@@ -105,43 +105,9 @@
     <div class="modal-content">
       <span class="close" data-modal="paymentModal">&times;</span>
       <h2>Select Payment Method</h2>
-      <button id="selectCardPayment">Pay with Card</button>
-      <button id="selectEasypaisaPayment">Pay with Easypaisa</button>
+      <button id="selectCardPayment" disabled>Pay with Card</button>
+      <button id="selectEasypaisaPayment" disabled>Pay with Easypaisa</button>
       <button id="selectCODPayment">Cash on Delivery</button>
-    </div>
-  </div>
-
-  <!-- Card Payment Modal -->
-  <div id="cardPaymentModal" class="modal" style="display: none;">
-    <div class="modal-content">
-      <span class="close" data-modal="cardPaymentModal">&times;</span>
-      <h2>Card Payment Details</h2>
-      <form id="cardPaymentForm">
-        <label for="cardHolderName">Card Holder Name:</label>
-        <input type="text" id="cardHolderName" required /><br />
-        <label for="cardNumber">Card Number:</label>
-        <input type="text" id="cardNumber" required /><br />
-        <label for="cardExpiry">Expiry Date:</label>
-        <input type="text" id="cardExpiry" placeholder="MM/YY" required /><br />
-        <label for="cardCVV">CVV:</label>
-        <input type="text" id="cardCVV" required /><br />
-        <button type="submit">Submit Payment</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Easypaisa Payment Modal -->
-  <div id="easypaisaPaymentModal" class="modal" style="display: none;">
-    <div class="modal-content">
-      <span class="close" data-modal="easypaisaPaymentModal">&times;</span>
-      <h2>Easypaisa Payment Details</h2>
-      <form id="easypaisaPaymentForm">
-        <label for="easypaisaMobile">Mobile Number:</label>
-        <input type="text" id="easypaisaMobile" required /><br />
-        <label for="easypaisaTransactionId">Transaction ID:</label>
-        <input type="text" id="easypaisaTransactionId" required /><br />
-        <button type="submit">Submit Payment</button>
-      </form>
     </div>
   </div>
 
@@ -175,7 +141,7 @@
         <input type="text" id="zone" required /><br />
         <div class="text____area">
           <label for="address">Address:</label>
-        <textarea id="address" required></textarea><br />
+          <textarea id="address" required style="width: 100%; height: 60px; resize: vertical;"></textarea><br />
         </div>
         <button type="submit">Submit Details</button>
       </form>
@@ -183,7 +149,7 @@
   </div>
 
   <!-- Order Tracking Modal -->
-  <div id="orderTrackingModal" class="modal" style="display: none;">
+  <div id="orderTrackingModal" class="modal">
     <div class="modal-content">
       <span class="close" data-modal="orderTrackingModal">&times;</span>
       <h2>Your Order Tracking</h2>

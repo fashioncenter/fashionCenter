@@ -185,6 +185,7 @@ header .search i {
     bottom: 20px;
     left: 10px;
     padding: 10px 20px;
+    cursor: pointer;
 }
 .coupon-section{
     position: absolute;
