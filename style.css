@@ -177,8 +177,19 @@ header .search i {
 .cart__total {
     position: absolute;
     left: 10px;
-    bottom: 20px;
+    bottom: 80px;
     font-size: 20px;
+}
+.buy-now-btn{
+    position: absolute;
+    bottom: 20px;
+    left: 10px;
+    padding: 10px 20px;
+}
+.coupon-section{
+    position: absolute;
+    bottom: 130px;
+    left: 10px;
 }
 
 .hero {
@@ -432,6 +443,16 @@ a {
 }
 #loginForm .login___btns button{
     padding: 3px 20px;
+    cursor: pointer;
+}
+.coupon-section input{
+    height: 30px;
+    padding: 0 4px;
+    outline: none;
+}
+.coupon-section button{
+    height: 30px;
+    padding: 3px 6px;
     cursor: pointer;
 }
 
