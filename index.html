@@ -64,7 +64,9 @@
       <form id="loginForm">
         <input type="email" id="loginEmail" placeholder="Email" required />
         <input type="password" id="loginPassword" placeholder="Password" required />
-        <button type="submit">Login</button>
+        <div class="login___btns">
+          <button type="submit">Login</button>
+        </div>
       </form>
       <button id="googleLoginBtn" style="margin-top: 10px;">Login with Google</button>
     </div>
@@ -171,8 +173,10 @@
         <input type="text" id="city" required /><br />
         <label for="zone">Zone:</label>
         <input type="text" id="zone" required /><br />
-        <label for="address">Address:</label>
+        <div class="text____area">
+          <label for="address">Address:</label>
         <textarea id="address" required></textarea><br />
+        </div>
         <button type="submit">Submit Details</button>
       </form>
     </div>
