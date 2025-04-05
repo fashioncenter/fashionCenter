@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E-Commerce</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
+  <link rel="shortcut icon" href="/Assets/facewash.png" type="image/x-icon" />
+  <!-- Firebase App (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <!-- Payment SDKs -->
+  <script src="https://www.paypal.com/sdk/js?client-id=AQP8CFjhaAkVoul_BJVlru-M1tt87boWNSF3gICDeHZwfPvMDKOnmLbSLedni30lmbVjBc0SSLJ41bQS_ID&currency=USD"></script>
+  <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+  <header>
+    <div class="search">
+      <input type="text" class="searchBar" placeholder="Search products..." />
+      <i class="ri-search-line"></i>
+    </div>
+    <div class="order">
+      <div class="cart__icon">
+        <i class="ri-shopping-cart-line" id="cart"></i>
+        <span class="cart-count">0</span>
+      </div>
+      <div class="side_cart_view">
+        <div class="side_bar_h1">
+          <h1>Cart View</h1>
+        </div>
+        <div class="cart__total"></div>
+        <!-- Coupon Section -->
+        <div class="coupon-section">
+          <input type="text" id="couponInput" placeholder="Enter coupon code" />
+          <button id="applyCouponBtn">Apply Coupon</button>
+          <p id="couponMessage"></p>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <div class="hero">
+    <div class="image">
+      <img src="../Assets/hero.png" alt="Hero" />
+    </div>
+    <div class="overlay">
+      <h1>EC Market</h1>
+      <p>Affiliate Marketing Place</p>
+      <div class="social___media_container">
+        <a href="https://wa.me/923173646088" target="_blank"><i class="ri-whatsapp-line"></i></a>
+      </div>
+    </div>
+  </div>
+  
+  <div class="products"></div>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <span class="close" data-modal="loginModal">&times;</span>
+      <h2>Login</h2>
+      <form id="loginForm">
+        <input type="email" id="loginEmail" placeholder="Email" required />
+        <input type="password" id="loginPassword" placeholder="Password" required />
+        <button type="submit">Login</button>
+      </form>
+      <button id="googleLoginBtn" style="margin-top: 10px;">Login with Google</button>
+    </div>
+  </div>
+
+  <!-- Signup Modal -->
+  <div id="signupModal" class="modal">
+    <div class="modal-content">
+      <span class="close" data-modal="signupModal">&times;</span>
+      <h2>Sign Up</h2>
+      <form id="signupForm">
+        <input type="text" id="signupName" placeholder="Name" required />
+        <input type="email" id="signupEmail" placeholder="Email" required />
+        <input type="password" id="signupPassword" placeholder="Password" required />
+        <button type="submit">Sign Up</button>
+      </form>
+      <button id="googleSignupBtn" style="margin-top: 10px;">Sign Up with Google</button>
+    </div>
+  </div>
+
+  <!-- Admin Login Modal (if applicable) -->
+  <div id="adminLoginModal" class="modal">
+    <div class="modal-content">
+      <span class="close" data-modal="adminLoginModal">&times;</span>
+      <h2>Admin Login</h2>
+      <form id="adminLoginForm">
+        <input type="email" id="adminEmail" placeholder="Admin Email" required />
+        <input type="password" id="adminPassword" placeholder="Password" required />
+        <button type="submit">Login as Admin</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Payment Selection Modal -->
+  <div id="paymentModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" data-modal="paymentModal">&times;</span>
+      <h2>Select Payment Method</h2>
+      <button id="selectCardPayment">Pay with Card</button>
+      <button id="selectEasypaisaPayment">Pay with Easypaisa</button>
+      <button id="selectCODPayment">Cash on Delivery</button>
+    </div>
+  </div>
+
+  <!-- Card Payment Modal -->
+  <div id="cardPaymentModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" data-modal="cardPaymentModal">&times;</span>
+      <h2>Card Payment Details</h2>
+      <form id="cardPaymentForm">
+        <label for="cardHolderName">Card Holder Name:</label>
+        <input type="text" id="cardHolderName" required /><br />
+        <label for="cardNumber">Card Number:</label>
+        <input type="text" id="cardNumber" required /><br />
+        <label for="cardExpiry">Expiry Date:</label>
+        <input type="text" id="cardExpiry" placeholder="MM/YY" required /><br />
+        <label for="cardCVV">CVV:</label>
+        <input type="text" id="cardCVV" required /><br />
+        <button type="submit">Submit Payment</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Easypaisa Payment Modal -->
+  <div id="easypaisaPaymentModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" data-modal="easypaisaPaymentModal">&times;</span>
+      <h2>Easypaisa Payment Details</h2>
+      <form id="easypaisaPaymentForm">
+        <label for="easypaisaMobile">Mobile Number:</label>
+        <input type="text" id="easypaisaMobile" required /><br />
+        <label for="easypaisaTransactionId">Transaction ID:</label>
+        <input type="text" id="easypaisaTransactionId" required /><br />
+        <button type="submit">Submit Payment</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Cash on Delivery (COD) Payment Modal -->
+  <div id="codPaymentModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" data-modal="codPaymentModal">&times;</span>
+      <h2>Cash on Delivery</h2>
+      <p>Please confirm your order. You will pay in cash when your order is delivered.</p>
+      <form id="codPaymentForm">
+        <button type="submit">Confirm Order</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Shipping Details Modal -->
+  <div id="shippingDetailsModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" data-modal="shippingDetailsModal">&times;</span>
+      <h2>Enter Shipping Details</h2>
+      <form id="shippingDetailsForm">
+        <label for="fullName">Full Name:</label>
+        <input type="text" id="fullName" required /><br />
+        <label for="phoneNumber">Phone Number:</label>
+        <input type="text" id="phoneNumber" required /><br />
+        <label for="province">Province / Region:</label>
+        <input type="text" id="province" required /><br />
+        <label for="city">City:</label>
+        <input type="text" id="city" required /><br />
+        <label for="zone">Zone:</label>
+        <input type="text" id="zone" required /><br />
+        <label for="address">Address:</label>
+        <textarea id="address" required></textarea><br />
+        <button type="submit">Submit Details</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Order Tracking Modal -->
+  <div id="orderTrackingModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" data-modal="orderTrackingModal">&times;</span>
+      <h2>Your Order Tracking</h2>
+      <div id="orderStatusContainer">
+        <!-- Order status details will be injected by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer___conter">
+    <footer>
+      <div class="footer__container">
+        <div class="logo">
+          <h1>EC</h1>
+        </div>
+        <nav class="auth-nav footer___social">
+          <li><button id="loginBtn" class="__1">Login</button></li>
+          <li><button id="signupBtn" class="__1">Sign Up</button></li>
+          <li><button id="logoutBtn" style="display: none;">Logout</button></li>
+        </nav>
+        <ul class="container__about__store">
+          <li><a href="#">About Store</a></li>
+          <li><a href="#">Bug Report</a></li>
+        </ul>
+        <div class="box__to__social">
+          <li><a href="#"><i class="ri-facebook-circle-fill"></i></a></li>
+          <li><a href="#"><i class="ri-instagram-line"></i></a></li>
+          <li><a href="#"><i class="ri-shopping-bag-2-line"></i></a></li>
+        </div>
+        <div class="container__dev_info">
+          <p style="color: #9c9c9cbe; line-height: 10px;">
+            &copy; 2025, Your Company Name. All rights reserved.
+            Managed by Developer 
+            <a href="https://www.fiverr.com/s/jjkkZ9V" target="_blank">
+              <img src="Assets/fiverr.jpg" alt="Fiverr">
+            </a>
+          </p>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Load external JavaScript file -->
+  <script src="script.js"></script>
+</body>
+</html>

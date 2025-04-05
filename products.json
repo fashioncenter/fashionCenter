@@ -1,0 +1,26 @@
+[
+    {
+        "id": 1,
+        "name": "Baseus Bowie H1s Noise Cancellation Wireless Headphones",
+        "category": "headphones",
+        "description": "Free Shipping & Cash On Delivery all over Pakistan. Exclusively",
+        "price": {
+            "original": 230.99,
+            "discounted": 6.00
+        },
+        "image": "Assets/facewash.png",
+        "badge": "Hot"
+    },
+    {
+        "id": 2,
+        "name": "Baseus Bowie H1s Noise Cancellation Wireless Headphones",
+        "category": "headphones",
+        "description": "Free Shipping & Cash On Delivery all over Pakistan. Exclusively",
+        "price": {
+            "original": 230.99,
+            "discounted": 10.00
+        },
+        "image": "Assets/headPhone.png",
+        "badge": "Hot"
+    }
+]
