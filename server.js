@@ -22,8 +22,8 @@ app.post('/create-checkout-session', async (req, res) => {
         quantity: item.quantity,
       })),
       mode: 'payment',
-      success_url: 'https://your-domain.com/success',
-      cancel_url: 'https://your-domain.com/cancel',
+      success_url: 'codetoweb.tech',
+      cancel_url: 'codetoweb.tech',
     });
 
     res.json({ id: session.id });
