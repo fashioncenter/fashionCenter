@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const slider = document.querySelector('.side_cart_view');
   let shippingData = {};
   let appliedCoupon = null; // Track applied coupon
+  let isAuthenticated = false;
 
   // Show message within cart slider
   function showCartMessage(message) {
@@ -101,6 +102,13 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       cartItemsContainer.appendChild(itemDiv);
     });
+
+    // Update buy now button based on auth state
+    const buyNowBtn = document.querySelector('.buy-now-btn');
+    if (buyNowBtn) {
+      buyNowBtn.textContent = isAuthenticated ? 'Buy Now' : 'Login to Order';
+      buyNowBtn.disabled = !isAuthenticated;
+    }
 
     // Attach control handlers
     cartItemsContainer.querySelectorAll('.remove-item').forEach(btn => {
@@ -218,11 +226,52 @@ document.addEventListener('DOMContentLoaded', () => {
   const shippingModal = document.getElementById('shippingDetailsModal');
   const paymentModal = document.getElementById('paymentModal');
 
-  // Buy Now button click handler
+  // Add authentication state listener
+  window.addEventListener('load', async () => {
+    await Clerk.load();
+    
+    Clerk.addListener(({ user }) => {
+      isAuthenticated = !!user;
+      updateAuthState();
+    });
+  });
+
+  // Function to update UI based on auth state
+  function updateAuthState() {
+    const buyNowBtn = document.querySelector('.buy-now-btn');
+    const authLinks = document.getElementById('auth-links');
+    const userProfileDiv = document.getElementById('user-profile');
+    const dashboardLink = document.getElementById('dashboardLink');
+
+    if (isAuthenticated) {
+      if (buyNowBtn) buyNowBtn.textContent = 'Buy Now';
+      if (authLinks) authLinks.style.display = 'none';
+      if (userProfileDiv) userProfileDiv.style.display = 'block';
+      if (dashboardLink) dashboardLink.style.display = 'block';
+    } else {
+      if (buyNowBtn) buyNowBtn.textContent = 'Login to Order';
+      if (authLinks) authLinks.style.display = 'flex';
+      if (userProfileDiv) userProfileDiv.style.display = 'none';
+      if (dashboardLink) dashboardLink.style.display = 'none';
+    }
+    
+    // Refresh cart view to update UI
+    refreshCart();
+  }
+
+  // Update the Buy Now button click handler
   document.querySelector('.buy-now-btn')?.addEventListener('click', () => {
     if (!cartItems.length) {
       return showCartMessage('Your cart is empty!');
     }
+    
+    // Check if user is logged in
+    if (!isAuthenticated) {
+      showCartMessage('Please login to place an order');
+      Clerk.openSignIn({ redirectUrl: window.location.href });
+      return;
+    }
+
     if (shippingModal) {
       shippingModal.style.display = 'block';
     } else {
@@ -286,10 +335,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Payment form submission
+  // Update the payment form submission
   document.querySelector('.payment-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
+    // Check login status
+    if (!isAuthenticated) {
+      showCartMessage('Please login to complete your order');
+      Clerk.openSignIn({ redirectUrl: window.location.href });
+      return;
+    }
+
     const activeMethod = document.querySelector('.payment-method-option.active');
     if (!activeMethod) {
       showCartMessage('Please select a payment method');
@@ -306,27 +362,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Complete checkout: Firestore write
+  // Update the completeCheckout function
   async function completeCheckout(paymentMethod) {
+    if (!isAuthenticated || !Clerk.user) {
+      throw new Error('Authentication required');
+    }
+
     const order = {
       cart: cartItems,
       shipping: shippingData,
-      paymentMethod,                      
+      paymentMethod,
       total: cartItems.reduce((a, i) => a + i.price.discounted * i.quantity, 0),
       createdAt: new Date(),
-      email: Clerk.user?.primaryEmailAddress?.emailAddress || 'guest',
+      email: Clerk.user.primaryEmailAddress?.emailAddress,
+      userId: Clerk.user.id,
       status: 'pending',
       coupon: appliedCoupon ? {
         code: appliedCoupon.code,
         discount: appliedCoupon.discount
       } : null
     };
-    
-    // Apply coupon discount to total if exists
+
+    // Apply coupon discount if exists
     if (appliedCoupon) {
       order.total = order.total * (1 - appliedCoupon.discount / 100);
     }
-    
+
     try {
       const orderRef = await addDoc(collection(window.db, 'orders'), order);
       cartItems = [];
