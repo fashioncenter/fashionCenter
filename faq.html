@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAQ - M. Fashion</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
+  <link rel="shortcut icon" href="Assets/logo.png" type="image/x-icon" />
+
+  <!-- Import Firebase -->
+  <script type="module" src="firebase.js"></script>
+
+  <!-- Clerk browser bundle -->
+  <script
+    async
+    crossorigin="anonymous"
+    data-clerk-publishable-key="pk_test_bW92aW5nLXN0dXJnZW9uLTczLmNsZXJrLmFjY291bnRzLmRldiQ"
+    src="https://moving-sturgeon-73.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+    type="text/javascript"
+  ></script>
+</head>
+<body>
+  <header>
+    <div class="search">
+      <input type="text" class="searchBar" placeholder="Search products..." />
+      <i class="ri-search-line"></i>
+    </div>
+    <div class="order">
+      <div class="cart__icon">
+        <i class="ri-shopping-cart-line" id="cart"></i>
+        <span class="cart-count">0</span>
+      </div>
+      <div class="side_cart_view">
+        <div class="side_bar_h1">
+          <h1>Your Cart</h1>
+          <button class="close-cart" onclick="closeCart()">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="cart__total"></div>
+        <div class="coupon-section">
+          <input type="text" id="couponInput" placeholder="Enter coupon code" />
+          <button id="applyCouponBtn" type="button">Apply Coupon</button>
+          <p id="couponMessage"></p>
+        </div>
+        <button class="buy-now-btn">Buy Now</button>
+      </div>
+    </div>
+    <nav class="auth-nav">
+      <ul id="auth-links">
+        <li><button id="loginBtn" class="__1" type="button">Login</button></li>
+        <li><button id="signupBtn" class="__1" type="button">Sign Up</button></li>
+        <li><button id="logoutBtn" style="display:none;" type="button">Logout</button></li>
+      </ul>
+      <div id="user-profile" style="display:none;"></div>
+      <a href="user-dashboard.html" id="dashboardLink" style="display:none;" class="dashboard-link">
+        <i class="ri-dashboard-line"></i> My Orders
+      </a>
+    </nav>
+  </header>
+
+  <div class="faq-page">
+    <div class="faq-container">
+      <h1>Frequently Asked Questions</h1>
+      
+      <!-- Search Section -->
+      <div class="faq-search">
+        <input type="text" placeholder="Search FAQs..." id="faqSearch" />
+        <i class="ri-search-line"></i>
+      </div>
+
+      <!-- FAQ Categories -->
+      <div class="faq-categories">
+        <button class="category-btn active" data-category="all">All Questions</button>
+        <button class="category-btn" data-category="shipping">Shipping</button>
+        <button class="category-btn" data-category="returns">Returns</button>
+        <button class="category-btn" data-category="orders">Orders</button>
+        <button class="category-btn" data-category="payment">Payment</button>
+      </div>
+
+      <!-- FAQ Items -->
+      <div class="faq-items">
+        <!-- Shipping FAQs -->
+        <div class="faq-item" data-category="shipping">
+          <div class="faq-question">
+            <h3>How long does shipping take?</h3>
+            <i class="ri-arrow-down-s-line"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Standard shipping typically takes 3-5 business days. Express shipping is available for 1-2 business day delivery. International shipping may take 7-14 business days depending on the destination.</p>
+          </div>
+        </div>
+
+        <div class="faq-item" data-category="shipping">
+          <div class="faq-question">
+            <h3>Do you ship internationally?</h3>
+            <i class="ri-arrow-down-s-line"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Yes, we ship to most countries worldwide. International shipping rates and delivery times vary by location. You can check shipping rates during checkout.</p>
+          </div>
+        </div>
+
+        <!-- Returns FAQs -->
+        <div class="faq-item" data-category="returns">
+          <div class="faq-question">
+            <h3>What is your return policy?</h3>
+            <i class="ri-arrow-down-s-line"></i>
+          </div>
+          <div class="faq-answer">
+            <p>We offer a 30-day return policy for all items. Items must be unused and in their original packaging. Please visit our Returns & Refunds section for more details.</p>
+          </div>
+        </div>
+
+        <div class="faq-item" data-category="returns">
+          <div class="faq-question">
+            <h3>How do I return an item?</h3>
+            <i class="ri-arrow-down-s-line"></i>
+          </div>
+          <div class="faq-answer">
+            <p>To return an item, log into your account, go to "My Orders," select the order containing the item you want to return, and follow the return instructions. You'll receive a return label via email.</p>
+          </div>
+        </div>
+
+        <!-- Orders FAQs -->
+        <div class="faq-item" data-category="orders">
+          <div class="faq-question">
+            <h3>How can I track my order?</h3>
+            <i class="ri-arrow-down-s-line"></i>
+          </div>
+          <div class="faq-answer">
+            <p>You can track your order by logging into your account and visiting the "My Orders" section. You'll find the tracking number and current status of your order there.</p>
+          </div>
+        </div>
+
+        <div class="faq-item" data-category="orders">
+          <div class="faq-question">
+            <h3>Can I modify or cancel my order?</h3>
+            <i class="ri-arrow-down-s-line"></i>
+          </div>
+          <div class="faq-answer">
+            <p>You can modify or cancel your order within 1 hour of placing it. Please contact our customer service team immediately for assistance.</p>
+          </div>
+        </div>
+
+        <!-- Payment FAQs -->
+        <div class="faq-item" data-category="payment">
+          <div class="faq-question">
+            <h3>What payment methods do you accept?</h3>
+            <i class="ri-arrow-down-s-line"></i>
+          </div>
+          <div class="faq-answer">
+            <p>We accept various payment methods including credit/debit cards, PayPal, and cash on delivery. All online payments are secure and encrypted.</p>
+          </div>
+        </div>
+
+        <div class="faq-item" data-category="payment">
+          <div class="faq-question">
+            <h3>Is my payment information secure?</h3>
+            <i class="ri-arrow-down-s-line"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Yes, we use industry-standard SSL encryption to protect your payment information. We never store your complete credit card details on our servers.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Still Need Help Section -->
+      <div class="need-help">
+        <h2>Still Need Help?</h2>
+        <p>Our customer support team is here to help you 24/7</p>
+        <div class="help-options">
+          <a href="contact.html" class="help-card">
+            <i class="ri-customer-service-2-line"></i>
+            <span>Contact Support</span>
+          </a>
+          <a href="tel:+923173646088" class="help-card">
+            <i class="ri-phone-line"></i>
+            <span>Call Us</span>
+          </a>
+          <a href="mailto:support@mfashion.com" class="help-card">
+            <i class="ri-mail-line"></i>
+            <span>Email Us</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer___conter">
+    <footer>
+      <div class="footer__container">
+        <div class="footer-section">
+          <div class="logo">
+            <h1>M. Fashion</h1>
+            <p>Your one-stop destination for fashion and style</p>
+          </div>
+          <div class="social-links">
+            <a href="#" class="social-link"><i class="ri-facebook-circle-fill"></i></a>
+            <a href="#" class="social-link"><i class="ri-instagram-line"></i></a>
+            <a href="#" class="social-link"><i class="ri-twitter-x-line"></i></a>
+            <a href="#" class="social-link"><i class="ri-whatsapp-line"></i></a>
+          </div>
+        </div>
+
+        <div class="footer-section">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html#products">Products</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h3>Customer Service</h3>
+          <ul>
+            <li><a href="help-center.html">Help Center</a></li>
+            <li><a href="shipping-policy.html">Shipping Policy</a></li>
+            <li><a href="return-policy.html">Return Policy</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h3>Contact Us</h3>
+          <ul>
+            <li><i class="ri-map-pin-line"></i> 123 Fashion Street, City</li>
+            <li><i class="ri-phone-line"></i> +92 317 3646088</li>
+            <li><i class="ri-mail-line"></i> support@mfashion.com</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 M. Fashion. All rights reserved.</p>
+      </div>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    // FAQ functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const faqItems = document.querySelectorAll('.faq-item');
+      const categoryBtns = document.querySelectorAll('.category-btn');
+      const faqSearch = document.getElementById('faqSearch');
+
+      // Toggle FAQ answers
+      faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question');
+        question.addEventListener('click', () => {
+          item.classList.toggle('active');
+        });
+      });
+
+      // Category filtering
+      categoryBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const category = btn.dataset.category;
+          
+          // Update active button
+          categoryBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          // Filter FAQ items
+          faqItems.forEach(item => {
+            if (category === 'all' || item.dataset.category === category) {
+              item.style.display = 'block';
+            } else {
+              item.style.display = 'none';
+            }
+          });
+        });
+      });
+
+      // Search functionality
+      faqSearch.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        
+        faqItems.forEach(item => {
+          const question = item.querySelector('h3').textContent.toLowerCase();
+          const answer = item.querySelector('p').textContent.toLowerCase();
+          
+          if (question.includes(searchTerm) || answer.includes(searchTerm)) {
+            item.style.display = 'block';
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html> 

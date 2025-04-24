@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact Us - M. Fashion</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
+  <link rel="shortcut icon" href="Assets/logo.png" type="image/x-icon" />
+
+  <!-- Import Firebase -->
+  <script type="module" src="firebase.js"></script>
+
+  <!-- Clerk browser bundle -->
+  <script
+    async
+    crossorigin="anonymous"
+    data-clerk-publishable-key="pk_test_bW92aW5nLXN0dXJnZW9uLTczLmNsZXJrLmFjY291bnRzLmRldiQ"
+    src="https://moving-sturgeon-73.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+    type="text/javascript"
+  ></script>
+</head>
+<body>
+  <header>
+    <div class="search">
+      <input type="text" class="searchBar" placeholder="Search products..." />
+      <i class="ri-search-line"></i>
+    </div>
+    <div class="order">
+      <div class="cart__icon">
+        <i class="ri-shopping-cart-line" id="cart"></i>
+        <span class="cart-count">0</span>
+      </div>
+      <div class="side_cart_view">
+        <div class="side_bar_h1">
+          <h1>Your Cart</h1>
+          <button class="close-cart" onclick="closeCart()">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="cart__total"></div>
+        <div class="coupon-section">
+          <input type="text" id="couponInput" placeholder="Enter coupon code" />
+          <button id="applyCouponBtn" type="button">Apply Coupon</button>
+          <p id="couponMessage"></p>
+        </div>
+        <button class="buy-now-btn">Buy Now</button>
+      </div>
+    </div>
+    <nav class="auth-nav">
+      <ul id="auth-links">
+        <li><button id="loginBtn" class="__1" type="button">Login</button></li>
+        <li><button id="signupBtn" class="__1" type="button">Sign Up</button></li>
+        <li><button id="logoutBtn" style="display:none;" type="button">Logout</button></li>
+      </ul>
+      <div id="user-profile" style="display:none;"></div>
+      <a href="user-dashboard.html" id="dashboardLink" style="display:none;" class="dashboard-link">
+        <i class="ri-dashboard-line"></i> My Orders
+      </a>
+    </nav>
+  </header>
+
+  <div class="contact-us">
+    <div class="contact-container">
+      <h2>Contact Us</h2>
+      <div class="contact-content">
+        <div class="contact-info">
+          <div class="info-item">
+            <i class="ri-map-pin-line"></i>
+            <div>
+              <h3>Our Location</h3>
+              <p>123 Fashion Street, City</p>
+            </div>
+          </div>
+          <div class="info-item">
+            <i class="ri-phone-line"></i>
+            <div>
+              <h3>Phone Number</h3>
+              <p>+92 317 3646088</p>
+            </div>
+          </div>
+          <div class="info-item">
+            <i class="ri-mail-line"></i>
+            <div>
+              <h3>Email Address</h3>
+              <p>support@mfashion.com</p>
+            </div>
+          </div>
+          <div class="info-item">
+            <i class="ri-time-line"></i>
+            <div>
+              <h3>Working Hours</h3>
+              <p>Monday - Saturday: 9:00 AM - 8:00 PM</p>
+              <p>Sunday: 10:00 AM - 6:00 PM</p>
+            </div>
+          </div>
+        </div>
+        <div class="contact-form">
+          <h3>Send us a Message</h3>
+          <form id="contactForm">
+            <div class="form-group">
+              <label for="name">Full Name</label>
+              <input type="text" id="name" name="name" required placeholder="Enter your full name" />
+            </div>
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <input type="email" id="email" name="email" required placeholder="Enter your email address" />
+            </div>
+            <div class="form-group">
+              <label for="subject">Subject</label>
+              <input type="text" id="subject" name="subject" required placeholder="Enter message subject" />
+            </div>
+            <div class="form-group">
+              <label for="message">Message</label>
+              <textarea id="message" name="message" required placeholder="Enter your message" rows="5"></textarea>
+            </div>
+            <button type="submit" class="submit-btn">Send Message</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer___conter">
+    <footer>
+      <div class="footer__container">
+        <div class="footer-section">
+          <div class="logo">
+            <h1>M. Fashion</h1>
+            <p>Your one-stop destination for fashion and style</p>
+          </div>
+          <div class="social-links">
+            <a href="#" class="social-link"><i class="ri-facebook-circle-fill"></i></a>
+            <a href="#" class="social-link"><i class="ri-instagram-line"></i></a>
+            <a href="#" class="social-link"><i class="ri-twitter-x-line"></i></a>
+            <a href="#" class="social-link"><i class="ri-whatsapp-line"></i></a>
+          </div>
+        </div>
+
+        <div class="footer-section">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html#products">Products</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h3>Customer Service</h3>
+          <ul>
+            <li><a href="help-center.html">Help Center</a></li>
+            <li><a href="#">Shipping Policy</a></li>
+            <li><a href="#">Return Policy</a></li>
+            <li><a href="#">FAQ</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h3>Contact Us</h3>
+          <ul class="contact-info">
+            <li><i class="ri-map-pin-line"></i> 123 Fashion Street, City</li>
+            <li><i class="ri-phone-line"></i> +92 317 3646088</li>
+            <li><i class="ri-mail-line"></i> support@mfashion.com</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="container">
+          <p>&copy; 2024 M. Fashion. All rights reserved.</p>
+          <div class="payment-methods">
+            <i class="ri-visa-line"></i>
+            <i class="ri-mastercard-line"></i>
+            <i class="ri-paypal-line"></i>
+            <i class="ri-bank-card-line"></i>
+          </div>
+        </div>
+        <div class="developer-info">
+          <p>Developed with <i class="ri-heart-fill"></i> by <a href="https://github.com/yourusername" target="_blank">Your Name</a></p>
+          <div class="developer-links">
+            <a href="https://github.com/yourusername" target="_blank"><i class="ri-github-fill"></i></a>
+            <a href="https://linkedin.com/in/yourusername" target="_blank"><i class="ri-linkedin-fill"></i></a>
+            <a href="https://twitter.com/yourusername" target="_blank"><i class="ri-twitter-x-fill"></i></a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module" src="script.js"></script>
+
+  <!-- Contact Form Firebase Integration -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js";
+    import { db } from './firebase.js';
+
+    // Get the contact form
+    const contactForm = document.getElementById('contactForm');
+
+    // Add submit event listener
+    contactForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Get form values
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const subject = document.getElementById('subject').value;
+      const message = document.getElementById('message').value;
+
+      try {
+        // Add document to 'contacts' collection
+        const docRef = await addDoc(collection(db, "contacts"), {
+          name: name,
+          email: email,
+          subject: subject,
+          message: message,
+          timestamp: serverTimestamp()
+        });
+
+        // Show success message
+        alert('Thank you for your message! We will get back to you soon.');
+        
+        // Reset form
+        contactForm.reset();
+
+      } catch (error) {
+        console.error("Error adding document: ", error);
+        alert('Sorry, there was an error sending your message. Please try again later.');
+      }
+    });
+  </script>
+
+  <!-- Clerk Auth script -->
+  <script>
+    window.addEventListener('load', async () => {
+      await Clerk.load();
+
+      const loginBtn = document.getElementById('loginBtn');
+      const signupBtn = document.getElementById('signupBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const authLinks = document.getElementById('auth-links');
+      const userProfileDiv = document.getElementById('user-profile');
+      const dashboardLink = document.getElementById('dashboardLink');
+
+      if (Clerk.user) {
+        authLinks.style.display = 'none';
+        userProfileDiv.style.display = 'block';
+        dashboardLink.style.display = 'block';
+        Clerk.mountUserButton(userProfileDiv);
+      } else {
+        authLinks.style.display = 'flex';
+        userProfileDiv.style.display = 'none';
+        dashboardLink.style.display = 'none';
+      }
+
+      loginBtn.addEventListener('click', () => Clerk.openSignIn({ redirectUrl: window.location.href }));
+      signupBtn.addEventListener('click', () => Clerk.openSignUp({ redirectUrl: window.location.href }));
+      logoutBtn.addEventListener('click', async () => {
+        await Clerk.signOut();
+        window.location.reload();
+      });
+
+      Clerk.onAuth(({ user }) => {
+        if (user) {
+          authLinks.style.display = 'none';
+          userProfileDiv.style.display = 'block';
+          dashboardLink.style.display = 'block';
+        } else {
+          authLinks.style.display = 'flex';
+          userProfileDiv.style.display = 'none';
+          dashboardLink.style.display = 'none';
+        }
+      });
+    });
+  </script>
+</body>
+</html> 

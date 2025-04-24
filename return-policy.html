@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Return Policy - M. Fashion</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
+  <link rel="shortcut icon" href="Assets/logo.png" type="image/x-icon" />
+
+  <!-- Import Firebase -->
+  <script type="module" src="firebase.js"></script>
+
+  <!-- Clerk browser bundle -->
+  <script
+    async
+    crossorigin="anonymous"
+    data-clerk-publishable-key="pk_test_bW92aW5nLXN0dXJnZW9uLTczLmNsZXJrLmFjY291bnRzLmRldiQ"
+    src="https://moving-sturgeon-73.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+    type="text/javascript"
+  ></script>
+</head>
+<body>
+  <header>
+    <div class="search">
+      <input type="text" class="searchBar" placeholder="Search products..." />
+      <i class="ri-search-line"></i>
+    </div>
+    <div class="order">
+      <div class="cart__icon">
+        <i class="ri-shopping-cart-line" id="cart"></i>
+        <span class="cart-count">0</span>
+      </div>
+      <div class="side_cart_view">
+        <div class="side_bar_h1">
+          <h1>Your Cart</h1>
+          <button class="close-cart" onclick="closeCart()">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="cart__total"></div>
+        <div class="coupon-section">
+          <input type="text" id="couponInput" placeholder="Enter coupon code" />
+          <button id="applyCouponBtn" type="button">Apply Coupon</button>
+          <p id="couponMessage"></p>
+        </div>
+        <button class="buy-now-btn">Buy Now</button>
+      </div>
+    </div>
+    <nav class="auth-nav">
+      <ul id="auth-links">
+        <li><button id="loginBtn" class="__1" type="button">Login</button></li>
+        <li><button id="signupBtn" class="__1" type="button">Sign Up</button></li>
+        <li><button id="logoutBtn" style="display:none;" type="button">Logout</button></li>
+      </ul>
+      <div id="user-profile" style="display:none;"></div>
+      <a href="user-dashboard.html" id="dashboardLink" style="display:none;" class="dashboard-link">
+        <i class="ri-dashboard-line"></i> My Orders
+      </a>
+    </nav>
+  </header>
+
+  <div class="return-policy">
+    <div class="policy-container">
+      <h2>Return Policy</h2>
+      
+      <!-- Overview Section -->
+      <div class="policy-section">
+        <h3>Overview</h3>
+        <p>At M. Fashion, we want you to be completely satisfied with your purchase. Our return policy is designed to make the return process as smooth and convenient as possible.</p>
+      </div>
+
+      <!-- Return Window -->
+      <div class="policy-section">
+        <h3>Return Window</h3>
+        <div class="return-window">
+          <div class="window-card">
+            <i class="ri-calendar-line"></i>
+            <h4>30-Day Return Period</h4>
+            <p>You have 30 days from the date of delivery to initiate a return.</p>
+          </div>
+          <div class="window-card">
+            <i class="ri-time-line"></i>
+            <h4>Processing Time</h4>
+            <p>Returns are typically processed within 5-7 business days after receipt.</p>
+          </div>
+          <div class="window-card">
+            <i class="ri-refund-2-line"></i>
+            <h4>Refund Timeline</h4>
+            <p>Refunds are issued within 3-5 business days after return approval.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Return Conditions -->
+      <div class="policy-section">
+        <h3>Return Conditions</h3>
+        <div class="return-conditions">
+          <div class="condition-card">
+            <h4>Eligible Items</h4>
+            <ul>
+              <li>Unused items in original packaging</li>
+              <li>Items with original tags attached</li>
+              <li>Items in original condition</li>
+              <li>Items with proof of purchase</li>
+            </ul>
+          </div>
+          <div class="condition-card">
+            <h4>Non-Eligible Items</h4>
+            <ul>
+              <li>Used or worn items</li>
+              <li>Items without original packaging</li>
+              <li>Items without original tags</li>
+              <li>Items purchased on sale or clearance</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Return Process -->
+      <div class="policy-section">
+        <h3>Return Process</h3>
+        <div class="return-steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <h4>Initiate Return</h4>
+            <p>Log into your account and select the item(s) you wish to return.</p>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <h4>Print Label</h4>
+            <p>Print the return shipping label provided in your account.</p>
+          </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <h4>Package Items</h4>
+            <p>Pack the items securely with all original packaging and tags.</p>
+          </div>
+          <div class="step">
+            <div class="step-number">4</div>
+            <h4>Ship Back</h4>
+            <p>Drop off the package at your nearest shipping location.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Refund Information -->
+      <div class="policy-section">
+        <h3>Refund Information</h3>
+        <div class="refund-info">
+          <div class="refund-card">
+            <i class="ri-bank-card-line"></i>
+            <h4>Original Payment Method</h4>
+            <p>Refunds will be issued to the original payment method used for purchase.</p>
+          </div>
+          <div class="refund-card">
+            <i class="ri-exchange-dollar-line"></i>
+            <h4>Store Credit</h4>
+            <p>You may choose to receive store credit instead of a refund.</p>
+          </div>
+          <div class="refund-card">
+            <i class="ri-money-dollar-circle-line"></i>
+            <h4>Shipping Costs</h4>
+            <p>Original shipping costs are non-refundable unless the item was defective.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Exchanges -->
+      <div class="policy-section">
+        <h3>Exchanges</h3>
+        <div class="exchange-info">
+          <p>We offer exchanges for different sizes, colors, or styles of the same item. To process an exchange:</p>
+          <ol>
+            <li>Initiate a return through your account</li>
+            <li>Select "Exchange" as the return reason</li>
+            <li>Choose the new item you'd like to receive</li>
+            <li>Follow the return shipping instructions</li>
+          </ol>
+          <div class="exchange-note">
+            <i class="ri-information-line"></i>
+            <p>Exchanges are subject to availability. If the desired item is out of stock, we'll process a refund instead.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact Support -->
+      <div class="policy-section">
+        <h3>Need Help?</h3>
+        <div class="support-info">
+          <p>If you have any questions about our return policy or need assistance with a return, please contact our customer support team.</p>
+          <div class="support-options">
+            <a href="contact.html" class="support-link">
+              <i class="ri-customer-service-2-line"></i>
+              Contact Support
+            </a>
+            <a href="help-center.html" class="support-link">
+              <i class="ri-question-line"></i>
+              Visit Help Center
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer___conter">
+    <footer>
+      <div class="footer__container">
+        <div class="footer-section">
+          <div class="logo">
+            <h1>M. Fashion</h1>
+            <p>Your one-stop destination for fashion and style</p>
+          </div>
+          <div class="social-links">
+            <a href="#" class="social-link"><i class="ri-facebook-circle-fill"></i></a>
+            <a href="#" class="social-link"><i class="ri-instagram-line"></i></a>
+            <a href="#" class="social-link"><i class="ri-twitter-x-line"></i></a>
+            <a href="#" class="social-link"><i class="ri-whatsapp-line"></i></a>
+          </div>
+        </div>
+
+        <div class="footer-section">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html#products">Products</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h3>Customer Service</h3>
+          <ul>
+            <li><a href="help-center.html">Help Center</a></li>
+            <li><a href="shipping-policy.html">Shipping Policy</a></li>
+            <li><a href="return-policy.html">Return Policy</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h3>Contact Us</h3>
+          <ul class="contact-info">
+            <li><i class="ri-map-pin-line"></i> 123 Fashion Street, City</li>
+            <li><i class="ri-phone-line"></i> +92 317 3646088</li>
+            <li><i class="ri-mail-line"></i> support@mfashion.com</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="container">
+          <p>&copy; 2024 M. Fashion. All rights reserved.</p>
+          <div class="payment-methods">
+            <i class="ri-visa-line"></i>
+            <i class="ri-mastercard-line"></i>
+            <i class="ri-paypal-line"></i>
+            <i class="ri-bank-card-line"></i>
+          </div>
+        </div>
+        <div class="developer-info">
+          <p>Developed with <i class="ri-heart-fill"></i> by <a href="https://github.com/yourusername" target="_blank">Your Name</a></p>
+          <div class="developer-links">
+            <a href="https://github.com/yourusername" target="_blank"><i class="ri-github-fill"></i></a>
+            <a href="https://linkedin.com/in/yourusername" target="_blank"><i class="ri-linkedin-fill"></i></a>
+            <a href="https://twitter.com/yourusername" target="_blank"><i class="ri-twitter-x-fill"></i></a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module" src="script.js"></script>
+
+  <!-- Clerk Auth script -->
+  <script>
+    window.addEventListener('load', async () => {
+      await Clerk.load();
+
+      const loginBtn = document.getElementById('loginBtn');
+      const signupBtn = document.getElementById('signupBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const authLinks = document.getElementById('auth-links');
+      const userProfileDiv = document.getElementById('user-profile');
+      const dashboardLink = document.getElementById('dashboardLink');
+
+      if (Clerk.user) {
+        authLinks.style.display = 'none';
+        userProfileDiv.style.display = 'block';
+        dashboardLink.style.display = 'block';
+        Clerk.mountUserButton(userProfileDiv);
+      } else {
+        authLinks.style.display = 'flex';
+        userProfileDiv.style.display = 'none';
+        dashboardLink.style.display = 'none';
+      }
+
+      loginBtn.addEventListener('click', () => Clerk.openSignIn({ redirectUrl: window.location.href }));
+      signupBtn.addEventListener('click', () => Clerk.openSignUp({ redirectUrl: window.location.href }));
+      logoutBtn.addEventListener('click', async () => {
+        await Clerk.signOut();
+        window.location.reload();
+      });
+
+      Clerk.onAuth(({ user }) => {
+        if (user) {
+          authLinks.style.display = 'none';
+          userProfileDiv.style.display = 'block';
+          dashboardLink.style.display = 'block';
+        } else {
+          authLinks.style.display = 'flex';
+          userProfileDiv.style.display = 'none';
+          dashboardLink.style.display = 'none';
+        }
+      });
+    });
+  </script>
+</body>
+</html> 

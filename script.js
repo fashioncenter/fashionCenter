@@ -105,29 +105,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // Attach control handlers
     cartItemsContainer.querySelectorAll('.remove-item').forEach(btn => {
       btn.addEventListener('click', () => {
-        const index = parseInt(btn.getAttribute('data-index'), 10);
-        cartItems.splice(index, 1);
-        refreshCart();
+      const index = parseInt(btn.getAttribute('data-index'), 10);
+      cartItems.splice(index, 1);
+      refreshCart();
       });
     });
 
     cartItemsContainer.querySelectorAll('.increase-item').forEach(btn => {
       btn.addEventListener('click', () => {
-        const index = parseInt(btn.getAttribute('data-index'), 10);
-        cartItems[index].quantity++;
-        refreshCart();
+      const index = parseInt(btn.getAttribute('data-index'), 10);
+      cartItems[index].quantity++;
+      refreshCart();
       });
     });
 
     cartItemsContainer.querySelectorAll('.decrease-item').forEach(btn => {
       btn.addEventListener('click', () => {
-        const index = parseInt(btn.getAttribute('data-index'), 10);
+      const index = parseInt(btn.getAttribute('data-index'), 10);
         if (cartItems[index].quantity > 1) {
-          cartItems[index].quantity--;
+      cartItems[index].quantity--;
         } else {
           cartItems.splice(index, 1);
         }
-        refreshCart();
+      refreshCart();
       });
     });
 
@@ -315,9 +315,9 @@ document.addEventListener('DOMContentLoaded', () => {
   orderStatusModal.innerHTML = `
     <button data-modal="orderStatusModal" class="close" type="button">×</button>
     <div class="modal-content">
-      <div class="order-status-content">
-        <h2>Order Status</h2>
-        <div id="orderStatusDetails"></div>
+    <div class="order-status-content">
+      <h2>Order Status</h2>
+      <div id="orderStatusDetails"></div>
       </div>
     </div>
   `;
