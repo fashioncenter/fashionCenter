@@ -97,7 +97,7 @@
 
   <!-- Shipping Details Modal -->
   <div id="shippingDetailsModal" class="modal" style="display:none;">
-    <button data-modal="shippingDetailsModal" class="close" type="button">×</button>
+    <button data-modal="shippingDetailsModal" class="close" type="button"><i class="ri-close-fill"></i></button>
     <div class="shipping-form-container">
       <h2>Shipping Details</h2>
       <form id="shippingDetailsForm">
@@ -135,22 +135,54 @@
   </div>
 
   <!-- Payment Selection Modal -->
-  <div id="paymentModal" class="modal" style="display:none;">
-    <button data-modal="paymentModal" class="close" type="button">×</button>
-    <div class="modal-content">
+  <div id="paymentModal" class="modal">
+    <div class="payment-modal">
       <h2>Select Payment Method</h2>
-      <button id="selectCardPayment" type="button">
-        <i class="ri-bank-card-line"></i>
-        Pay by Card
-      </button>
-      <button id="selectEasypaisaPayment" type="button">
-        <i class="ri-money-dollar-circle-line"></i>
-        Easypaisa
-      </button>
-      <button id="selectCODPayment" type="button">
-        <i class="ri-truck-line"></i>
-        Cash on Delivery
-      </button>
+      
+      <div class="payment-methods">
+        <div class="payment-method-option" data-method="card">
+          <i class="ri-bank-card-line"></i>
+          <span>Credit Card</span>
+        </div>
+        <div class="payment-method-option" data-method="easypaisa">
+          <i class="ri-smartphone-line"></i>
+          <span>Easypaisa</span>
+        </div>
+        <div class="payment-method-option" data-method="cod">
+          <i class="ri-wallet-3-line"></i>
+          <span>Cash on Delivery</span>
+        </div>
+      </div>
+
+      <form class="payment-form">
+        <div id="card-fields" style="display: none;">
+          <div class="form-group">
+            <label for="card-number">Card Number</label>
+            <input type="text" id="card-number" placeholder="1234 5678 9012 3456" maxlength="16" />
+          </div>
+          <div class="form-group">
+            <label for="card-expiry">Expiry Date</label>
+            <input type="text" id="card-expiry" placeholder="MM/YY" maxlength="5" />
+          </div>
+          <div class="form-group">
+            <label for="card-cvc">CVC</label>
+            <input type="text" id="card-cvc" placeholder="123" maxlength="4" />
+          </div>
+        </div>
+
+        <div id="easypaisa-fields" style="display: none;">
+          <div class="form-group">
+            <label for="easypaisa-number">Easypaisa Number</label>
+            <input type="text" id="easypaisa-number" placeholder="03XX XXXXXXX" maxlength="11" />
+          </div>
+        </div>
+
+        <div id="cod-fields" style="display: none;">
+          <p>You will pay when your order is delivered.</p>
+        </div>
+
+        <button type="submit">Complete Payment</button>
+      </form>
     </div>
   </div>
 
@@ -197,28 +229,8 @@
     <button data-modal="codPaymentModal" class="close" type="button">×</button>
     <div class="modal-content">
       <form id="codPaymentForm">
-        favicon.ico
             <li><a href="about.html">About Us</a></li>
             <li><a href="contact.html">Contact</a></li>
-          </ul>
-        </div>
-
-        <div class="footer-section">
-          <h3>Customer Service</h3>
-          <ul>
-            <li><a href="help-center.html">Help Center</a></li>
-            <li><a href="shipping-policy.html">Shipping Policy</a></li>
-            <li><a href="return-policy.html">Return Policy</a></li>
-            <li><a href="faq.html">FAQ</a></li>
-          </ul>
-        </div>
-
-        <div class="footer-section">
-          <h3>Contact Us</h3>
-          <ul class="contact-info">
-            <li><i class="ri-map-pin-line"></i> Wapda Colony, Dādu</li>
-            <li><i class="ri-phone-line"></i>+92-3173646088</li>
-            <li><i class="ri-mail-line"></i>devfreelancer51@gmail.com</li>
           </ul>
         </div>
       </div>

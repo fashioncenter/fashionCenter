@@ -253,30 +253,65 @@ document.addEventListener('DOMContentLoaded', () => {
     if (paymentModal) paymentModal.style.display = 'block';
   });
 
-  // Payment flows
-  ['Card', 'Easypaisa', 'COD'].forEach(type => {
-    const selectBtn = document.getElementById(`select${type}Payment`);
-    const form = document.getElementById(`${type.toLowerCase()}PaymentForm`);
-    const modal = document.getElementById(`${type.toLowerCase()}PaymentModal`);
+  // Payment method selection and form handling
+  document.querySelectorAll('.payment-method-option').forEach(method => {
+    method.addEventListener('click', () => {
+      // Remove active class from all methods
+      document.querySelectorAll('.payment-method-option').forEach(el => 
+        el.classList.remove('active')
+      );
+      // Add active class to selected method
+      method.classList.add('active');
+      // Show relevant fields
+      const paymentMethod = method.getAttribute('data-method');
+      showPaymentFields(paymentMethod);
+    });
+  });
 
-    selectBtn?.addEventListener('click', () => {
-      if (paymentModal) paymentModal.style.display = 'none';
-      if (modal) modal.style.display = 'block';
+  function showPaymentFields(method) {
+    const fields = {
+      card: document.getElementById('card-fields'),
+      easypaisa: document.getElementById('easypaisa-fields'),
+      cod: document.getElementById('cod-fields')
+    };
+
+    // Hide all fields first
+    Object.values(fields).forEach(field => {
+      if (field) field.style.display = 'none';
     });
 
-    form?.addEventListener('submit', async e => {
-      e.preventDefault();
-      if (modal) modal.style.display = 'none';
-            await completeCheckout(type);
-          });
-        });
-      
+    // Show selected method's fields
+    if (fields[method]) {
+      fields[method].style.display = 'block';
+    }
+  }
+
+  // Payment form submission
+  document.querySelector('.payment-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const activeMethod = document.querySelector('.payment-method-option.active');
+    if (!activeMethod) {
+      showCartMessage('Please select a payment method');
+      return;
+    }
+
+    const paymentMethod = activeMethod.getAttribute('data-method');
+    try {
+      await completeCheckout(paymentMethod);
+      if (paymentModal) paymentModal.style.display = 'none';
+    } catch (error) {
+      console.error('Payment error:', error);
+      showCartMessage('Payment failed. Please try again.');
+    }
+  });
+
   // Complete checkout: Firestore write
-        async function completeCheckout(paymentMethod) {
-          const order = {
+  async function completeCheckout(paymentMethod) {
+    const order = {
       cart: cartItems,
       shipping: shippingData,
-            paymentMethod,                      
+      paymentMethod,                      
       total: cartItems.reduce((a, i) => a + i.price.discounted * i.quantity, 0),
       createdAt: new Date(),
       email: Clerk.user?.primaryEmailAddress?.emailAddress || 'guest',
@@ -285,27 +320,27 @@ document.addEventListener('DOMContentLoaded', () => {
         code: appliedCoupon.code,
         discount: appliedCoupon.discount
       } : null
-          };
-      
-          // Apply coupon discount to total if exists
-          if (appliedCoupon) {
-            order.total = order.total * (1 - appliedCoupon.discount / 100);
-          }
-      
-          try {
+    };
+    
+    // Apply coupon discount to total if exists
+    if (appliedCoupon) {
+      order.total = order.total * (1 - appliedCoupon.discount / 100);
+    }
+    
+    try {
       const orderRef = await addDoc(collection(window.db, 'orders'), order);
-            cartItems = [];
-            appliedCoupon = null; // Reset coupon after order
-            refreshCart();
-            showCartMessage('Thank you! Your order has been placed.');
+      cartItems = [];
+      appliedCoupon = null; // Reset coupon after order
+      refreshCart();
+      showCartMessage('Thank you! Your order has been placed.');
       
       // Show order status modal
       showOrderStatusModal(orderRef.id);
-          } catch (err) {
-            console.error(err);
-            showCartMessage('Error submitting order. Please try again.');
-          }
-        }
+    } catch (err) {
+      console.error(err);
+      showCartMessage('Error submitting order. Please try again.');
+    }
+  }
 
   // Add order status modal to the page
   const orderStatusModal = document.createElement('div');
