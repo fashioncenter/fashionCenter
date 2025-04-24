@@ -1,7 +1,26 @@
 {
   "dependencies": {
+    "body-parser": "^2.2.0",
     "express": "^5.1.0",
     "firebase": "^11.6.0",
     "stripe": "^18.0.0"
-  }
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "name": "fashioncenter",
+  "description": "",
+  "version": "1.0.0",
+  "main": "script.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fashioncenter/fashionCenter.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fashioncenter/fashionCenter/issues"
+  },
+  "homepage": "https://github.com/fashioncenter/fashionCenter#readme"
 }

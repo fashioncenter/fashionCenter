@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Setup</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #f5f5f5;
+    }
+    .setup-container {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 400px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 1.5rem;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #666;
+    }
+    input {
+      width: 100%;
+      padding: 0.8rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    button {
+      width: 100%;
+      padding: 0.8rem;
+      background: #e4cd00;
+      color: black;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background: #d4bd00;
+    }
+    .message {
+      margin-top: 1rem;
+      padding: 0.8rem;
+      border-radius: 4px;
+      text-align: center;
+    }
+    .success {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .error {
+      background: #ffebee;
+      color: #c62828;
+    }
+  </style>
+  <!-- Import Firebase -->
+  <script type="module" src="firebase.js"></script>
+</head>
+<body>
+  <div class="setup-container">
+    <h1>Admin Setup</h1>
+    <form id="adminSetupForm">
+      <div class="form-group">
+        <label for="adminEmail">Admin Email</label>
+        <input type="email" id="adminEmail" required placeholder="Enter your email address" />
+      </div>
+      <div class="form-group">
+        <label for="adminPassword">Password</label>
+        <input type="password" id="adminPassword" required placeholder="Enter a password" />
+      </div>
+      <button type="submit">Register as Admin</button>
+    </form>
+    <div id="message" class="message" style="display: none;"></div>
+  </div>
+
+  <script type="module">
+    import { collection, addDoc, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js';
+    const db = window.db;
+
+    const form = document.getElementById('adminSetupForm');
+    const messageDiv = document.getElementById('message');
+
+    function showMessage(text, type) {
+      messageDiv.textContent = text;
+      messageDiv.className = `message ${type}`;
+      messageDiv.style.display = 'block';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('adminEmail').value.trim();
+      const password = document.getElementById('adminPassword').value;
+
+      if (!email || !password) {
+        showMessage('Please fill in all fields', 'error');
+        return;
+      }
+
+      try {
+        // Check if admin already exists
+        const adminsRef = collection(db, 'admins');
+        const q = query(adminsRef, where('email', '==', email));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          showMessage('This email is already registered as an admin', 'error');
+          return;
+        }
+
+        // Add new admin
+        await addDoc(collection(db, 'admins'), {
+          email,
+          password, // Note: In a production environment, you should hash the password
+          createdAt: new Date()
+        });
+
+        showMessage('Admin registered successfully! You can now login to the admin dashboard.', 'success');
+        form.reset();
+
+        // Redirect to admin dashboard after 2 seconds
+        setTimeout(() => {
+          window.location.href = 'admin.html';
+        }, 2000);
+
+      } catch (error) {
+        console.error('Error registering admin:', error);
+        showMessage('Error registering admin. Please try again.', 'error');
+      }
+    });
+  </script>
+</body>
+</html> 

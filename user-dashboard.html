@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Orders - M. Fashion</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
+  <style>
+    .dashboard-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      margin-top: 100px;
+    }
+
+    .user-info {
+      background: #000000;
+      padding: 2rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .user-info h2 {
+      color: #e4cd00;
+      margin-bottom: 0.5rem;
+      font-size: 24px;
+    }
+
+    .user-info p {
+      color: #fff;
+      opacity: 0.8;
+    }
+
+    .user-actions {
+      display: flex;
+      gap: 15px;
+    }
+
+    .user-actions button {
+      padding: 8px 16px;
+      background: #e4cd00;
+      color: #000;
+      border: none;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .user-actions button:hover {
+      background: #d4bd00;
+      transform: translateY(-2px);
+    }
+
+    .orders-section {
+      margin-top: 2rem;
+    }
+
+    .orders-section h2 {
+      color: #333;
+      margin-bottom: 1.5rem;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .order-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .order-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #eee;
+    }
+
+    .order-header h3 {
+      color: #333;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .order-header p {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .order-items {
+      margin: 1.5rem 0;
+    }
+
+    .order-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      transition: background-color 0.3s;
+    }
+
+    .order-item:hover {
+      background: #f0f0f0;
+    }
+
+    .order-item img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      margin-right: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .order-item h4 {
+      color: #333;
+      margin-bottom: 0.5rem;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .order-item p {
+      color: #666;
+      margin: 0.25rem 0;
+      font-size: 14px;
+    }
+
+    .status {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 500;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-pending { 
+      background: #fff3e0;
+      color: #e65100;
+    }
+
+    .status-processing { 
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+
+    .status-shipped { 
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .status-delivered { 
+      background: #f1f8e9;
+      color: #33691e;
+    }
+
+    .order-total {
+      font-weight: 600;
+      margin-top: 1.5rem;
+      text-align: right;
+      font-size: 18px;
+      color: #e4cd00;
+      padding-top: 1rem;
+      border-top: 1px solid #eee;
+    }
+
+    .shipping-info {
+      margin-top: 1.5rem;
+      padding: 1.5rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .shipping-info h4 {
+      color: #333;
+      margin-bottom: 1rem;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .shipping-info p {
+      color: #666;
+      margin: 0.5rem 0;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .shipping-info p i {
+      color: #e4cd00;
+    }
+
+    .no-orders {
+      text-align: center;
+      padding: 3rem;
+      background: #f8f9fa;
+      border-radius: 12px;
+      margin-top: 2rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .no-orders h3 {
+      color: #333;
+      margin-bottom: 1rem;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .no-orders p {
+      color: #666;
+      margin-bottom: 1.5rem;
+      font-size: 16px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: #e4cd00;
+      color: #000;
+      text-decoration: none;
+      border-radius: 20px;
+      font-size: 16px;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+
+    .button:hover {
+      background: #d4bd00;
+      transform: translateY(-2px);
+    }
+
+    .button i {
+      font-size: 20px;
+    }
+
+    .error-details {
+      color: #ff4444;
+      font-size: 14px;
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #fff3f3;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-container {
+        padding: 1rem;
+        margin-top: 80px;
+      }
+
+      .user-info {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+      }
+
+      .user-actions {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .order-item {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .order-item img {
+        margin-right: 0;
+        margin-bottom: 1rem;
+      }
+
+      .shipping-info {
+        padding: 1rem;
+      }
+    }
+  </style>
+  <!-- Import Firebase -->
+  <script type="module" src="firebase.js"></script>
+  <!-- Clerk browser bundle -->
+  <script
+    async
+    crossorigin="anonymous"
+    data-clerk-publishable-key="pk_test_bW92aW5nLXN0dXJnZW9uLTczLmNsZXJrLmFjY291bnRzLmRldiQ"
+    src="https://moving-sturgeon-73.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+    type="text/javascript"
+  ></script>
+</head>
+<body>
+  <header>
+    <nav class="auth-nav">
+      <div class="logo"><a href="index.html">M. Fashion</a></div>
+      <div id="user-profile"></div>
+    </nav>
+  </header>
+
+  <div class="dashboard-container">
+    <div class="user-info">
+      <div>
+        <h2>Welcome, <span id="userName">User</span></h2>
+        <p>Email: <span id="userEmail"></span></p>
+      </div>
+      <div class="user-actions">
+        <button onclick="window.location.href='index.html'">
+          <i class="ri-shopping-bag-line"></i> Continue Shopping
+        </button>
+      </div>
+    </div>
+
+    <div class="orders-section">
+      <h2>My Orders</h2>
+      <div id="ordersList"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { collection, query, where, orderBy, onSnapshot, getDocs } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js';
+    const db = window.db;
+
+    window.addEventListener('load', async () => {
+      try {
+        await Clerk.load();
+        console.log('Clerk loaded successfully');
+
+        if (!Clerk.user) {
+          console.log('No user found, redirecting to index');
+          window.location.href = 'index.html';
+          return;
+        }
+
+        // Update user info
+        const userName = document.getElementById('userName');
+        const userEmail = document.getElementById('userEmail');
+        const userEmailAddress = Clerk.user.primaryEmailAddress?.emailAddress;
+        
+        console.log('User email:', userEmailAddress);
+        
+        if (!userEmailAddress) {
+          console.error('No email address found for user');
+          return;
+        }
+
+        userName.textContent = Clerk.user.firstName || 'User';
+        userEmail.textContent = userEmailAddress;
+
+        // Mount user button
+        Clerk.mountUserButton(document.getElementById('user-profile'));
+
+        // Function to format date
+        function formatDate(date) {
+          if (!date) return 'N/A';
+          if (date.toDate) {
+            return date.toDate().toLocaleString();
+          }
+          return new Date(date).toLocaleString();
+        }
+
+        // Function to render orders
+        function renderOrders(orders) {
+          console.log('Rendering orders:', orders);
+          const ordersList = document.getElementById('ordersList');
+          
+          if (!orders || orders.length === 0) {
+            ordersList.innerHTML = `
+              <div class="no-orders">
+                <h3>No orders yet</h3>
+                <p>Start shopping to see your orders here!</p>
+                <a href="index.html" class="button">Go Shopping</a>
+              </div>
+            `;
+            return;
+          }
+
+          ordersList.innerHTML = '';
+          orders.forEach(doc => {
+            const order = doc.data();
+            console.log('Processing order:', order);
+            const orderCard = document.createElement('div');
+            orderCard.className = 'order-card';
+            
+            const status = order.status || 'pending';
+            const statusClass = `status-${status}`;
+            
+            orderCard.innerHTML = `
+              <div class="order-header">
+                <div>
+                  <h3>Order #${doc.id}</h3>
+                  <p>Placed on: ${formatDate(order.createdAt)}</p>
+                </div>
+                <div class="status ${statusClass}">
+                  ${status.charAt(0).toUpperCase() + status.slice(1)}
+                </div>
+              </div>
+              <div class="order-items">
+                ${(order.cart || []).map(item => `
+                  <div class="order-item">
+                    <img src="${item.image}" alt="${item.name}">
+                    <div>
+                      <h4>${item.name}</h4>
+                      <p>Quantity: ${item.quantity}</p>
+                      <p>Price: Rs. ${item.price.discounted.toFixed(2)}</p>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+              <div class="shipping-info">
+                <h4>Shipping Details</h4>
+                <p>Name: ${order.shipping?.name || 'N/A'}</p>
+                <p>Address: ${order.shipping?.address || 'N/A'}</p>
+                <p>City: ${order.shipping?.city || 'N/A'}</p>
+                <p>Postal Code: ${order.shipping?.postal || 'N/A'}</p>
+              </div>
+              <div class="order-total">
+                Total: Rs. ${(order.total || 0).toFixed(2)}
+              </div>
+            `;
+            
+            ordersList.appendChild(orderCard);
+          });
+        }
+
+        // First, try to get orders directly
+        try {
+          console.log('Attempting to fetch orders...');
+          const ordersRef = collection(db, 'orders');
+          const ordersSnapshot = await getDocs(ordersRef);
+          console.log('Initial orders fetch:', ordersSnapshot.docs.length, 'orders found');
+          
+          // Filter orders for this user
+          const userOrders = ordersSnapshot.docs.filter(doc => {
+            const order = doc.data();
+            return order.email === userEmailAddress;
+          });
+          console.log('Filtered orders for user:', userOrders.length, 'orders found');
+          
+          if (userOrders.length > 0) {
+            renderOrders(userOrders);
+          }
+        } catch (error) {
+          console.error('Error in initial orders fetch:', error);
+        }
+
+        // Then set up real-time listener
+        try {
+          console.log('Setting up real-time listener...');
+          // Simplified query without orderBy to avoid needing composite index
+          const ordersQuery = query(
+            collection(db, 'orders'),
+            where('email', '==', userEmailAddress)
+          );
+
+          const unsubscribe = onSnapshot(ordersQuery, 
+            (snapshot) => {
+              console.log('Real-time update received:', snapshot.docs.length, 'orders');
+              // Sort the results in memory instead of in the query
+              const sortedDocs = snapshot.docs.sort((a, b) => {
+                const dateA = a.data().createdAt?.toDate ? a.data().createdAt.toDate() : new Date(a.data().createdAt);
+                const dateB = b.data().createdAt?.toDate ? b.data().createdAt.toDate() : new Date(b.data().createdAt);
+                return dateB - dateA; // Sort in descending order (newest first)
+              });
+              renderOrders(sortedDocs);
+            },
+            (error) => {
+              console.error('Error in real-time listener:', error);
+              document.getElementById('ordersList').innerHTML = `
+                <div class="no-orders">
+                  <h3>Error Loading Orders</h3>
+                  <p>Please try refreshing the page.</p>
+                  <p class="error-details">${error.message}</p>
+                </div>
+              `;
+            }
+          );
+
+          // Cleanup listener on page unload
+          window.addEventListener('unload', () => {
+            console.log('Cleaning up listener');
+            unsubscribe();
+          });
+        } catch (error) {
+          console.error('Error setting up real-time listener:', error);
+          document.getElementById('ordersList').innerHTML = `
+            <div class="no-orders">
+              <h3>Error Setting Up Order Updates</h3>
+              <p>Please try refreshing the page.</p>
+              <p class="error-details">${error.message}</p>
+            </div>
+          `;
+        }
+
+      } catch (error) {
+        console.error('Error in dashboard:', error);
+        document.getElementById('ordersList').innerHTML = `
+          <div class="no-orders">
+            <h3>Error Loading Dashboard</h3>
+            <p>Please try refreshing the page.</p>
+            <p class="error-details">${error.message}</p>
+          </div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html> 

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clerk Auth Example</title>
+  <style>
+    /* Basic reset and styling */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #f9f9f9;
+    }
+    #app {
+      width: 100%;
+      max-width: 400px;
+      padding: 2rem;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    /* Center the widgets inside the app container */
+    #app > div {
+      width: 100%;
+    }
+  </style>
+
+  <!-- Clerk browser bundle -->
+  <script
+    async
+    crossorigin="anonymous"
+    data-clerk-publishable-key="pk_test_bW92aW5nLXN0dXJnZW9uLTczLmNsZXJrLmFjY291bnRzLmRldiQ"
+    src="https://moving-sturgeon-73.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+    type="text/javascript"
+  ></script>
+</head>
+<body>
+  <div id="app">
+    <!-- Clerk Auth UI is injected here -->
+  </div>
+
+  <script>
+    // Wait until ClerkJS is fully loaded
+    window.addEventListener('load', async function() {
+      await Clerk.load();
+
+      const appDiv = document.getElementById('app');
+
+      // If a user is already signed in, show user button (profile & sign-out)
+      if (Clerk.user) {
+        appDiv.innerHTML = `<div id="user-button"></div>`;
+        const userButtonDiv = document.getElementById('user-button');
+        Clerk.mountUserButton(userButtonDiv, {
+          appearance: { /* optional styling overrides */ }
+        });
+      } else {
+        // Otherwise, show sign-in form with option to sign up
+        appDiv.innerHTML = `<div id="sign-in"></div>`;
+        const signInDiv = document.getElementById('sign-in');
+        Clerk.mountSignIn(signInDiv, {
+          routing: true,               // allow client-side routing
+          signUpUrl: '#',              // optional custom sign-up link
+          appearance: { /* optional styling */ }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

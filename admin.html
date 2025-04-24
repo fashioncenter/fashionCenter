@@ -3,142 +3,343 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Panel - Order Management</title>
+  <title>Admin Dashboard</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 2rem; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { padding: 0.5rem; border: 1px solid #ccc; text-align: left; }
-    button, input[type="submit"] { padding: 0.3rem 0.6rem; margin-right: 0.5rem; }
-    form { margin-top: 2rem; }
-    input { margin-right: 0.5rem; padding: 0.3rem; }
+    body { font-family: Arial; padding: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    select, input, button { margin-right: 0.5rem; }
+    .coupon-section { margin-bottom: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; }
+    .orders-section { margin-top: 2rem; }
+    .success { color: green; }
+    .error { color: red; }
+    .status-pending { color: orange; }
+    .status-processing { color: blue; }
+    .status-shipped { color: green; }
+    .status-delivered { color: darkgreen; }
+    .action-buttons { display: flex; gap: 0.5rem; }
+    .action-buttons button { padding: 0.25rem 0.5rem; }
+    .admin-login {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .admin-login form {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 400px;
+    }
+    .admin-login h2 {
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .admin-login input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .admin-login button {
+      width: 100%;
+      padding: 0.5rem;
+      background: #e4cd00;
+      border: none;
+      border-radius: 4px;
+      color: black;
+      cursor: pointer;
+    }
+    .admin-login button:hover {
+      background: #d4bd00;
+    }
+    .admin-login .error {
+      color: red;
+      margin-top: 1rem;
+      text-align: center;
+    }
+    .admin-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding: 1rem;
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
+    .admin-info .email {
+      font-weight: bold;
+    }
+    .admin-info .logout {
+      padding: 0.5rem 1rem;
+      background: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
   </style>
+  <!-- Import Firebase -->
+  <script type="module" src="firebase.js"></script>
 </head>
 <body>
-  <h1>Order Management</h1>
+  <div id="adminLogin" class="admin-login">
+    <form id="loginForm">
+      <h2>Admin Login</h2>
+      <input type="email" id="adminEmail" placeholder="Enter admin email" required />
+      <input type="password" id="adminPassword" placeholder="Enter password" required />
+      <button type="submit">Login</button>
+      <p id="loginError" class="error"></p>
+    </form>
+  </div>
 
-  <h2>Create Coupon</h2>
-  <form id="couponForm">
-    <input type="text" id="couponCode" placeholder="Coupon Code" required />
-    <input type="number" id="discountPercentage" placeholder="Discount (%)" required min="1" max="100" />
-    <input type="date" id="expiryDate" required />
-    <button type="submit">Add Coupon</button>
-  </form>
+  <div id="adminContent" style="display: none;">
+    <div class="admin-info">
+      <span class="email">Logged in as: <span id="adminEmailDisplay"></span></span>
+      <button class="logout" id="adminLogout">Logout</button>
+    </div>
 
-  <table id="ordersTable">
-    <thead>
-      <tr>
-        <th>Order ID</th>
-        <th>User</th>
-        <th>Items</th>
-        <th>Total</th>
-        <th>Status</th>
-        <th>Tracking ID</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+    <h1>Admin Dashboard</h1>
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-  <script>
-    // Firebase config
-    var firebaseConfig = {
-      apiKey: "AIzaSyCwcdBRc5bpkxu_k-u6blRl2pVycko1I1o",
-      authDomain: "ecommerce-f550e.firebaseapp.com",
-      projectId: "ecommerce-f550e",
-    };
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
+    <div class="coupon-section">
+      <h2>Create Coupon</h2>
+      <input id="couponCode" placeholder="Code" />
+      <input id="couponDiscount" type="number" placeholder="% off" min="0" max="100" />
+      <input id="couponExpiry" type="date" />
+      <button id="createCoupon">Create</button>
+      <p id="couponMsg"></p>
+    </div>
 
-    const ordersTableBody = document.getElementById('ordersTable').querySelector('tbody');
+    <div class="orders-section">
+      <h2>Orders</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Email</th>
+            <th>Items</th>
+            <th>Shipping</th>
+            <th>Payment</th>
+            <th>Total</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTable"></tbody>
+      </table>
+    </div>
+  </div>
 
-    // Fetch orders
-    function fetchOrders() {
-      db.collection('orders').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
-        ordersTableBody.innerHTML = '';
-        snapshot.forEach(doc => {
-          const order = doc.data();
-          const tr = document.createElement('tr');
+  <script type="module">
+    import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, getDocs, where } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js';
+    const db = window.db;
 
-          tr.innerHTML = `
-            <td>${doc.id}</td>
-            <td>${order.userEmail || 'N/A'}</td>
-            <td>${order.items ? order.items.map(item => item.name + ' (x' + item.quantity + ')').join(', ') : 'N/A'}</td>
-            <td>$${order.total ? order.total.toFixed(2) : '0.00'}</td>
-            <td>${order.status || 'Pending'}</td>
-            <td>${order.trackingId ? order.trackingId : '—'}</td>
-            <td>
-              ${order.status === 'Pending' 
-                ? '<button class="process-btn" data-id="'+doc.id+'">Process Order</button>' 
-                : '<button class="delete-btn" data-id="'+doc.id+'">Delete Order</button>'}
-            </td>
-          `;
-          ordersTableBody.appendChild(tr);
-        });
+    window.addEventListener('DOMContentLoaded', () => {
+      const adminLogin = document.getElementById('adminLogin');
+      const adminContent = document.getElementById('adminContent');
+      const loginForm = document.getElementById('loginForm');
+      const adminEmailInput = document.getElementById('adminEmail');
+      const adminPasswordInput = document.getElementById('adminPassword');
+      const loginError = document.getElementById('loginError');
+      const adminEmailDisplay = document.getElementById('adminEmailDisplay');
+      const adminLogout = document.getElementById('adminLogout');
 
-        // Process Order
-        document.querySelectorAll('.process-btn').forEach(button => {
-          button.addEventListener('click', () => {
-            const orderId = button.getAttribute('data-id');
-            const trackingId = prompt("Enter Tracking ID for this order:");
-            if (trackingId && trackingId.trim() !== '') {
-              db.collection('orders').doc(orderId).update({
-                status: 'Processed',
-                trackingId: trackingId.trim()
-              })
-              .then(() => alert('Order marked as processed with Tracking ID: ' + trackingId))
-              .catch(error => alert("Error processing order. Please try again."));
-            } else {
-              alert("Tracking ID is required to process the order.");
-            }
-          });
-        });
-
-        // Delete Order
-        document.querySelectorAll('.delete-btn').forEach(button => {
-          button.addEventListener('click', () => {
-            const orderId = button.getAttribute('data-id');
-            if (confirm("Are you sure you want to delete this order?")) {
-              db.collection('orders').doc(orderId).delete()
-                .then(() => alert('Order deleted successfully.'))
-                .catch(error => alert("Error deleting order. Please try again."));
-            }
-          });
-        });
-      });
-    }
-
-    fetchOrders();
-
-    // Add coupon with expiry
-    const couponForm = document.getElementById('couponForm');
-    couponForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const code = document.getElementById('couponCode').value.trim().toUpperCase();
-      const discount = parseInt(document.getElementById('discountPercentage').value);
-      const expiry = document.getElementById('expiryDate').value;
-
-      if (!code || discount < 1 || discount > 100 || !expiry) {
-        alert("Please enter a valid coupon code, discount, and expiry date.");
-        return;
+      // Check if admin is already logged in
+      const savedAdminEmail = localStorage.getItem('adminEmail');
+      if (savedAdminEmail) {
+        verifyAdminAccess(savedAdminEmail);
       }
 
-      const expiryDate = new Date(expiry + "T23:59:59");
-
-      db.collection('coupons').doc(code).set({
-        code,
-        discount,
-        expiry: firebase.firestore.Timestamp.fromDate(expiryDate),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => {
-        alert(`Coupon "${code}" added with ${discount}% discount until ${expiryDate.toDateString()}`);
-        couponForm.reset();
-      }).catch(error => {
-        alert("Error adding coupon: " + error.message);
+      // Admin login form submission
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = adminEmailInput.value.trim();
+        const password = adminPasswordInput.value;
+        await verifyAdminAccess(email, password);
       });
+
+      // Admin logout
+      adminLogout.addEventListener('click', () => {
+        localStorage.removeItem('adminEmail');
+        adminContent.style.display = 'none';
+        adminLogin.style.display = 'flex';
+        adminEmailInput.value = '';
+        adminPasswordInput.value = '';
+      });
+
+      // Verify admin access
+      async function verifyAdminAccess(email, password) {
+        try {
+          const adminsRef = collection(db, 'admins');
+          const q = query(adminsRef, where('email', '==', email));
+          const querySnapshot = await getDocs(q);
+
+          if (querySnapshot.empty) {
+            loginError.textContent = 'Access denied. Not an admin.';
+            return;
+          }
+
+          const adminDoc = querySnapshot.docs[0];
+          const adminData = adminDoc.data();
+
+          // Verify password
+          if (adminData.password !== password) {
+            loginError.textContent = 'Invalid password.';
+            return;
+          }
+
+          // Admin access granted
+          localStorage.setItem('adminEmail', email);
+          adminEmailDisplay.textContent = email;
+          adminLogin.style.display = 'none';
+          adminContent.style.display = 'block';
+          loginError.textContent = '';
+
+          // Initialize admin functionality
+          initializeAdminFunctionality();
+        } catch (error) {
+          console.error('Error verifying admin:', error);
+          loginError.textContent = 'Error verifying admin access.';
+        }
+      }
+
+      // Initialize admin functionality
+      function initializeAdminFunctionality() {
+        const btn = document.getElementById('createCoupon');
+        const msg = document.getElementById('couponMsg');
+        const ordersTable = document.getElementById('ordersTable');
+
+        // Create coupon
+        btn.addEventListener('click', async () => {
+          const code = document.getElementById('couponCode').value.trim().toUpperCase();
+          const discount = parseFloat(document.getElementById('couponDiscount').value);
+          const expiry = document.getElementById('couponExpiry').value;
+          
+          if (!code || isNaN(discount) || !expiry) {
+            msg.textContent = 'Please fill all fields';
+            msg.className = 'error';
+            return;
+          }
+
+          if (discount < 0 || discount > 100) {
+            msg.textContent = 'Discount must be between 0 and 100';
+            msg.className = 'error';
+            return;
+          }
+
+          try {
+            // Check if coupon code already exists
+            const couponsRef = collection(db, 'coupons');
+            const q = query(couponsRef, where('code', '==', code));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+              msg.textContent = 'This coupon code already exists';
+              msg.className = 'error';
+              return;
+            }
+
+            await addDoc(collection(db, 'coupons'), { 
+              code, 
+              discount, 
+              expiry,
+              createdAt: new Date()
+            });
+            msg.textContent = 'Coupon created successfully!';
+            msg.className = 'success';
+            
+            // Clear form
+            document.getElementById('couponCode').value = '';
+            document.getElementById('couponDiscount').value = '';
+            document.getElementById('couponExpiry').value = '';
+          } catch (e) {
+            console.error(e);
+            msg.textContent = 'Error creating coupon';
+            msg.className = 'error';
+          }
+        });
+
+        // Update order status
+        async function updateOrderStatus(orderId, newStatus) {
+          try {
+            await updateDoc(doc(db, 'orders', orderId), {
+              status: newStatus,
+              statusUpdatedAt: new Date()
+            });
+          } catch (e) {
+            console.error('Error updating order status:', e);
+          }
+        }
+
+        // Listen orders in real-time
+        const ordersQuery = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+        onSnapshot(ordersQuery, snapshot => {
+          ordersTable.innerHTML = '';
+          snapshot.forEach(doc => {
+            const o = doc.data();
+            const tr = document.createElement('tr');
+            
+            // Format cart items for display
+            const cartItems = o.cart || [];
+            const itemsDisplay = cartItems.map(item => 
+              `${item.name} (${item.quantity}x)`
+            ).join(', ');
+
+            // Format shipping info
+            const shipping = o.shipping || {};
+            const shippingDisplay = `${shipping.name}, ${shipping.address}, ${shipping.city}, ${shipping.postal}`;
+
+            // Format date
+            const date = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+            const formattedDate = date.toLocaleString();
+
+            // Get current status
+            const status = o.status || 'pending';
+            const statusClass = `status-${status}`;
+
+            // Create action buttons based on current status
+            let actionButtons = '';
+            if (status === 'pending') {
+              actionButtons = `
+                <button onclick="updateOrderStatus('${doc.id}', 'processing')" class="process-btn">Process</button>
+              `;
+            } else if (status === 'processing') {
+              actionButtons = `
+                <button onclick="updateOrderStatus('${doc.id}', 'shipped')" class="ship-btn">Ship</button>
+              `;
+            } else if (status === 'shipped') {
+              actionButtons = `
+                <button onclick="updateOrderStatus('${doc.id}', 'delivered')" class="deliver-btn">Mark Delivered</button>
+              `;
+            }
+
+            tr.innerHTML = `
+              <td>${doc.id}</td>
+              <td>${o.email || 'guest'}</td>
+              <td>${itemsDisplay}</td>
+              <td>${shippingDisplay}</td>
+              <td>${o.paymentMethod || ''}</td>
+              <td>Rs. ${(o.total || 0).toFixed(2)}</td>
+              <td>${formattedDate}</td>
+              <td class="${statusClass}">${status.charAt(0).toUpperCase() + status.slice(1)}</td>
+              <td class="action-buttons">${actionButtons}</td>
+            `;
+            ordersTable.appendChild(tr);
+          });
+        });
+
+        // Make updateOrderStatus available globally
+        window.updateOrderStatus = updateOrderStatus;
+      }
     });
   </script>
 </body>

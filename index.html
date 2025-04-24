@@ -3,19 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>E-Commerce</title>
+  <title>M. Fashion</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
   <link rel="shortcut icon" href="Assets/facewash.png" type="image/x-icon" />
-  <!-- Firebase App (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <!-- Payment SDKs -->
-  <script src="https://www.paypal.com/sdk/js?client-id=AQP8CFjhaAkVoul_BJVlru-M1tt87boWNSF3gICDeHZwfPvMDKOnmLbSLedni30lmbVjBc0SSLJ41bQS_ID&currency=USD"></script>
-  <script src="https://js.stripe.com/v3/"></script>
+
+  <!-- Import Firebase -->
+  <script type="module" src="firebase.js"></script>
+
+  <!-- Clerk browser bundle -->
+  <script
+    async
+    crossorigin="anonymous"
+    data-clerk-publishable-key="pk_test_bW92aW5nLXN0dXJnZW9uLTczLmNsZXJrLmFjY291bnRzLmRldiQ"
+    src="https://moving-sturgeon-73.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+    type="text/javascript"
+  ></script>
 </head>
 <body>
+  <!-- HTML BODY STRUCTURE REMAINS SAME -->
+  <!-- Your full HTML body here from previous version -->
+
   <header>
     <div class="search">
       <input type="text" class="searchBar" placeholder="Search products..." />
@@ -28,172 +36,286 @@
       </div>
       <div class="side_cart_view">
         <div class="side_bar_h1">
-          <h1>Cart View</h1>
+          <h1>Your Cart</h1>
+          <button class="close-cart" onclick="closeCart()">
+            <i class="ri-close-line"></i>
+          </button>
         </div>
         <div class="cart__total"></div>
-        <!-- Coupon Section -->
         <div class="coupon-section">
           <input type="text" id="couponInput" placeholder="Enter coupon code" />
-          <button id="applyCouponBtn">Apply Coupon</button>
+          <button id="applyCouponBtn" type="button">Apply Coupon</button>
           <p id="couponMessage"></p>
         </div>
+        <button class="buy-now-btn">Buy Now</button>
       </div>
     </div>
+    <nav class="auth-nav">
+      <ul id="auth-links">
+        <li><button id="loginBtn" class="__1" type="button">Login</button></li>
+        <li><button id="signupBtn" class="__1" type="button">Sign Up</button></li>
+        <li><button id="logoutBtn" style="display:none;" type="button">Logout</button></li>
+      </ul>
+      <div id="user-profile" style="display:none;"></div>
+      <a href="user-dashboard.html" id="dashboardLink" style="display:none;" class="dashboard-link">
+        <i class="ri-dashboard-line"></i> My Orders
+      </a>
+    </nav>
   </header>
-  
+
   <div class="hero">
-    <div class="image">
-      <img src="Assets/hero.png" alt="Hero" />
+    <div class="hero__content">
+      <div class="hero__text">
+        <h1>Welcome to M. Fashion</h1>
+        <p>Discover the latest trends in fashion and style</p>
+        <div class="hero__buttons">
+          <a href="#products" class="hero__btn primary">Shop Now</a>
+          <a href="#categories" class="hero__btn secondary">Explore Categories</a>
+        </div>
+      </div>
+      <div class="hero__image">
+        <img src="Assets/hero_ban.png" alt="Fashion Collection" />
+      </div>
     </div>
-    <div class="overlay">
-      <h1>EC Market</h1>
-      <p>Affiliate Marketing Place</p>
-      <div class="social___media_container">
-        <a href="https://wa.me/923173646088" target="_blank"><i class="ri-whatsapp-line"></i></a>
+    <div class="hero__features">
+      <div class="feature">
+        <i class="ri-truck-line"></i>
+        <span>Free Shipping</span>
+      </div>
+      <div class="feature">
+        <i class="ri-shield-check-line"></i>
+        <span>Secure Payment</span>
+      </div>
+      <div class="feature">
+        <i class="ri-customer-service-2-line"></i>
+        <span>24/7 Support</span>
       </div>
     </div>
   </div>
-  
-  <div class="products"></div>
 
-  <!-- Login Modal -->
-  <div id="loginModal" class="modal">
-    <div class="modal-content">
-      <span class="close" data-modal="loginModal">&times;</span>
-      <h2>Login</h2>
-      <form id="loginForm">
-        <input type="email" id="loginEmail" placeholder="Email" required />
-        <input type="password" id="loginPassword" placeholder="Password" required />
-        <div class="login___btns">
-          <button type="submit">Login</button>
+  <div class="products" id="products"></div>
+
+  <!-- Shipping Details Modal -->
+  <div id="shippingDetailsModal" class="modal" style="display:none;">
+    <button data-modal="shippingDetailsModal" class="close" type="button">×</button>
+    <div class="shipping-form-container">
+      <h2>Shipping Details</h2>
+      <form id="shippingDetailsForm">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input name="name" required placeholder="Enter your full name" />
         </div>
-      </form>
-      <button id="googleLoginBtn" style="margin-top: 10px;">Login with Google</button>
-    </div>
-  </div>
-
-  <!-- Signup Modal -->
-  <div id="signupModal" class="modal">
-    <div class="modal-content">
-      <span class="close" data-modal="signupModal">&times;</span>
-      <h2>Sign Up</h2>
-      <form id="signupForm">
-        <input type="text" id="signupName" placeholder="Name" required />
-        <input type="email" id="signupEmail" placeholder="Email" required />
-        <input type="password" id="signupPassword" placeholder="Password" required />
-        <button type="submit">Sign Up</button>
-      </form>
-      <button id="googleSignupBtn" style="margin-top: 10px;">Sign Up with Google</button>
-    </div>
-  </div>
-
-  <!-- Admin Login Modal (if applicable) -->
-  <div id="adminLoginModal" class="modal">
-    <div class="modal-content">
-      <span class="close" data-modal="adminLoginModal">&times;</span>
-      <h2>Admin Login</h2>
-      <form id="adminLoginForm">
-        <input type="email" id="adminEmail" placeholder="Admin Email" required />
-        <input type="password" id="adminPassword" placeholder="Password" required />
-        <button type="submit">Login as Admin</button>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input name="phone" type="tel" required placeholder="Enter your phone number" pattern="[0-9]{11}" />
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input name="email" type="email" required placeholder="Enter your email address" />
+        </div>
+        <div class="form-group">
+          <label>Address</label>
+          <input name="address" required placeholder="Enter your street address" />
+        </div>
+        <div class="form-group">
+          <label>City</label>
+          <input name="city" required placeholder="Enter your city" />
+        </div>
+        <div class="form-group">
+          <label>Postal Code</label>
+          <input name="postal" required placeholder="Enter your postal code" />
+        </div>
+        <div class="form-group">
+          <label>Additional Information</label>
+          <textarea name="additionalInfo" placeholder="Any additional delivery instructions or information"></textarea>
+        </div>
+        <button type="submit" class="submit-btn">Continue to Payment</button>
       </form>
     </div>
   </div>
 
   <!-- Payment Selection Modal -->
-  <div id="paymentModal" class="modal" style="display: none;">
+  <div id="paymentModal" class="modal" style="display:none;">
+    <button data-modal="paymentModal" class="close" type="button">×</button>
     <div class="modal-content">
-      <span class="close" data-modal="paymentModal">&times;</span>
       <h2>Select Payment Method</h2>
-      <button id="selectCardPayment" disabled>Pay with Card</button>
-      <button id="selectEasypaisaPayment" disabled>Pay with Easypaisa</button>
-      <button id="selectCODPayment">Cash on Delivery</button>
+      <button id="selectCardPayment" type="button">
+        <i class="ri-bank-card-line"></i>
+        Pay by Card
+      </button>
+      <button id="selectEasypaisaPayment" type="button">
+        <i class="ri-money-dollar-circle-line"></i>
+        Easypaisa
+      </button>
+      <button id="selectCODPayment" type="button">
+        <i class="ri-truck-line"></i>
+        Cash on Delivery
+      </button>
     </div>
   </div>
 
-  <!-- Cash on Delivery (COD) Payment Modal -->
-  <div id="codPaymentModal" class="modal" style="display: none;">
+  <!-- Card Payment Modal -->
+  <div id="cardPaymentModal" class="modal" style="display:none;">
+    <button data-modal="cardPaymentModal" class="close" type="button">×</button>
     <div class="modal-content">
-      <span class="close" data-modal="codPaymentModal">&times;</span>
-      <h2>Cash on Delivery</h2>
-      <p>Please confirm your order. You will pay in cash when your order is delivered.</p>
+      <form id="cardPaymentForm">
+        <h2>Card Payment</h2>
+        <div class="form-group">
+          <label>Card Number</label>
+          <input name="cardNumber" type="text" required placeholder="Enter card number" pattern="[0-9]{16}" />
+        </div>
+        <div class="form-group">
+          <label>Expiry Date</label>
+          <input name="expiry" type="text" required placeholder="MM/YY" pattern="(0[1-9]|1[0-2])\/([0-9]{2})" />
+        </div>
+        <div class="form-group">
+          <label>CVV</label>
+          <input name="cvv" type="password" required placeholder="Enter CVV" pattern="[0-9]{3,4}" maxlength="4" />
+        </div>
+        <button type="submit">Pay Now</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Easypaisa Payment Modal -->
+  <div id="easypaisaPaymentModal" class="modal" style="display:none;">
+    <button data-modal="easypaisaPaymentModal" class="close" type="button">×</button>
+    <div class="modal-content">
+      <form id="easypaisaPaymentForm">
+        <h2>Easypaisa Payment</h2>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input name="phone" type="tel" required placeholder="Enter your Easypaisa number" pattern="[0-9]{11}" />
+        </div>
+        <button type="submit">Pay Now</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- COD Payment Modal -->
+  <div id="codPaymentModal" class="modal" style="display:none;">
+    <button data-modal="codPaymentModal" class="close" type="button">×</button>
+    <div class="modal-content">
       <form id="codPaymentForm">
+        <h2>Cash on Delivery</h2>
+        <p>Please confirm your order. Payment will be collected upon delivery.</p>
         <button type="submit">Confirm Order</button>
       </form>
     </div>
   </div>
 
-  <!-- Shipping Details Modal -->
-  <div id="shippingDetailsModal" class="modal" style="display: none;">
-    <div class="modal-content">
-      <span class="close" data-modal="shippingDetailsModal">&times;</span>
-      <h2>Enter Shipping Details</h2>
-      <form id="shippingDetailsForm">
-        <label for="fullName">Full Name:</label>
-        <input type="text" id="fullName" required /><br />
-        <label for="phoneNumber">Phone Number:</label>
-        <input type="text" id="phoneNumber" required /><br />
-        <label for="province">Province / Region:</label>
-        <input type="text" id="province" required /><br />
-        <label for="city">City:</label>
-        <input type="text" id="city" required /><br />
-        <label for="zone">Zone:</label>
-        <input type="text" id="zone" required /><br />
-        <div class="text____area">
-          <label for="address">Address:</label>
-          <textarea id="address" required style="width: 100%; height: 60px; resize: vertical;"></textarea><br />
-        </div>
-        <button type="submit">Submit Details</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Order Tracking Modal -->
-  <div id="orderTrackingModal" class="modal">
-    <div class="modal-content">
-      <span class="close" data-modal="orderTrackingModal">&times;</span>
-      <h2>Your Order Tracking</h2>
-      <div id="orderStatusContainer">
-        <!-- Order status details will be injected by JS -->
-      </div>
-    </div>
-  </div>
-
-  <!-- Footer -->
   <div class="footer___conter">
     <footer>
       <div class="footer__container">
-        <div class="logo">
-          <h1>EC</h1>
+        <div class="footer-section">
+          <div class="logo">
+            <h1>M. Fashion</h1>
+            <p>Your one-stop destination for fashion and style</p>
+          </div>
+          <div class="social-links">
+            <a href="#" class="social-link"><i class="ri-facebook-circle-fill"></i></a>
+            <a href="#" class="social-link"><i class="ri-instagram-line"></i></a>
+            <a href="#" class="social-link"><i class="ri-twitter-x-line"></i></a>
+            <a href="#" class="social-link"><i class="ri-whatsapp-line"></i></a>
+          </div>
         </div>
-        <nav class="auth-nav footer___social">
-          <li><button id="loginBtn" class="__1">Login</button></li>
-          <li><button id="signupBtn" class="__1">Sign Up</button></li>
-          <li><button id="logoutBtn" style="display: none;">Logout</button></li>
-        </nav>
-        <ul class="container__about__store">
-          <li><a href="#">About Store</a></li>
-          <li><a href="#">Bug Report</a></li>
-        </ul>
-        <div class="box__to__social">
-          <li><a href="#"><i class="ri-facebook-circle-fill"></i></a></li>
-          <li><a href="#"><i class="ri-instagram-line"></i></a></li>
-          <li><a href="#"><i class="ri-shopping-bag-2-line"></i></a></li>
+
+        <div class="footer-section">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Products</a></li>
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Contact</a></li>
+          </ul>
         </div>
-        <div class="container__dev_info">
-          <p style="color: #9c9c9cbe; line-height: 10px;">
-            &copy; 2025, Your Company Name. All rights reserved.
-            Managed by Developer 
-            <a href="https://www.fiverr.com/s/jjkkZ9V" target="_blank">
-              <img src="Assets/fiverr.jpg" alt="Fiverr">
-            </a>
-          </p>
+
+        <div class="footer-section">
+          <h3>Customer Service</h3>
+          <ul>
+            <li><a href="#">Help Center</a></li>
+            <li><a href="#">Shipping Policy</a></li>
+            <li><a href="#">Return Policy</a></li>
+            <li><a href="#">FAQ</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h3>Contact Us</h3>
+          <ul class="contact-info">
+            <li><i class="ri-map-pin-line"></i> 123 Fashion Street, City</li>
+            <li><i class="ri-phone-line"></i> +92 317 3646088</li>
+            <li><i class="ri-mail-line"></i> support@mfashion.com</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="container">
+          <p>&copy; 2024 M. Fashion. All rights reserved.</p>
+          <div class="payment-methods">
+            <i class="ri-visa-line"></i>
+            <i class="ri-mastercard-line"></i>
+            <i class="ri-paypal-line"></i>
+            <i class="ri-bank-card-line"></i>
+          </div>
+        </div>
+        <div class="developer-info">
+          <p>Developed with <i class="ri-heart-fill"></i> by <a href="https://github.com/yourusername" target="_blank">Your Name</a></p>
+          <div class="developer-links">
+            <a href="https://github.com/yourusername" target="_blank"><i class="ri-github-fill"></i></a>
+            <a href="https://linkedin.com/in/yourusername" target="_blank"><i class="ri-linkedin-fill"></i></a>
+            <a href="https://twitter.com/yourusername" target="_blank"><i class="ri-twitter-x-fill"></i></a>
+          </div>
         </div>
       </div>
     </footer>
   </div>
 
-  <!-- Load external JavaScript file -->
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
+
+  <!-- Clerk Auth script -->
+  <script>
+    window.addEventListener('load', async () => {
+      await Clerk.load();
+
+      const loginBtn = document.getElementById('loginBtn');
+      const signupBtn = document.getElementById('signupBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const authLinks = document.getElementById('auth-links');
+      const userProfileDiv = document.getElementById('user-profile');
+      const dashboardLink = document.getElementById('dashboardLink');
+
+      if (Clerk.user) {
+        authLinks.style.display = 'none';
+        userProfileDiv.style.display = 'block';
+        dashboardLink.style.display = 'block';
+        Clerk.mountUserButton(userProfileDiv);
+      } else {
+        authLinks.style.display = 'flex';
+        userProfileDiv.style.display = 'none';
+        dashboardLink.style.display = 'none';
+      }
+
+      loginBtn.addEventListener('click', () => Clerk.openSignIn({ redirectUrl: window.location.href }));
+      signupBtn.addEventListener('click', () => Clerk.openSignUp({ redirectUrl: window.location.href }));
+      logoutBtn.addEventListener('click', async () => {
+        await Clerk.signOut();
+        window.location.reload();
+      });
+
+      Clerk.onAuth(({ user }) => {
+        if (user) {
+          authLinks.style.display = 'none';
+          userProfileDiv.style.display = 'block';
+          dashboardLink.style.display = 'block';
+        } else {
+          authLinks.style.display = 'flex';
+          userProfileDiv.style.display = 'none';
+          dashboardLink.style.display = 'none';
+        }
+      });
+    });
+  </script>
 </body>
 </html>
