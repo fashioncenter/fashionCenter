@@ -166,11 +166,39 @@ document.addEventListener('DOMContentLoaded', () => {
   refreshCart();
 
   // Fetch and display products
+  let products = []; // Make products array accessible globally
   fetch('products.json')
     .then(res => res.json())
-    .then(products => {
+    .then(productsData => {
+      products = productsData; // Store products data
       const productsContainer = document.querySelector('.products');
       const searchBar = document.querySelector('.searchBar');
+
+      // Add dynamic search placeholder
+      function updateSearchPlaceholder() {
+        const searchBar = document.querySelector('.searchBar');
+        if (!searchBar) return;
+
+        // Get random product names for suggestions
+        const suggestions = products
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 3)
+          .map(product => product.name);
+
+        let currentIndex = 0;
+        
+        function updatePlaceholder() {
+          searchBar.placeholder = `Search for ${suggestions[currentIndex]}...`;
+          currentIndex = (currentIndex + 1) % suggestions.length;
+        }
+
+        // Update placeholder every 3 seconds
+        updatePlaceholder();
+        setInterval(updatePlaceholder, 2000);
+      }
+
+      // Initialize dynamic placeholder
+      updateSearchPlaceholder();
 
       // Add favorite functionality
       let favoriteItems = JSON.parse(localStorage.getItem('favoriteItems')) || [];
@@ -190,6 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
           
           const card = document.createElement('div');
           card.classList.add('product-card');
+          card.setAttribute('data-product-id', product.id);
           if (isRecommended) {
             card.classList.add('recommended');
           }
@@ -200,12 +229,12 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="product-tumb"><img src="${escapeHTML(product.image)}" alt=""></div>
             <div class="product-details">
               <span class="product-catagory">${escapeHTML(product.category)}</span>
-              <h4><a href="#">${escapeHTML(product.name)}</a></h4>
+              <h4><a href="#products/${product.id}">${escapeHTML(product.name)}</a></h4>
               <p>${escapeHTML(product.description)}</p>
               <div class="product-bottom-details">
-                <div class="product-price"><small>$${product.price.original.toFixed(2)}</small> $${product.price.discounted.toFixed(2)}</div>
+                <div class="product-price"><small>PKR ${product.price.original.toFixed(2)}</small> PKR ${product.price.discounted.toFixed(2)}</div>
                 <div class="product-links">
-                  <a href="#" class="share-btn" data-product='${JSON.stringify(product)}'><i class="ri-share-line"></i></a>
+                  <a href="#" class="share-btn" data-product-id="${product.id}"><i class="ri-share-line"></i></a>
                   <a href="#" class="favorite-btn ${isFavorite ? 'active' : ''}" data-product-id="${product.id}">
                     <i class="ri-heart-${isFavorite ? 'fill' : 'line'}"></i>
                   </a>
@@ -228,8 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const shareBtn = card.querySelector('.share-btn');
           shareBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            const productData = JSON.parse(shareBtn.getAttribute('data-product'));
-            shareProduct(productData);
+            shareProduct(product);
           });
           
           // Add favorite button functionality
@@ -249,6 +277,9 @@ document.addEventListener('DOMContentLoaded', () => {
           
           productsContainer.appendChild(card);
         });
+
+        // Check if we need to navigate to a specific product
+        handleProductNavigation();
       }
 
       displayProducts(products);
@@ -485,8 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const status = order.status || 'pending';
         const statusClass = `status-${status}`;
         
-        detailsDiv.innerHTML = `
-          <p>Order #${orderId}</p>
+        detailsDiv.innerHTML = `          <p>Order #${orderId}</p>
           <div class="order-details">
             <h3>Order Information</h3>
             <p><strong>Status:</strong> <span class="status-badge ${statusClass}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></p>
@@ -589,7 +619,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Function to handle product sharing
   function shareProduct(product) {
-    const shareUrl = window.location.href;
+    // Create a URL with the product ID in the hash
+    const shareUrl = `${window.location.origin}${window.location.pathname}#products/${product.id}`;
     const shareText = `Check out this amazing ${product.name} at M. Fashion! Only $${product.price.discounted.toFixed(2)}`;
     
     // Create share modal
@@ -598,6 +629,21 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.innerHTML = `
       <div class="share-modal-content">
         <h3>Share this product</h3>
+        <div class="share-preview">
+          <img src="${product.image}" alt="${product.name}">
+          <div class="share-preview-info">
+            <h4>${product.name}</h4>
+            <p>${product.description}</p>
+            <div class="share-product-details">
+              <div class="share-price">
+                <small>PKR ${product.price.original.toFixed(2)}</small>
+                PKR ${product.price.discounted.toFixed(2)}
+              </div>
+              <div class="share-category">Category: ${product.category}</div>
+              <div class="share-availability">In Stock</div>
+            </div>
+          </div>
+        </div>
         <div class="share-buttons">
           <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}" target="_blank" class="share-button facebook">
             <i class="ri-facebook-fill"></i> Facebook
@@ -618,15 +664,26 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.body.appendChild(modal);
     
+    // Show modal with animation
+    setTimeout(() => {
+      modal.classList.add('active');
+    }, 10);
+    
     // Add event listener to close button
     modal.querySelector('.close-share-modal').addEventListener('click', () => {
-      modal.remove();
+      modal.classList.remove('active');
+      setTimeout(() => {
+        modal.remove();
+      }, 300);
     });
     
     // Close modal when clicking outside
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
-        modal.remove();
+        modal.classList.remove('active');
+        setTimeout(() => {
+          modal.remove();
+        }, 300);
       }
     });
 
@@ -640,6 +697,36 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 2000);
     });
   }
+
+  // Function to handle product URL navigation
+  function handleProductNavigation() {
+    const hash = window.location.hash;
+    if (hash.startsWith('#products/')) {
+      const productId = parseInt(hash.split('/')[1]);
+      // Find the product in the products array
+      const product = products.find(p => p.id === productId);
+      if (product) {
+        // Scroll to the products section
+        const productsSection = document.getElementById('products');
+        if (productsSection) {
+          productsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        // Highlight the product card
+        const productCard = document.querySelector(`[data-product-id="${productId}"]`);
+        if (productCard) {
+          productCard.classList.add('highlight');
+          setTimeout(() => {
+            productCard.classList.remove('highlight');
+          }, 2000);
+        }
+      }
+    }
+  }
+
+  // Add event listener for hash changes
+  window.addEventListener('hashchange', handleProductNavigation);
+  // Handle initial load
+  handleProductNavigation();
 
   function toggleFavorite(product) {
     const index = favoriteItems.findIndex(item => item.id === product.id);
@@ -664,3 +751,4 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 });
+
