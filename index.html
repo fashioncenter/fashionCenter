@@ -39,6 +39,82 @@
     src="https://moving-sturgeon-73.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
     type="text/javascript"
   ></script>
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Store",
+    "name": "M. Fashion",
+    "description": "Your Premium Fashion Destination",
+    "url": "https://m-fashion.com",
+    "logo": "https://m-fashion.com/Assets/logo.png",
+    "image": "https://m-fashion.com/Assets/hero_ban.png",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Wapda Colony",
+      "addressLocality": "Dādu",
+      "addressCountry": "PK"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "26.7300",
+      "longitude": "67.7769"
+    },
+    "openingHours": "Mo-Su 00:00-23:59",
+    "telephone": "+923173646088",
+    "email": "devfreelancer51@gmail.com",
+    "priceRange": "$$",
+    "sameAs": [
+      "https://www.facebook.com/profile.php?id=100089252036130",
+      "https://www.instagram.com/nawab_muzamil_1100/",
+      "https://wa.me/+923173646088"
+    ],
+    "offers": {
+      "@type": "AggregateOffer",
+      "priceCurrency": "PKR",
+      "availability": "https://schema.org/InStock",
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "value": "0",
+          "currency": "PKR"
+        },
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "PK"
+        }
+      }
+    }
+  }
+  </script>
+
+  <!-- Product Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "item": {
+          "@type": "Product",
+          "name": "Baseus Bowie H1s Noise Cancellation Wireless Headphones",
+          "description": "Free Shipping & Cash On Delivery all over Pakistan. Exclusively",
+          "image": "Assets/facewash.png",
+          "offers": {
+            "@type": "Offer",
+            "price": "6.00",
+            "priceCurrency": "PKR",
+            "availability": "https://schema.org/InStock"
+          }
+        }
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <header>

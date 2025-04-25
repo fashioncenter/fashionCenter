@@ -1,3 +1,25 @@
 User-agent: *
+Allow: /
+Allow: /sitemap.xml
+Allow: /products.json
+
+# Disallow admin and private areas
 Disallow: /admin/
 Disallow: /private/
+Disallow: /temp/
+Disallow: /backup/
+
+# Allow all product pages
+Allow: /products/
+Allow: /category/
+
+# Allow all static assets
+Allow: /Assets/
+Allow: /css/
+Allow: /js/
+
+# Sitemap location
+Sitemap: https://codetoweb.tech/sitemap.xml
+
+# Crawl delay to prevent server overload
+Crawl-delay: 10
