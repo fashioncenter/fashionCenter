@@ -432,7 +432,7 @@ header .search input:focus::placeholder {
 }
 
 header .search input::placeholder {
-    animation: placeholderFade 3s infinite;
+    animation: placeholderFade 5s infinite;
 }
 
 header .search i {
@@ -698,9 +698,9 @@ a {
 
 .product-card {
     background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    transition: all 0.4s ease;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -709,35 +709,55 @@ a {
 }
 
 .product-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    transform: translateY(-10px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
 }
 
 .product-tumb {
     position: relative;
-    height: 220px;
+    height: 250px;
     overflow: hidden;
     background: #f8f9fa;
     padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-tumb::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, rgba(228, 205, 0, 0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.product-card:hover .product-tumb::before {
+    opacity: 1;
 }
 
 .product-tumb img {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    transition: transform 0.5s ease;
+    transition: transform 0.6s ease;
 }
 
 .product-card:hover .product-tumb img {
-    transform: scale(1.05);
+    transform: scale(1.1);
 }
 
 .product-details {
-    padding: 20px;
+    padding: 25px;
     flex: 1;
     display: flex;
     flex-direction: column;
     background: #fff;
+    position: relative;
 }
 
 .product-catagory {
@@ -745,17 +765,18 @@ a {
     font-size: 12px;
     text-transform: uppercase;
     color: #666;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
     background: #f0f0f0;
-    padding: 4px 12px;
+    padding: 6px 15px;
     border-radius: 20px;
     font-weight: 500;
+    letter-spacing: 0.5px;
 }
 
 .product-details h4 {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 600;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     color: #333;
     line-height: 1.4;
 }
@@ -774,7 +795,7 @@ a {
     font-size: 14px;
     line-height: 1.6;
     color: #666;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     flex: 1;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -787,7 +808,7 @@ a {
     justify-content: space-between;
     align-items: center;
     margin-top: auto;
-    padding-top: 15px;
+    padding-top: 20px;
     border-top: 1px solid #eee;
 }
 
@@ -804,7 +825,7 @@ a {
 }
 
 .product-price span {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 600;
     color: #333;
 }
@@ -818,8 +839,8 @@ a {
     color: #666;
     font-size: 18px;
     transition: all 0.3s ease;
-    width: 35px;
-    height: 35px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -830,7 +851,8 @@ a {
 .product-links a:hover {
     color: #e4cd00;
     background: #fff8e1;
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(228, 205, 0, 0.2);
 }
 
 @media (max-width: 900px) {
@@ -840,25 +862,25 @@ a {
     }
 
     .product-tumb {
-        height: 200px;
+        height: 220px;
         padding: 15px;
     }
 
     .product-details {
-        padding: 15px;
+        padding: 20px;
     }
 
     .product-details h4 {
-        font-size: 16px;
-    }
-
-    .product-price span {
         font-size: 18px;
     }
 
+    .product-price span {
+        font-size: 20px;
+    }
+
     .product-links a {
-        width: 32px;
-        height: 32px;
+        width: 35px;
+        height: 35px;
         font-size: 16px;
     }
 }
@@ -1073,7 +1095,7 @@ a {
 footer {
     background: #000000;
     color: #fff;
-    padding: 40px 0 0;
+    padding: 60px 0 0;
 }
 
 .footer__container {
@@ -1088,14 +1110,28 @@ footer {
 .footer-section {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 20px;
+}
+
+.footer-section .logo h1 {
+    color: #e4cd00;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.footer-section .logo p {
+    color: #fff;
+    opacity: 0.8;
+    line-height: 1.6;
+    font-size: 14px;
 }
 
 .footer-section h3 {
     color: #e4cd00;
     font-size: 18px;
     font-weight: 600;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     position: relative;
     padding-bottom: 10px;
 }
@@ -1108,13 +1144,6 @@ footer {
     width: 40px;
     height: 2px;
     background: #e4cd00;
-}
-
-.footer-section p {
-    color: #fff;
-    opacity: 0.8;
-    line-height: 1.6;
-    font-size: 14px;
 }
 
 .footer-section ul {
@@ -1210,184 +1239,66 @@ footer {
     font-size: 14px;
 }
 
-.payment-methods {
+.footer-bottom .payment-methods {
     display: flex;
     gap: 15px;
 }
 
-.payment-methods i {
-    color: #fff;
+.footer-bottom .payment-methods i {
     font-size: 24px;
+    color: #fff;
     opacity: 0.8;
     transition: all 0.3s;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
 }
 
-.payment-methods i:hover {
+.footer-bottom .payment-methods i:hover {
     color: #e4cd00;
     opacity: 1;
-    background: rgba(228, 205, 0, 0.1);
 }
 
-/* Mobile Footer Styles */
 @media (max-width: 900px) {
     .footer__container {
         grid-template-columns: repeat(2, 1fr);
         gap: 30px;
-        padding: 0 20px;
-    }
-
-    .footer-section {
-        text-align: left;
-    }
-
-    .footer-section h3 {
-        font-size: 16px;
-    }
-
-    .footer-section h3::after {
-        width: 30px;
-    }
-
-    .footer-section p,
-    .footer-section ul li a {
-        font-size: 13px;
-    }
-
-    .social-link {
-        font-size: 18px;
-        width: 35px;
-        height: 35px;
-    }
-
-    .contact-info li {
-        font-size: 13px;
-    }
-
-    .contact-info li i {
-        font-size: 16px;
-        width: 28px;
-        height: 28px;
-    }
-
-    .footer-bottom .container {
-        flex-direction: column;
-        gap: 20px;
-        text-align: center;
-    }
-
-    .payment-methods {
-        justify-content: center;
-    }
-
-    .payment-methods i {
-        font-size: 20px;
-        width: 35px;
-        height: 35px;
     }
 }
 
 @media (max-width: 600px) {
-    .footer___conter {
-        margin-top: 60px;
-    }
-
     footer {
-        padding: 30px 0 0;
+        padding: 40px 0 0;
     }
-
+    
     .footer__container {
         grid-template-columns: 1fr;
-        gap: 25px;
-        padding: 0 15px;
+        gap: 30px;
     }
-
+    
     .footer-section {
         text-align: center;
-        align-items: center;
     }
-
-    .footer-section h3 {
-        font-size: 18px;
-        margin-bottom: 15px;
-    }
-
+    
     .footer-section h3::after {
         left: 50%;
         transform: translateX(-50%);
     }
-
-    .footer-section p {
-        font-size: 14px;
-        max-width: 300px;
-        margin: 0 auto;
-    }
-
-    .footer-section ul li {
-        margin-bottom: 10px;
-    }
-
-    .footer-section ul li a {
-        font-size: 14px;
-    }
-
+    
     .social-links {
         justify-content: center;
-        gap: 12px;
     }
-
-    .social-link {
-        font-size: 18px;
-        width: 40px;
-        height: 40px;
-    }
-
+    
     .contact-info li {
         justify-content: center;
-        font-size: 14px;
-        margin-bottom: 12px;
     }
-
-    .contact-info li i {
-        font-size: 18px;
-        width: 32px;
-        height: 32px;
-    }
-
-    .footer-bottom {
-        margin-top: 30px;
-        padding: 15px 0;
-    }
-
+    
     .footer-bottom .container {
+        flex-direction: column;
         gap: 15px;
+        text-align: center;
     }
-
-    .footer-bottom p {
-        font-size: 13px;
+    
+    .footer-bottom .payment-methods {
+        justify-content: center;
     }
-
-    .payment-methods {
-        gap: 12px;
-    }
-
-    .payment-methods i {
-        font-size: 18px;
-        width: 35px;
-        height: 35px;
-    }
-
-    .buy-now-btn {
-        margin: 12px;
-    padding: 10px;
-        font-size: 14px;
-}
 }
 
 /* Modal Responsive Styles */

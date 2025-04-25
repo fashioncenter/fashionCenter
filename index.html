@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>M. Fashion - Your Premium Fashion Destination</title>
-  <meta name="title" content="M. Fashion - Your Premium Fashion Destination">
-  <meta name="description" content="Discover the latest trends in fashion at M. Fashion. Shop premium clothing, accessories, and more with free shipping and secure payment options.">
-  <meta name="keywords" content="fashion, clothing, accessories, online shopping, premium fashion, M. Fashion">
+  <title>M. Fashion - Trendy Clothing & Fashion</title>
+  <meta name="title" content="M. Fashion - Trendy Clothing & Fashion">
+  <meta name="description" content="M. Fashion - Your premier destination for trendy and fashionable clothing. Shop the latest styles in women's and men's fashion.">
+  <meta name="keywords" content="fashion, clothing, trendy, style, women's fashion, men's fashion, online shopping">
   <meta name="author" content="M. Fashion">
   <meta name="robots" content="index, follow">
   <meta property="og:type" content="website">
   <meta name="google-site-verification" content="8FWnTiy_yuKdrRvfV9cU8uk2HpgnaPARoMNkJVwqGPM" />
   <meta property="og:url" content="https://codetoweb.tech/">
-  <meta property="og:title" content="M. Fashion - Your Premium Fashion Destination">
-  <meta property="og:description" content="Discover the latest trends in fashion at M. Fashion. Shop premium clothing, accessories, and more with free shipping and secure payment options.">
+  <meta property="og:title" content="M. Fashion - Trendy Clothing & Fashion">
+  <meta property="og:description" content="Discover the latest fashion trends at M. Fashion. Shop premium quality clothing for men and women.">
   <meta property="og:image" content="Assets/logo.png">
   <meta property="twitter:card" content="summary_large_image">
   <meta property="twitter:url" content="https://codetoweb.tech/">
-  <meta property="twitter:title" content="M. Fashion - Your Premium Fashion Destination">
-  <meta property="twitter:description" content="Discover the latest trends in fashion at M. Fashion. Shop premium clothing, accessories, and more with free shipping and secure payment options.">
+  <meta property="twitter:title" content="M. Fashion - Trendy Clothing & Fashion">
+  <meta property="twitter:description" content="Discover the latest fashion trends at M. Fashion. Shop premium quality clothing for men and women.">
   <meta property="twitter:image" content="Assets/logo.png">
   <link rel="icon" type="image/png" href="Assets/logo.png">
   <link rel="apple-touch-icon" href="Assets/logo.png">
@@ -250,10 +250,6 @@
       <h2>Select Payment Method</h2>
       
       <div class="payment-methods">
-        <div class="payment-method-option" data-method="card">
-          <i class="ri-bank-card-line"></i>
-          <span>Credit Card</span>
-        </div>
         <div class="payment-method-option" data-method="easypaisa">
           <i class="ri-smartphone-line"></i>
           <span>Easypaisa</span>
@@ -265,21 +261,6 @@
       </div>
 
       <form class="payment-form">
-        <div id="card-fields" style="display: none;">
-          <div class="form-group">
-            <label for="card-number">Card Number</label>
-            <input type="text" id="card-number" placeholder="1234 5678 9012 3456" maxlength="16" />
-          </div>
-          <div class="form-group">
-            <label for="card-expiry">Expiry Date</label>
-            <input type="text" id="card-expiry" placeholder="MM/YY" maxlength="5" />
-          </div>
-          <div class="form-group">
-            <label for="card-cvc">CVC</label>
-            <input type="text" id="card-cvc" placeholder="123" maxlength="4" />
-          </div>
-        </div>
-
         <div id="easypaisa-fields" style="display: none;">
           <div class="form-group">
             <label for="easypaisa-number">Easypaisa Number</label>
@@ -292,29 +273,6 @@
         </div>
 
         <button type="submit">Complete Payment</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Card Payment Modal -->
-  <div id="cardPaymentModal" class="modal" style="display:none;">
-    <button data-modal="cardPaymentModal" class="close" type="button">×</button>
-    <div class="modal-content">
-      <form id="cardPaymentForm">
-        <h2>Card Payment</h2>
-        <div class="form-group">
-          <label>Card Number</label>
-          <input name="cardNumber" type="text" required placeholder="Enter card number" pattern="[0-9]{16}" />
-        </div>
-        <div class="form-group">
-          <label>Expiry Date</label>
-          <input name="expiry" type="text" required placeholder="MM/YY" pattern="(0[1-9]|1[0-2])\/([0-9]{2})" />
-        </div>
-        <div class="form-group">
-          <label>CVV</label>
-          <input name="cvv" type="password" required placeholder="Enter CVV" pattern="[0-9]{3,4}" maxlength="4" />
-        </div>
-        <button type="submit">Pay Now</button>
       </form>
     </div>
   </div>
@@ -339,11 +297,12 @@
     <button data-modal="codPaymentModal" class="close" type="button">×</button>
     <div class="modal-content">
       <form id="codPaymentForm">
-            <li><a href="about.html">About Us</a></li>
-            <li><a href="contact.html">Contact</a></li>
-          </ul>
-        </div>
-      </div>
+        <h2>Cash on Delivery</h2>
+        <p>You will pay when your order is delivered.</p>
+        <button type="submit">Place Order</button>
+      </form>
+    </div>
+  </div>
 
   <div class="footer___conter">
     <footer>
@@ -375,7 +334,7 @@
           <ul>
             <li><a href="help-center.html">Help Center</a></li>
             <li><a href="shipping-policy.html">Shipping Policy</a></li>
-            <li><a href="return-policy.html ">Return Policy</a></li>
+            <li><a href="return-policy.html">Return Policy</a></li>
             <li><a href="faq.html">FAQ</a></li>
           </ul>
         </div>

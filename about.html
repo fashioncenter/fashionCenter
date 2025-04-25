@@ -3,10 +3,239 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>About Us - M. Fashion</title>
+  <meta name="description" content="Learn about M. Fashion - Your premier destination for trendy and affordable fashion. Discover our story, mission, and commitment to sustainable fashion.">
+  <meta name="keywords" content="M. Fashion about, fashion mission, clothing store history, sustainable fashion, ethical fashion">
+  <meta name="author" content="M. Fashion">
+  <meta name="google-site-verification" content="8FWnTiy_yuKdrRvfV9cU8uk2HpgnaPARoMNkJVwqGPM" />
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://codetoweb.tech/about">
+  <meta property="og:title" content="About M. Fashion - Our Story & Mission">
+  <meta property="og:description" content="Learn about M. Fashion's journey, mission, and commitment to bringing you the latest fashion trends at affordable prices.">
+  <meta property="og:image" content="Assets/logo.png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://codetoweb.tech/about">
+  <meta property="twitter:title" content="About M. Fashion - Our Story & Mission">
+  <meta property="twitter:description" content="Learn about M. Fashion's journey, mission, and commitment to bringing you the latest fashion trends at affordable prices.">
+  <meta property="twitter:image" content="Assets/logo.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="Assets/logo.png">
+  <link rel="apple-touch-icon" href="Assets/logo.png">
+
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#e4cd00">
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://codetoweb.tech/about">
+
+  <title>About M. Fashion</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
-  <link rel="shortcut icon" href="Assets/logo.png" type="image/x-icon" />
+  
+  <style>
+    .about-container {
+      max-width: 1200px;
+      margin: 100px auto 50px;
+      padding: 0 20px;
+    }
+
+    .about-header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .about-header h1 {
+      font-size: 2.5rem;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .about-content {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+
+    .about-section {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .about-section h2 {
+      color: #333;
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .about-section h2::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: -8px;
+      width: 60px;
+      height: 3px;
+      background: #e4cd00;
+    }
+
+    .about-section p {
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 30px;
+      margin: 40px 0;
+    }
+
+    .stat-card {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .stat-card i {
+      font-size: 2.5rem;
+      color: #e4cd00;
+      margin-bottom: 15px;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 600;
+      color: #333;
+      margin: 10px 0;
+    }
+
+    .stat-label {
+      color: #666;
+      font-size: 1rem;
+    }
+
+    .features-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .features-list li {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      transition: transform 0.3s ease;
+    }
+
+    .features-list li:hover {
+      transform: translateX(5px);
+      background: #f0f0f0;
+    }
+
+    .features-list li i {
+      color: #e4cd00;
+      margin-right: 15px;
+      font-size: 1.2rem;
+    }
+
+    .team-section {
+      margin-top: 40px;
+    }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 30px;
+      margin-top: 30px;
+    }
+
+    .team-member {
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s ease;
+    }
+
+    .team-member:hover {
+      transform: translateY(-5px);
+    }
+
+    .team-member img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+    }
+
+    .team-info {
+      padding: 20px;
+      text-align: center;
+    }
+
+    .team-info h3 {
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .team-info p {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 15px;
+    }
+
+    .social-links {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .social-links a {
+      color: #666;
+      transition: color 0.3s ease;
+    }
+
+    .social-links a:hover {
+      color: #e4cd00;
+    }
+
+    @media (max-width: 768px) {
+      .about-container {
+        margin-top: 80px;
+      }
+
+      .about-header h1 {
+        font-size: 2rem;
+      }
+
+      .about-section h2 {
+        font-size: 1.5rem;
+      }
+
+      .stat-card {
+        padding: 20px;
+      }
+
+      .team-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      }
+    }
+  </style>
 
   <!-- Import Firebase -->
   <script type="module" src="firebase.js"></script>
@@ -60,40 +289,79 @@
     </nav>
   </header>
 
-  <div class="about-us">
-    <div class="about-container">
-      <h2>About M. Fashion</h2>
-      <div class="about-content">
-        <div class="about-text">
-          <h3>Our Story</h3>
-          <p>Founded in 2024, M. Fashion has grown from a small boutique to a leading fashion destination. We believe in bringing the latest trends and timeless classics to our customers at affordable prices.</p>
-          
-          <h3>Our Mission</h3>
-          <p>To provide high-quality fashion products that empower individuals to express their unique style while maintaining sustainable and ethical business practices.</p>
-          
-          <h3>Why Choose Us?</h3>
-          <ul class="features-list">
-            <li><i class="ri-check-line"></i> Curated Collection of Premium Brands</li>
-            <li><i class="ri-check-line"></i> Fast and Reliable Shipping</li>
-            <li><i class="ri-check-line"></i> 24/7 Customer Support</li>
-            <li><i class="ri-check-line"></i> Easy Returns and Exchanges</li>
-          </ul>
-        </div>
-        <div class="about-stats">
-          <div class="stat-item">
-            <i class="ri-user-line"></i>
-            <h4>3+</h4>
-            <p>Happy Customers</p>
+  <div class="about-container">
+    <div class="about-header">
+      <h1>About M. Fashion</h1>
+    </div>
+
+    <div class="about-content">
+      <div class="about-section">
+        <h2>Our Story</h2>
+        <p>Founded in 2024, M. Fashion has grown from a small boutique to a leading fashion destination. We believe in bringing the latest trends and timeless classics to our customers at affordable prices.</p>
+        
+        <div class="stats-grid">
+          <div class="stat-card" data-stat="customers">
+            <i class="ri-user-heart-line"></i>
+            <div class="stat-number">3+</div>
+            <div class="stat-label">Happy Customers</div>
           </div>
-          <div class="stat-item">
+          <div class="stat-card" data-stat="products">
             <i class="ri-shopping-bag-line"></i>
-            <h4>3+</h4>
-            <p>Products</p>
+            <div class="stat-number">3+</div>
+            <div class="stat-label">Products</div>
           </div>
-          <div class="stat-item">
+          <div class="stat-card" data-stat="cities">
+            <i class="ri-map-pin-line"></i>
+            <div class="stat-number">10+</div>
+            <div class="stat-label">Cities Served</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="about-section">
+        <h2>Our Mission</h2>
+        <p>To provide high-quality fashion products that empower individuals to express their unique style while maintaining sustainable and ethical business practices.</p>
+      </div>
+
+      <div class="about-section">
+        <h2>Why Choose Us?</h2>
+        <ul class="features-list">
+          <li>
+            <i class="ri-store-2-line"></i>
+            <span>Curated Collection of Premium Brands</span>
+          </li>
+          <li>
             <i class="ri-truck-line"></i>
-            <h4>10+</h4>
-            <p>Cities Served</p>
+            <span>Fast and Reliable Shipping</span>
+          </li>
+          <li>
+            <i class="ri-customer-service-2-line"></i>
+            <span>24/7 Customer Support</span>
+          </li>
+          <li>
+            <i class="ri-secure-payment-line"></i>
+            <span>Secure Payment Options</span>
+          </li>
+          <li>
+            <i class="ri-exchange-line"></i>
+            <span>Easy Returns & Exchanges</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="about-section team-section">
+        <h2>Our Team</h2>
+        <div class="team-grid">
+          <div class="team-member">
+            <img src="Assets/team-1.jpg" alt="Team Member" onerror="this.src='Assets/logo.png'">
+            <div class="team-info">
+              <h3>Muzamil Ali</h3>
+              <p>Founder & CEO</p>
+              <div class="social-links">
+                <a href="https://github.com/freelancetaha" target="_blank"><i class="ri-github-fill"></i></a>
+                <a href="https://www.linkedin.com/in/muhammad-taha-03a252355/" target="_blank"><i class="ri-linkedin-fill"></i></a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -119,7 +387,7 @@
           <h3>Quick Links</h3>
           <ul>
             <li><a href="index.html">Home</a></li>
-            <li><a href="index.html#products">Products</a></li>
+            <li><a href="#products">Products</a></li>
             <li><a href="about.html">About Us</a></li>
             <li><a href="contact.html">Contact</a></li>
           </ul>
@@ -138,9 +406,9 @@
         <div class="footer-section">
           <h3>Contact Us</h3>
           <ul class="contact-info">
-            <li><i class="ri-map-pin-line"></i> 123 Fashion Street, City</li>
-            <li><i class="ri-phone-line"></i> +92 317 3646088</li>
-            <li><i class="ri-mail-line"></i> support@mfashion.com</li>
+            <li><i class="ri-map-pin-line"></i> Wapda Colony, Dādu</li>
+            <li><i class="ri-phone-line"></i>+92 3173646088</li>
+            <li><i class="ri-mail-line"></i> devfreelancer51@gmail.com</li>
           </ul>
         </div>
       </div>
@@ -155,18 +423,93 @@
             <i class="ri-bank-card-line"></i>
           </div>
         </div>
-        <div class="developer-info">
-          <p>Developed with <i class="ri-heart-fill"></i> by <a href="https://www.fiverr.com/s/991Bmrj" target="_blank">Taha Ale</a></p>
-          <div class="developer-links">
-            <a href="https://github.com/freelancetaha" target="_blank"><i class="ri-github-fill"></i></a>
-            <a href="https://www.linkedin.com/in/muhammad-taha-03a252355/" target="_blank"><i class="ri-linkedin-fill"></i></a>
-          </div>
-        </div>
       </div>
     </footer>
   </div>
 
   <script type="module" src="script.js"></script>
+
+  <!-- Stats Update Script -->
+  <script type="module">
+    import { 
+      collection, 
+      query, 
+      getDocs, 
+      onSnapshot,
+      getDoc,
+      doc
+    } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js';
+    import { db } from './firebase.js';
+
+    // Function to animate number counting
+    function animateNumber(element, start, end, duration) {
+      let startTimestamp = null;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const current = Math.floor(progress * (end - start) + start);
+        element.textContent = current + '+';
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      };
+      window.requestAnimationFrame(step);
+    }
+
+    // Function to update stats
+    async function updateStats() {
+      try {
+        // Get customers count
+        const usersQuery = query(collection(db, 'users'));
+        const usersSnapshot = await getDocs(usersQuery);
+        const customersCount = usersSnapshot.size;
+
+        // Get products count
+        const productsQuery = query(collection(db, 'products'));
+        const productsSnapshot = await getDocs(productsQuery);
+        const productsCount = productsSnapshot.size;
+
+        // Get cities served (from orders)
+        const ordersQuery = query(collection(db, 'orders'));
+        const ordersSnapshot = await getDocs(ordersQuery);
+        const cities = new Set();
+        ordersSnapshot.forEach(doc => {
+          const order = doc.data();
+          if (order.shipping && order.shipping.city) {
+            cities.add(order.shipping.city);
+          }
+        });
+        const citiesCount = cities.size || 10; // Default to 10 if no orders yet
+
+        // Get stats elements
+        const customersElement = document.querySelector('[data-stat="customers"] .stat-number');
+        const productsElement = document.querySelector('[data-stat="products"] .stat-number');
+        const citiesElement = document.querySelector('[data-stat="cities"] .stat-number');
+
+        // Animate the numbers
+        if (customersElement) animateNumber(customersElement, 0, Math.max(3, customersCount), 1000);
+        if (productsElement) animateNumber(productsElement, 0, Math.max(3, productsCount), 1000);
+        if (citiesElement) animateNumber(citiesElement, 0, Math.max(10, citiesCount), 1000);
+
+        // Set up real-time listeners for updates
+        const statsDoc = doc(db, 'stats', 'counters');
+        onSnapshot(statsDoc, (doc) => {
+          if (doc.exists()) {
+            const data = doc.data();
+            if (customersElement) animateNumber(customersElement, 0, Math.max(3, data.customers || 0), 500);
+            if (productsElement) animateNumber(productsElement, 0, Math.max(3, data.products || 0), 500);
+            if (citiesElement) animateNumber(citiesElement, 0, Math.max(10, data.cities || 0), 500);
+          }
+        });
+
+      } catch (error) {
+        console.error('Error updating stats:', error);
+      }
+    }
+
+    // Update stats when page loads
+    window.addEventListener('load', updateStats);
+  </script>
 
   <!-- Clerk Auth script -->
   <script>

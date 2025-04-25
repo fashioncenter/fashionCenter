@@ -3,22 +3,476 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Dashboard</title>
+  <meta name="description" content="M. Fashion Admin Dashboard - Manage your online fashion store efficiently. Control orders, inventory, and settings.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="M. Fashion">
+  <meta name="google-site-verification" content="8FWnTiy_yuKdrRvfV9cU8uk2HpgnaPARoMNkJVwqGPM" />
+  
+  <!-- Security Headers -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://www.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://www.gstatic.com;">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  
+  <!-- PWA Support -->
+  <meta name="application-name" content="M. Fashion Admin">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="M. Fashion Admin">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="Assets/logo.png">
+  <link rel="apple-touch-icon" href="Assets/logo.png">
+
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#1a1a1a">
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://codetoweb.tech/admin">
+
+  <title>Admin Dashboard - M. Fashion</title>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
   <style>
-    body { font-family: Arial; padding: 1rem; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; }
-    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
-    select, input, button { margin-right: 0.5rem; }
-    .coupon-section { margin-bottom: 2rem; padding: 1rem; background: #f5f5f5; border-radius: 4px; }
-    .orders-section { margin-top: 2rem; }
-    .success { color: green; }
-    .error { color: red; }
-    .status-pending { color: orange; }
-    .status-processing { color: blue; }
-    .status-shipped { color: green; }
-    .status-delivered { color: darkgreen; }
-    .action-buttons { display: flex; gap: 0.5rem; }
-    .action-buttons button { padding: 0.25rem 0.5rem; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: #f8f9fa;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .admin-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 280px;
+      background: #1a1a1a;
+      color: #fff;
+      padding: 20px;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 20px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-header h1 {
+      font-size: 24px;
+      color: #e4cd00;
+    }
+
+    .sidebar-menu {
+      margin-top: 30px;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 15px;
+      border-radius: 8px;
+      color: #fff;
+      text-decoration: none;
+      transition: all 0.3s;
+      margin-bottom: 5px;
+    }
+
+    .menu-item:hover, .menu-item.active {
+      background: rgba(228, 205, 0, 0.1);
+      color: #e4cd00;
+    }
+
+    .menu-item i {
+      font-size: 20px;
+    }
+
+    .main-content {
+      flex: 1;
+      margin-left: 280px;
+      padding: 20px;
+    }
+
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-title h2 {
+      font-size: 24px;
+      color: #333;
+    }
+
+    .admin-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .admin-email {
+      font-weight: 500;
+      color: #666;
+    }
+
+    .logout-btn {
+      padding: 8px 16px;
+      background: #ff4444;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .logout-btn:hover {
+      background: #ff3333;
+    }
+
+    .coupon-section {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      margin-bottom: 30px;
+    }
+
+    .coupon-section h2 {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .coupon-form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      align-items: end;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-group label {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .form-group input {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+
+    .form-group input:focus {
+      border-color: #e4cd00;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(228, 205, 0, 0.1);
+    }
+
+    .create-btn {
+      padding: 10px 20px;
+      background: #e4cd00;
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 500;
+    }
+
+    .create-btn:hover {
+      background: #d4bd00;
+    }
+
+    .coupon-msg {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .coupon-msg.success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .coupon-msg.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .orders-section {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .orders-section h2 {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .orders-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .stat-card h3 {
+      font-size: 14px;
+      color: #666;
+      font-weight: 500;
+    }
+
+    .stat-card .value {
+      font-size: 24px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .stat-card .trend {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+    }
+
+    .trend.up {
+      color: #28a745;
+    }
+
+    .trend.down {
+      color: #dc3545;
+    }
+
+    .orders-filters {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .filter-group label {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .filter-group select {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      min-width: 150px;
+    }
+
+    .orders-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .orders-table th {
+      text-align: left;
+      padding: 12px;
+      border-bottom: 2px solid #eee;
+      color: #666;
+      font-weight: 500;
+    }
+
+    .orders-table td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      color: #333;
+    }
+
+    .order-details {
+      display: none;
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    .order-details.active {
+      display: block;
+    }
+
+    .order-items {
+      margin-bottom: 15px;
+    }
+
+    .order-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: #fff;
+      border-radius: 6px;
+      margin-bottom: 5px;
+    }
+
+    .order-item img {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    .order-item-info {
+      flex: 1;
+    }
+
+    .order-item-name {
+      font-weight: 500;
+      color: #333;
+    }
+
+    .order-item-price {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .order-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .summary-item {
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .summary-item h4 {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .summary-item p {
+      font-size: 16px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .view-details-btn {
+      padding: 6px 12px;
+      background: #e4cd00;
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 13px;
+    }
+
+    .view-details-btn:hover {
+      background: #d4bd00;
+    }
+
+    .status-badge {
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .status-processing {
+      background: #cce5ff;
+      color: #004085;
+    }
+
+    .status-shipped {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-delivered {
+      background: #d1e7dd;
+      color: #0f5132;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .process-btn {
+      background: #e4cd00;
+      color: #000;
+    }
+
+    .ship-btn {
+      background: #17a2b8;
+      color: #fff;
+    }
+
+    .deliver-btn {
+      background: #28a745;
+      color: #fff;
+    }
+
+    .action-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
     .admin-login {
       position: fixed;
       top: 0;
@@ -31,60 +485,285 @@
       align-items: center;
       z-index: 1000;
     }
-    .admin-login form {
-      background: white;
-      padding: 2rem;
-      border-radius: 8px;
+
+    .login-form {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
       width: 90%;
       max-width: 400px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     }
-    .admin-login h2 {
-      margin-bottom: 1rem;
+
+    .login-form h2 {
       text-align: center;
+      margin-bottom: 20px;
+      color: #333;
     }
-    .admin-login input {
+
+    .login-form input {
       width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: all 0.3s;
     }
-    .admin-login button {
+
+    .login-form input:focus {
+      border-color: #e4cd00;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(228, 205, 0, 0.1);
+    }
+
+    .login-form button {
       width: 100%;
-      padding: 0.5rem;
+      padding: 12px;
       background: #e4cd00;
       border: none;
-      border-radius: 4px;
-      color: black;
+      border-radius: 6px;
+      color: #000;
+      font-weight: 500;
       cursor: pointer;
+      transition: all 0.3s;
     }
-    .admin-login button:hover {
+
+    .login-form button:hover {
       background: #d4bd00;
     }
-    .admin-login .error {
-      color: red;
-      margin-top: 1rem;
+
+    .login-error {
+      color: #dc3545;
+      margin-top: 15px;
       text-align: center;
+      font-size: 14px;
     }
-    .admin-info {
+
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 80px;
+        padding: 20px 10px;
+      }
+
+      .sidebar-header h1 {
+        display: none;
+      }
+
+      .menu-item span {
+        display: none;
+      }
+
+      .main-content {
+        margin-left: 80px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .coupon-form {
+        grid-template-columns: 1fr;
+      }
+
+      .orders-table {
+        display: block;
+        overflow-x: auto;
+      }
+
+      .dashboard-header {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .admin-info {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .main-content {
+        padding: 15px;
+      }
+
+      .coupon-section,
+      .orders-section {
+        padding: 15px;
+      }
+
+      .action-buttons {
+        flex-direction: column;
+      }
+
+      .action-btn {
+        width: 100%;
+      }
+    }
+
+    .settings-section {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      margin-bottom: 30px;
+    }
+
+    .settings-section h2 {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 20px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 2rem;
-      padding: 1rem;
-      background: #f5f5f5;
-      border-radius: 4px;
+      gap: 10px;
     }
-    .admin-info .email {
-      font-weight: bold;
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
     }
-    .admin-info .logout {
-      padding: 0.5rem 1rem;
-      background: #ff4444;
-      color: white;
+
+    .settings-card {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #eee;
+    }
+
+    .settings-card h3 {
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .settings-card h3 i {
+      color: #666;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      border-color: #e4cd00;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(228, 205, 0, 0.1);
+    }
+
+    .form-group textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .settings-btn {
+      padding: 8px 16px;
       border: none;
-      border-radius: 4px;
+      border-radius: 6px;
+      font-size: 14px;
       cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .save-btn {
+      background: #e4cd00;
+      color: #000;
+    }
+
+    .save-btn:hover {
+      background: #d4bd00;
+    }
+
+    .delete-btn {
+      background: #dc3545;
+      color: #fff;
+    }
+
+    .delete-btn:hover {
+      background: #c82333;
+    }
+
+    .settings-msg {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .settings-msg.success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .settings-msg.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+      background-color: #e4cd00;
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(26px);
     }
   </style>
   <!-- Import Firebase -->
@@ -92,55 +771,269 @@
 </head>
 <body>
   <div id="adminLogin" class="admin-login">
-    <form id="loginForm">
+    <form id="loginForm" class="login-form">
       <h2>Admin Login</h2>
       <input type="email" id="adminEmail" placeholder="Enter admin email" required />
       <input type="password" id="adminPassword" placeholder="Enter password" required />
       <button type="submit">Login</button>
-      <p id="loginError" class="error"></p>
+      <p id="loginError" class="login-error"></p>
     </form>
   </div>
 
   <div id="adminContent" style="display: none;">
-    <div class="admin-info">
-      <span class="email">Logged in as: <span id="adminEmailDisplay"></span></span>
-      <button class="logout" id="adminLogout">Logout</button>
-    </div>
+    <div class="admin-container">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <h1>M. Fashion</h1>
+        </div>
+        <div class="sidebar-menu">
+          <a href="#" class="menu-item active">
+            <i class="ri-dashboard-line"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="#" class="menu-item">
+            <i class="ri-shopping-bag-line"></i>
+            <span>Orders</span>
+          </a>
+          <a href="#couponCode" class="menu-item">
+            <i class="ri-coupon-line"></i>
+            <span>Coupons</span>
+          </a>
+          <a href="#" class="menu-item">
+            <i class="ri-settings-line"></i>
+            <span>Settings</span>
+          </a>
+        </div>
+      </div>
 
-    <h1>Admin Dashboard</h1>
+      <!-- Main Content -->
+      <div class="main-content">
+        <div class="dashboard-header">
+          <div class="header-title">
+            <h2>Admin Dashboard</h2>
+          </div>
+          <div class="admin-info">
+            <span class="admin-email">Logged in as: <span id="adminEmailDisplay"></span></span>
+            <button class="logout-btn" id="adminLogout">Logout</button>
+          </div>
+        </div>
 
-    <div class="coupon-section">
-      <h2>Create Coupon</h2>
-      <input id="couponCode" placeholder="Code" />
-      <input id="couponDiscount" type="number" placeholder="% off" min="0" max="100" />
-      <input id="couponExpiry" type="date" />
-      <button id="createCoupon">Create</button>
-      <p id="couponMsg"></p>
-    </div>
+        <div class="orders-section">
+          <h2>Orders Overview</h2>
+          <div class="orders-stats">
+            <div class="stat-card">
+              <h3>Total Orders</h3>
+              <div class="value" id="totalOrders">0</div>
+              <div class="trend up" id="totalOrdersTrend">
+                <i class="ri-arrow-up-line"></i>
+                <span>0% from last month</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <h3>Pending Orders</h3>
+              <div class="value" id="pendingOrders">0</div>
+              <div class="trend down" id="pendingOrdersTrend">
+                <i class="ri-arrow-down-line"></i>
+                <span>0% from last week</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <h3>Total Revenue</h3>
+              <div class="value" id="totalRevenue">Rs. 0</div>
+              <div class="trend up" id="revenueTrend">
+                <i class="ri-arrow-up-line"></i>
+                <span>0% from last month</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <h3>Average Order Value</h3>
+              <div class="value" id="avgOrderValue">Rs. 0</div>
+              <div class="trend up" id="avgOrderTrend">
+                <i class="ri-arrow-up-line"></i>
+                <span>0% from last month</span>
+              </div>
+            </div>
+          </div>
 
-    <div class="orders-section">
-      <h2>Orders</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Email</th>
-            <th>Items</th>
-            <th>Shipping</th>
-            <th>Payment</th>
-            <th>Total</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="ordersTable"></tbody>
-      </table>
+          <div class="orders-filters">
+            <div class="filter-group">
+              <label>Status</label>
+              <select id="statusFilter">
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Date Range</label>
+              <select id="dateFilter">
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+                <option value="all">All Time</option>
+              </select>
+            </div>
+          </div>
+
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTable"></tbody>
+          </table>
+        </div>
+
+        <div class="coupon-section">
+          <h2>Create Coupon</h2>
+          <div class="coupon-form">
+            <div class="form-group">
+              <label for="couponCode">Coupon Code</label>
+              <input id="couponCode" placeholder="Enter coupon code" />
+            </div>
+            <div class="form-group">
+              <label for="couponDiscount">Discount (%)</label>
+              <input id="couponDiscount" type="number" placeholder="Enter discount" min="0" max="100" />
+            </div>
+            <div class="form-group">
+              <label for="couponExpiry">Expiry Date</label>
+              <input id="couponExpiry" type="date" />
+            </div>
+            <button id="createCoupon" class="create-btn">Create Coupon</button>
+          </div>
+          <p id="couponMsg" class="coupon-msg"></p>
+        </div>
+
+        <div class="settings-section" id="settingsSection" style="display: none;">
+          <h2><i class="ri-settings-2-line"></i> Settings</h2>
+          
+          <div class="settings-grid">
+            <!-- Store Settings -->
+            <div class="settings-card">
+              <h3><i class="ri-store-2-line"></i> Store Settings</h3>
+              <div class="form-group">
+                <label>Store Name</label>
+                <input type="text" id="storeName" placeholder="Enter store name">
+              </div>
+              <div class="form-group">
+                <label>Store Description</label>
+                <textarea id="storeDescription" placeholder="Enter store description"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Currency</label>
+                <select id="storeCurrency">
+                  <option value="Rs.">Indian Rupee (Rs.)</option>
+                  <option value="$">US Dollar ($)</option>
+                  <option value="€">Euro (€)</option>
+                  <option value="£">British Pound (£)</option>
+                </select>
+              </div>
+              <button onclick="saveStoreSettings()" class="settings-btn save-btn">Save Store Settings</button>
+              <p id="storeSettingsMsg" class="settings-msg"></p>
+            </div>
+
+            <!-- Admin Management -->
+            <div class="settings-card">
+              <h3><i class="ri-user-settings-line"></i> Admin Management</h3>
+              <div class="form-group">
+                <label>New Admin Email</label>
+                <input type="email" id="newAdminEmail" placeholder="Enter email">
+              </div>
+              <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="newAdminPassword" placeholder="Enter password">
+              </div>
+              <button onclick="addNewAdmin()" class="settings-btn save-btn">Add Admin</button>
+              <p id="adminManagementMsg" class="settings-msg"></p>
+              
+              <div id="adminsList" style="margin-top: 20px;">
+                <!-- Admins will be listed here -->
+              </div>
+            </div>
+
+            <!-- Email Settings -->
+            <div class="settings-card">
+              <h3><i class="ri-mail-settings-line"></i> Email Settings</h3>
+              <div class="form-group">
+                <label>Order Confirmation Template</label>
+                <textarea id="orderConfirmationTemplate" placeholder="Enter email template"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Shipping Notification Template</label>
+                <textarea id="shippingTemplate" placeholder="Enter email template"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Send Order Updates</label>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="sendOrderUpdates" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <button onclick="saveEmailSettings()" class="settings-btn save-btn">Save Email Settings</button>
+              <p id="emailSettingsMsg" class="settings-msg"></p>
+            </div>
+
+            <!-- Payment Settings -->
+            <div class="settings-card">
+              <h3><i class="ri-secure-payment-line"></i> Payment Settings</h3>
+              <div class="form-group">
+                <label>Payment Methods</label>
+                <div style="margin-bottom: 10px;">
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="enableCashOnDelivery" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <span style="margin-left: 10px;">Cash on Delivery</span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="enableCardPayment" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <span style="margin-left: 10px;">Card Payment</span>
+                </div>
+                <div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="enableUPI" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <span style="margin-left: 10px;">UPI</span>
+                </div>
+              </div>
+              <button onclick="savePaymentSettings()" class="settings-btn save-btn">Save Payment Settings</button>
+              <p id="paymentSettingsMsg" class="settings-msg"></p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script type="module">
-    import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, getDocs, where } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js';
+    import { 
+      collection, 
+      addDoc, 
+      onSnapshot, 
+      query, 
+      orderBy, 
+      doc, 
+      updateDoc, 
+      getDocs, 
+      where,
+      Timestamp,
+      serverTimestamp,
+      deleteDoc,
+      setDoc 
+    } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js';
     const db = window.db;
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -152,6 +1045,9 @@
       const loginError = document.getElementById('loginError');
       const adminEmailDisplay = document.getElementById('adminEmailDisplay');
       const adminLogout = document.getElementById('adminLogout');
+      const statusFilter = document.getElementById('statusFilter');
+      const dateFilter = document.getElementById('dateFilter');
+      const ordersTable = document.getElementById('ordersTable');
 
       // Check if admin is already logged in
       const savedAdminEmail = localStorage.getItem('adminEmail');
@@ -216,7 +1112,328 @@
       function initializeAdminFunctionality() {
         const btn = document.getElementById('createCoupon');
         const msg = document.getElementById('couponMsg');
-        const ordersTable = document.getElementById('ordersTable');
+
+        // Update order statistics
+        function updateOrderStats(orders) {
+          try {
+            // Get current date ranges for comparisons
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+            const lastWeek = new Date(now.setDate(now.getDate() - 7));
+
+            // Current period stats
+            const currentMonthOrders = orders.filter(o => {
+              const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+              return orderDate >= lastMonth;
+            });
+
+            const currentWeekOrders = orders.filter(o => {
+              const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+              return orderDate >= lastWeek;
+            });
+
+            // Previous period stats for comparison
+            const previousMonth = new Date(lastMonth);
+            previousMonth.setMonth(previousMonth.getMonth() - 1);
+            const previousMonthOrders = orders.filter(o => {
+              const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+              return orderDate >= previousMonth && orderDate < lastMonth;
+            });
+
+            const previousWeek = new Date(lastWeek);
+            previousWeek.setDate(previousWeek.getDate() - 7);
+            const previousWeekOrders = orders.filter(o => {
+              const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+              return orderDate >= previousWeek && orderDate < lastWeek;
+            });
+
+            // Calculate current stats
+            const totalOrders = orders.length;
+            const pendingOrders = orders.filter(o => o.status === 'pending').length;
+            const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+            const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+            // Calculate trends
+            const calculateTrend = (current, previous) => {
+              if (previous === 0) return 100;
+              return ((current - previous) / previous) * 100;
+            };
+
+            const ordersTrend = calculateTrend(currentMonthOrders.length, previousMonthOrders.length);
+            const pendingTrend = calculateTrend(
+              currentWeekOrders.filter(o => o.status === 'pending').length,
+              previousWeekOrders.filter(o => o.status === 'pending').length
+            );
+            const revenueTrend = calculateTrend(
+              currentMonthOrders.reduce((sum, o) => sum + (o.total || 0), 0),
+              previousMonthOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+            );
+            const avgOrderTrend = calculateTrend(
+              currentMonthOrders.length > 0 ? 
+                currentMonthOrders.reduce((sum, o) => sum + (o.total || 0), 0) / currentMonthOrders.length : 0,
+              previousMonthOrders.length > 0 ? 
+                previousMonthOrders.reduce((sum, o) => sum + (o.total || 0), 0) / previousMonthOrders.length : 0
+            );
+
+            // Update UI
+            document.getElementById('totalOrders').textContent = totalOrders;
+            document.getElementById('pendingOrders').textContent = pendingOrders;
+            document.getElementById('totalRevenue').textContent = `Rs. ${totalRevenue.toFixed(2)}`;
+            document.getElementById('avgOrderValue').textContent = `Rs. ${avgOrderValue.toFixed(2)}`;
+
+            // Update trends with icons and colors
+            updateTrendDisplay('totalOrdersTrend', ordersTrend, 'month');
+            updateTrendDisplay('pendingOrdersTrend', pendingTrend, 'week');
+            updateTrendDisplay('revenueTrend', revenueTrend, 'month');
+            updateTrendDisplay('avgOrderTrend', avgOrderTrend, 'month');
+
+          } catch (error) {
+            console.error('Error updating statistics:', error);
+          }
+        }
+
+        // Helper function to update trend display
+        function updateTrendDisplay(elementId, trendValue, period) {
+          const element = document.getElementById(elementId);
+          if (!element) return;
+
+          const isPositive = trendValue > 0;
+          const trendClass = isPositive ? 'up' : 'down';
+          const icon = isPositive ? 'ri-arrow-up-line' : 'ri-arrow-down-line';
+          
+          element.className = `trend ${trendClass}`;
+          element.innerHTML = `
+            <i class="${icon}"></i>
+            <span>${Math.abs(trendValue).toFixed(1)}% from last ${period}</span>
+          `;
+        }
+
+        // Filter orders
+        function filterOrders(orders, status, dateRange) {
+          let filtered = [...orders];
+
+          try {
+            // Filter by status
+            if (status && status !== 'all') {
+              filtered = filtered.filter(o => (o.status || 'pending').toLowerCase() === status.toLowerCase());
+            }
+
+            // Filter by date
+            if (dateRange && dateRange !== 'all') {
+              const now = new Date();
+              now.setHours(23, 59, 59, 999); // End of day
+
+              filtered = filtered.filter(o => {
+                if (!o.createdAt) return false;
+                
+                const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+                
+                switch (dateRange.toLowerCase()) {
+                  case 'today':
+                    const startOfDay = new Date(now);
+                    startOfDay.setHours(0, 0, 0, 0);
+                    return orderDate >= startOfDay && orderDate <= now;
+                    
+                  case 'week':
+                    const weekAgo = new Date(now);
+                    weekAgo.setDate(now.getDate() - 7);
+                    weekAgo.setHours(0, 0, 0, 0);
+                    return orderDate >= weekAgo && orderDate <= now;
+                    
+                  case 'month':
+                    const monthAgo = new Date(now);
+                    monthAgo.setMonth(now.getMonth() - 1);
+                    monthAgo.setHours(0, 0, 0, 0);
+                    return orderDate >= monthAgo && orderDate <= now;
+                    
+                  default:
+                    return true;
+                }
+              });
+            }
+          } catch (error) {
+            console.error('Error filtering orders:', error);
+          }
+
+          return filtered;
+        }
+
+        // Update order status
+        window.updateOrderStatus = async function(orderId, newStatus) {
+          try {
+            const orderRef = doc(db, 'orders', orderId);
+            await updateDoc(orderRef, {
+              status: newStatus,
+              statusUpdatedAt: serverTimestamp(),
+              lastUpdatedBy: localStorage.getItem('adminEmail')
+            });
+          } catch (error) {
+            console.error('Error updating order status:', error);
+            alert('Error updating order status. Please try again.');
+          }
+        };
+
+        // Listen orders in real-time
+        let allOrders = [];
+        const ordersQuery = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+        
+        onSnapshot(ordersQuery, snapshot => {
+          try {
+            // Update allOrders array
+            allOrders = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }));
+
+            // Apply current filters
+            const currentStatus = statusFilter.value;
+            const currentDateRange = dateFilter.value;
+            const filteredOrders = filterOrders(allOrders, currentStatus, currentDateRange);
+
+            // Update statistics and table
+            updateOrderStats(allOrders);
+            updateOrdersTable(filteredOrders);
+          } catch (error) {
+            console.error('Error processing orders update:', error);
+          }
+        });
+
+        // Update orders table
+        function updateOrdersTable(orders) {
+          try {
+            ordersTable.innerHTML = '';
+            
+            if (orders.length === 0) {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td colspan="6" style="text-align: center; padding: 20px;">
+                  No orders found for the selected filters
+                </td>
+              `;
+              ordersTable.appendChild(tr);
+              return;
+            }
+
+            orders.forEach(order => {
+              const tr = document.createElement('tr');
+              
+              // Format date
+              const date = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
+              const formattedDate = date.toLocaleString();
+
+              // Get current status
+              const status = order.status || 'pending';
+              const statusClass = `status-${status.toLowerCase()}`;
+
+              // Create action buttons based on current status
+              let actionButtons = '';
+              if (status.toLowerCase() === 'pending') {
+                actionButtons = `
+                  <button onclick="updateOrderStatus('${order.id}', 'processing')" class="process-btn">Process</button>
+                `;
+              } else if (status.toLowerCase() === 'processing') {
+                actionButtons = `
+                  <button onclick="updateOrderStatus('${order.id}', 'shipped')" class="ship-btn">Ship</button>
+                `;
+              } else if (status.toLowerCase() === 'shipped') {
+                actionButtons = `
+                  <button onclick="updateOrderStatus('${order.id}', 'delivered')" class="deliver-btn">Mark Delivered</button>
+                `;
+              }
+
+              tr.innerHTML = `
+                <td>${order.id}</td>
+                <td>${order.email || 'guest'}</td>
+                <td>${formattedDate}</td>
+                <td>Rs. ${(order.total || 0).toFixed(2)}</td>
+                <td><span class="status-badge ${statusClass}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></td>
+                <td class="action-buttons">
+                  ${actionButtons}
+                  <button onclick="toggleOrderDetails('${order.id}')" class="view-details-btn">View Details</button>
+                </td>
+              `;
+              ordersTable.appendChild(tr);
+
+              // Add order details row
+              const detailsRow = document.createElement('tr');
+              detailsRow.id = `order-details-${order.id}`;
+              detailsRow.className = 'order-details';
+              detailsRow.innerHTML = `
+                <td colspan="6">
+                  <div class="order-items">
+                    ${(order.cart || []).map(item => `
+                      <div class="order-item">
+                        <img src="${item.image || ''}" alt="${item.name}" onerror="this.src='placeholder.jpg'">
+                        <div class="order-item-info">
+                          <div class="order-item-name">${item.name}</div>
+                          <div class="order-item-price">Rs. ${item.price} x ${item.quantity}</div>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                  <div class="order-summary">
+                    <div class="summary-item">
+                      <h4>Shipping Address</h4>
+                      <p>${order.shipping?.name || ''}, ${order.shipping?.address || ''}, ${order.shipping?.city || ''}, ${order.shipping?.postal || ''}</p>
+                    </div>
+                    <div class="summary-item">
+                      <h4>Payment Method</h4>
+                      <p>${order.paymentMethod || 'Not specified'}</p>
+                    </div>
+                    <div class="summary-item">
+                      <h4>Order Notes</h4>
+                      <p>${order.notes || 'No notes'}</p>
+                    </div>
+                    <div class="summary-item">
+                      <h4>Last Updated</h4>
+                      <p>${order.statusUpdatedAt ? new Date(order.statusUpdatedAt.toDate()).toLocaleString() : 'Never'}</p>
+                    </div>
+                  </div>
+                </td>
+              `;
+              ordersTable.appendChild(detailsRow);
+            });
+          } catch (error) {
+            console.error('Error updating orders table:', error);
+            ordersTable.innerHTML = `
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 20px; color: #dc3545;">
+                  Error loading orders. Please refresh the page.
+                </td>
+              </tr>
+            `;
+          }
+        }
+
+        // Filter event listeners
+        statusFilter.addEventListener('change', () => {
+          try {
+            const filteredOrders = filterOrders(allOrders, statusFilter.value, dateFilter.value);
+            updateOrderStats(allOrders);
+            updateOrdersTable(filteredOrders);
+          } catch (error) {
+            console.error('Error handling status filter change:', error);
+          }
+        });
+
+        dateFilter.addEventListener('change', () => {
+          try {
+            const filteredOrders = filterOrders(allOrders, statusFilter.value, dateFilter.value);
+            updateOrderStats(allOrders);
+            updateOrdersTable(filteredOrders);
+          } catch (error) {
+            console.error('Error handling date filter change:', error);
+          }
+        });
+
+        // Toggle order details
+        window.toggleOrderDetails = function(orderId) {
+          const detailsRow = document.getElementById(`order-details-${orderId}`);
+          if (detailsRow) {
+            detailsRow.classList.toggle('active');
+          }
+        };
 
         // Create coupon
         btn.addEventListener('click', async () => {
@@ -252,7 +1469,8 @@
               code, 
               discount, 
               expiry,
-              createdAt: new Date()
+              createdAt: serverTimestamp(),
+              createdBy: localStorage.getItem('adminEmail')
             });
             msg.textContent = 'Coupon created successfully!';
             msg.className = 'success';
@@ -268,77 +1486,213 @@
           }
         });
 
-        // Update order status
-        async function updateOrderStatus(orderId, newStatus) {
+        // Settings Panel Functions
+        window.saveStoreSettings = async function() {
           try {
-            await updateDoc(doc(db, 'orders', orderId), {
-              status: newStatus,
-              statusUpdatedAt: new Date()
+            const settings = {
+              name: document.getElementById('storeName').value,
+              description: document.getElementById('storeDescription').value,
+              currency: document.getElementById('storeCurrency').value,
+              updatedAt: serverTimestamp(),
+              updatedBy: localStorage.getItem('adminEmail')
+            };
+
+            await setDoc(doc(db, 'settings', 'store'), settings);
+            
+            document.getElementById('storeSettingsMsg').textContent = 'Store settings saved successfully!';
+            document.getElementById('storeSettingsMsg').className = 'settings-msg success';
+          } catch (error) {
+            console.error('Error saving store settings:', error);
+            document.getElementById('storeSettingsMsg').textContent = 'Error saving settings. Please try again.';
+            document.getElementById('storeSettingsMsg').className = 'settings-msg error';
+          }
+        };
+
+        window.addNewAdmin = async function() {
+          try {
+            const email = document.getElementById('newAdminEmail').value.trim();
+            const password = document.getElementById('newAdminPassword').value;
+
+            if (!email || !password) {
+              document.getElementById('adminManagementMsg').textContent = 'Please fill all fields';
+              document.getElementById('adminManagementMsg').className = 'settings-msg error';
+              return;
+            }
+
+            // Check if admin already exists
+            const adminQuery = query(collection(db, 'admins'), where('email', '==', email));
+            const adminSnapshot = await getDocs(adminQuery);
+
+            if (!adminSnapshot.empty) {
+              document.getElementById('adminManagementMsg').textContent = 'Admin already exists';
+              document.getElementById('adminManagementMsg').className = 'settings-msg error';
+              return;
+            }
+
+            await addDoc(collection(db, 'admins'), {
+              email,
+              password,
+              createdAt: serverTimestamp(),
+              createdBy: localStorage.getItem('adminEmail')
             });
-          } catch (e) {
-            console.error('Error updating order status:', e);
+
+            document.getElementById('newAdminEmail').value = '';
+            document.getElementById('newAdminPassword').value = '';
+            document.getElementById('adminManagementMsg').textContent = 'Admin added successfully!';
+            document.getElementById('adminManagementMsg').className = 'settings-msg success';
+
+            loadAdminsList();
+          } catch (error) {
+            console.error('Error adding admin:', error);
+            document.getElementById('adminManagementMsg').textContent = 'Error adding admin. Please try again.';
+            document.getElementById('adminManagementMsg').className = 'settings-msg error';
+          }
+        };
+
+        window.deleteAdmin = async function(adminId) {
+          try {
+            if (confirm('Are you sure you want to delete this admin?')) {
+              await deleteDoc(doc(db, 'admins', adminId));
+              loadAdminsList();
+            }
+          } catch (error) {
+            console.error('Error deleting admin:', error);
+            alert('Error deleting admin. Please try again.');
+          }
+        };
+
+        window.saveEmailSettings = async function() {
+          try {
+            const settings = {
+              orderConfirmationTemplate: document.getElementById('orderConfirmationTemplate').value,
+              shippingTemplate: document.getElementById('shippingTemplate').value,
+              sendOrderUpdates: document.getElementById('sendOrderUpdates').checked,
+              updatedAt: serverTimestamp(),
+              updatedBy: localStorage.getItem('adminEmail')
+            };
+
+            await setDoc(doc(db, 'settings', 'email'), settings);
+            
+            document.getElementById('emailSettingsMsg').textContent = 'Email settings saved successfully!';
+            document.getElementById('emailSettingsMsg').className = 'settings-msg success';
+          } catch (error) {
+            console.error('Error saving email settings:', error);
+            document.getElementById('emailSettingsMsg').textContent = 'Error saving settings. Please try again.';
+            document.getElementById('emailSettingsMsg').className = 'settings-msg error';
+          }
+        };
+
+        window.savePaymentSettings = async function() {
+          try {
+            const settings = {
+              cashOnDelivery: document.getElementById('enableCashOnDelivery').checked,
+              cardPayment: document.getElementById('enableCardPayment').checked,
+              upi: document.getElementById('enableUPI').checked,
+              updatedAt: serverTimestamp(),
+              updatedBy: localStorage.getItem('adminEmail')
+            };
+
+            await setDoc(doc(db, 'settings', 'payment'), settings);
+            
+            document.getElementById('paymentSettingsMsg').textContent = 'Payment settings saved successfully!';
+            document.getElementById('paymentSettingsMsg').className = 'settings-msg success';
+          } catch (error) {
+            console.error('Error saving payment settings:', error);
+            document.getElementById('paymentSettingsMsg').textContent = 'Error saving settings. Please try again.';
+            document.getElementById('paymentSettingsMsg').className = 'settings-msg error';
+          }
+        };
+
+        // Load existing settings
+        async function loadSettings() {
+          try {
+            // Load store settings
+            const storeSettings = await getDoc(doc(db, 'settings', 'store'));
+            if (storeSettings.exists()) {
+              const data = storeSettings.data();
+              document.getElementById('storeName').value = data.name || '';
+              document.getElementById('storeDescription').value = data.description || '';
+              document.getElementById('storeCurrency').value = data.currency || 'Rs.';
+            }
+
+            // Load email settings
+            const emailSettings = await getDoc(doc(db, 'settings', 'email'));
+            if (emailSettings.exists()) {
+              const data = emailSettings.data();
+              document.getElementById('orderConfirmationTemplate').value = data.orderConfirmationTemplate || '';
+              document.getElementById('shippingTemplate').value = data.shippingTemplate || '';
+              document.getElementById('sendOrderUpdates').checked = data.sendOrderUpdates ?? true;
+            }
+
+            // Load payment settings
+            const paymentSettings = await getDoc(doc(db, 'settings', 'payment'));
+            if (paymentSettings.exists()) {
+              const data = paymentSettings.data();
+              document.getElementById('enableCashOnDelivery').checked = data.cashOnDelivery ?? true;
+              document.getElementById('enableCardPayment').checked = data.cardPayment ?? true;
+              document.getElementById('enableUPI').checked = data.upi ?? true;
+            }
+          } catch (error) {
+            console.error('Error loading settings:', error);
           }
         }
 
-        // Listen orders in real-time
-        const ordersQuery = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
-        onSnapshot(ordersQuery, snapshot => {
-          ordersTable.innerHTML = '';
-          snapshot.forEach(doc => {
-            const o = doc.data();
-            const tr = document.createElement('tr');
-            
-            // Format cart items for display
-            const cartItems = o.cart || [];
-            const itemsDisplay = cartItems.map(item => 
-              `${item.name} (${item.quantity}x)`
-            ).join(', ');
+        // Load admins list
+        async function loadAdminsList() {
+          try {
+            const adminsList = document.getElementById('adminsList');
+            adminsList.innerHTML = '<h4 style="margin-bottom: 10px;">Current Admins</h4>';
 
-            // Format shipping info
-            const shipping = o.shipping || {};
-            const shippingDisplay = `${shipping.name}, ${shipping.address}, ${shipping.city}, ${shipping.postal}`;
+            const adminsQuery = query(collection(db, 'admins'), orderBy('createdAt', 'desc'));
+            const snapshot = await getDocs(adminsQuery);
 
-            // Format date
-            const date = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
-            const formattedDate = date.toLocaleString();
+            snapshot.forEach(doc => {
+              const admin = doc.data();
+              const div = document.createElement('div');
+              div.style.display = 'flex';
+              div.style.justifyContent = 'space-between';
+              div.style.alignItems = 'center';
+              div.style.padding = '8px';
+              div.style.marginBottom = '5px';
+              div.style.background = '#fff';
+              div.style.borderRadius = '4px';
 
-            // Get current status
-            const status = o.status || 'pending';
-            const statusClass = `status-${status}`;
-
-            // Create action buttons based on current status
-            let actionButtons = '';
-            if (status === 'pending') {
-              actionButtons = `
-                <button onclick="updateOrderStatus('${doc.id}', 'processing')" class="process-btn">Process</button>
+              div.innerHTML = `
+                <span>${admin.email}</span>
+                <button onclick="deleteAdmin('${doc.id}')" class="settings-btn delete-btn" 
+                  ${admin.email === localStorage.getItem('adminEmail') ? 'disabled' : ''}>
+                  Delete
+                </button>
               `;
-            } else if (status === 'processing') {
-              actionButtons = `
-                <button onclick="updateOrderStatus('${doc.id}', 'shipped')" class="ship-btn">Ship</button>
-              `;
-            } else if (status === 'shipped') {
-              actionButtons = `
-                <button onclick="updateOrderStatus('${doc.id}', 'delivered')" class="deliver-btn">Mark Delivered</button>
-              `;
-            }
 
-            tr.innerHTML = `
-              <td>${doc.id}</td>
-              <td>${o.email || 'guest'}</td>
-              <td>${itemsDisplay}</td>
-              <td>${shippingDisplay}</td>
-              <td>${o.paymentMethod || ''}</td>
-              <td>Rs. ${(o.total || 0).toFixed(2)}</td>
-              <td>${formattedDate}</td>
-              <td class="${statusClass}">${status.charAt(0).toUpperCase() + status.slice(1)}</td>
-              <td class="action-buttons">${actionButtons}</td>
-            `;
-            ordersTable.appendChild(tr);
-          });
+              adminsList.appendChild(div);
+            });
+          } catch (error) {
+            console.error('Error loading admins:', error);
+          }
+        }
+
+        // Show settings when clicking settings menu item
+        document.querySelector('.menu-item[href="#"]').addEventListener('click', function(e) {
+          e.preventDefault();
+          document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+          this.classList.add('active');
+          
+          // Hide other sections
+          document.querySelector('.orders-section').style.display = 'none';
+          document.querySelector('.coupon-section').style.display = 'none';
+          
+          // Show settings section
+          document.getElementById('settingsSection').style.display = 'block';
+          
+          // Load settings
+          loadSettings();
+          loadAdminsList();
         });
 
-        // Make updateOrderStatus available globally
-        window.updateOrderStatus = updateOrderStatus;
+        // Initial load
+        loadSettings();
+        loadAdminsList();
       }
     });
   </script>

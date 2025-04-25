@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Cart & Product Functionality ---
   let cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+  let favoriteItems = JSON.parse(localStorage.getItem('favoriteItems')) || [];
   const slider = document.querySelector('.side_cart_view');
   let shippingData = {};
   let appliedCoupon = null; // Track applied coupon
@@ -231,6 +232,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 productsContainer.appendChild(card);
             });
+
+            // Initialize favorite buttons after products are loaded
+            initializeFavoriteButtons();
         })
         .catch(error => {
             console.error('Error fetching products:', error);
@@ -389,14 +393,12 @@ document.addEventListener('DOMContentLoaded', () => {
       // Add active class to selected method
       method.classList.add('active');
       // Show relevant fields
-      const paymentMethod = method.getAttribute('data-method');
-      showPaymentFields(paymentMethod);
+      showPaymentFields(method);
     });
   });
 
   function showPaymentFields(method) {
     const fields = {
-      card: document.getElementById('card-fields'),
       easypaisa: document.getElementById('easypaisa-fields'),
       cod: document.getElementById('cod-fields')
     };
@@ -742,6 +744,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Initialize favorite buttons for all products
+  function initializeFavoriteButtons() {
+    document.querySelectorAll('.favorite-btn').forEach(btn => {
+      const productId = btn.getAttribute('data-product-id');
+      updateFavoriteButton(productId);
+    });
+  }
+
   // Track user behavior
   function trackUserBehavior(productId, action) {
     if (isAuthenticated && Clerk.user) {
@@ -1011,6 +1021,49 @@ document.addEventListener('DOMContentLoaded', () => {
   //   icon: 'ri-share-line',
   //   duration: 0
   // });
+
+  // Add placeholder animation for search
+  const searchInput = document.querySelector('.searchBar');
+  const placeholders = [
+    'Search for fashion items...',
+    'Looking for accessories?',
+    'Find your style...',
+    'Discover new trends...',
+    'Search for shoes...',
+    'Find the perfect outfit...',
+    'Looking for jewelry?',
+    'Search for bags...',
+    'Find your favorite brands...',
+    'Discover exclusive deals...'
+  ];
+
+  let currentPlaceholderIndex = 0;
+  let placeholderInterval;
+
+  function updatePlaceholder() {
+    if (searchInput && !searchInput.value) {
+      searchInput.placeholder = placeholders[currentPlaceholderIndex];
+      currentPlaceholderIndex = (currentPlaceholderIndex + 1) % placeholders.length;
+    }
+  }
+
+  // Initialize placeholder animation
+  if (searchInput) {
+    // Set initial placeholder
+    searchInput.placeholder = placeholders[0];
+    
+    // Start the interval
+    placeholderInterval = setInterval(updatePlaceholder, 2000);
+    
+    // Clear interval when user starts typing
+    searchInput.addEventListener('input', () => {
+      if (searchInput.value) {
+        clearInterval(placeholderInterval);
+      } else {
+        placeholderInterval = setInterval(updatePlaceholder, 2000);
+      }
+    });
+  }
 
 });
 
