@@ -203,29 +203,189 @@ document.addEventListener('DOMContentLoaded', () => {
       // Add favorite functionality
       let favoriteItems = JSON.parse(localStorage.getItem('favoriteItems')) || [];
 
+      // Enhanced Recommendation System
+      class EnhancedRecommendationSystem {
+        constructor() {
+          this.userBehavior = {};
+          this.productSimilarity = {};
+          this.categoryPreferences = {};
+          this.pricePreferences = {};
+        }
+
+        // Record user behavior
+        recordBehavior(userId, productId, action) {
+          if (!this.userBehavior[userId]) {
+            this.userBehavior[userId] = {};
+          }
+          if (!this.userBehavior[userId][productId]) {
+            this.userBehavior[userId][productId] = {
+              views: 0,
+              favorites: 0,
+              purchases: 0,
+              cartAdds: 0,
+              lastInteraction: null
+            };
+          }
+          
+          this.userBehavior[userId][productId][action]++;
+          this.userBehavior[userId][productId].lastInteraction = new Date();
+          
+          // Update category preferences
+          const product = products.find(p => p.id === productId);
+          if (product) {
+            if (!this.categoryPreferences[userId]) {
+              this.categoryPreferences[userId] = {};
+            }
+            this.categoryPreferences[userId][product.category] = 
+              (this.categoryPreferences[userId][product.category] || 0) + 1;
+          }
+        }
+
+        // Calculate product similarity
+        calculateProductSimilarity(product1, product2) {
+          let similarity = 0;
+          
+          // Category similarity
+          if (product1.category === product2.category) {
+            similarity += 0.4;
+          }
+          
+          // Price range similarity
+          const priceDiff = Math.abs(product1.price.discounted - product2.price.discounted);
+          const maxPrice = Math.max(product1.price.discounted, product2.price.discounted);
+          similarity += 0.3 * (1 - priceDiff / maxPrice);
+          
+          // Description similarity (simple keyword matching)
+          const words1 = product1.description.toLowerCase().split(' ');
+          const words2 = product2.description.toLowerCase().split(' ');
+          const commonWords = words1.filter(word => words2.includes(word));
+          similarity += 0.3 * (commonWords.length / Math.max(words1.length, words2.length));
+          
+          return similarity;
+        }
+
+        // Get personalized recommendations
+        getPersonalizedRecommendations(userId, limit = 5) {
+          if (!this.userBehavior[userId]) return [];
+          
+          const userProducts = this.userBehavior[userId];
+          const recommendations = new Map();
+          
+          // Get user's preferred categories
+          const preferredCategories = Object.entries(this.categoryPreferences[userId] || {})
+            .sort((a, b) => b[1] - a[1])
+            .map(([category]) => category);
+          
+          // Calculate recommendation scores
+          products.forEach(product => {
+            if (userProducts[product.id]) return; // Skip products user has already interacted with
+            
+            let score = 0;
+            
+            // Category preference score
+            if (preferredCategories.includes(product.category)) {
+              score += 0.4;
+            }
+            
+            // Similarity score with user's favorite products
+            Object.entries(userProducts).forEach(([productId, behavior]) => {
+              if (behavior.favorites > 0) {
+                const similarProduct = products.find(p => p.id === parseInt(productId));
+                if (similarProduct) {
+                  score += 0.3 * this.calculateProductSimilarity(product, similarProduct);
+                }
+              }
+            });
+            
+            // Popularity score
+            const popularity = Object.values(this.userBehavior)
+              .filter(behavior => behavior[product.id])
+              .length;
+            score += 0.3 * (popularity / products.length);
+            
+            recommendations.set(product.id, score);
+          });
+          
+          // Return top recommendations
+          return Array.from(recommendations.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, limit)
+            .map(([productId]) => productId);
+        }
+
+        // Get trending products
+        getTrendingProducts(limit = 5) {
+          const productScores = new Map();
+          
+          products.forEach(product => {
+            let score = 0;
+            
+            // Calculate score based on recent interactions
+            Object.values(this.userBehavior).forEach(userBehavior => {
+              if (userBehavior[product.id]) {
+                const behavior = userBehavior[product.id];
+                const timeWeight = this.getTimeWeight(behavior.lastInteraction);
+                
+                score += (behavior.views * 0.2 + 
+                         behavior.favorites * 0.3 + 
+                         behavior.purchases * 0.4 + 
+                         behavior.cartAdds * 0.1) * timeWeight;
+              }
+            });
+            
+            productScores.set(product.id, score);
+          });
+          
+          return Array.from(productScores.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, limit)
+            .map(([productId]) => productId);
+        }
+
+        // Get time weight for recent interactions
+        getTimeWeight(lastInteraction) {
+          if (!lastInteraction) return 0;
+          
+          const now = new Date();
+          const hoursSinceInteraction = (now - lastInteraction) / (1000 * 60 * 60);
+          
+          // Exponential decay: more recent interactions have higher weight
+          return Math.exp(-hoursSinceInteraction / 24); // 24-hour decay
+        }
+      }
+
+      // Initialize enhanced recommendation system
+      const enhancedRecommendationSystem = new EnhancedRecommendationSystem();
+
+      // Update product display with recommendations
       function displayProducts(list) {
         productsContainer.innerHTML = '';
         
         // Get personalized recommendations if user is logged in
         let recommendedProducts = [];
+        let trendingProducts = [];
+        
         if (isAuthenticated && Clerk.user) {
-          recommendedProducts = recommendationSystem.getPersonalizedRecommendations(Clerk.user.id);
+          recommendedProducts = enhancedRecommendationSystem.getPersonalizedRecommendations(Clerk.user.id);
+          trendingProducts = enhancedRecommendationSystem.getTrendingProducts();
         }
 
         list.forEach(product => {
           const isFavorite = favoriteItems.some(item => item.id === product.id);
           const isRecommended = recommendedProducts.includes(product.id);
+          const isTrending = trendingProducts.includes(product.id);
           
           const card = document.createElement('div');
           card.classList.add('product-card');
           card.setAttribute('data-product-id', product.id);
-          if (isRecommended) {
-            card.classList.add('recommended');
-          }
+          
+          if (isRecommended) card.classList.add('recommended');
+          if (isTrending) card.classList.add('trending');
           
           card.innerHTML = `
             <div class="badge">${escapeHTML(product.badge)}</div>
             ${isRecommended ? '<div class="recommendation-badge">Recommended</div>' : ''}
+            ${isTrending ? '<div class="trending-badge">Trending</div>' : ''}
             <div class="product-tumb"><img src="${escapeHTML(product.image)}" alt=""></div>
             <div class="product-details">
               <span class="product-catagory">${escapeHTML(product.category)}</span>
@@ -248,9 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
           card.querySelector('.ri-shopping-cart-line').parentElement.addEventListener('click', e => { 
             e.preventDefault(); 
             addToCart(product);
-            if (isAuthenticated && Clerk.user) {
-              recommendationSystem.recordBehavior(Clerk.user.id, product.id, 'purchases');
-            }
+            trackUserBehavior(product.id, 'cartAdds');
           });
           
           // Add share button functionality
@@ -265,15 +423,11 @@ document.addEventListener('DOMContentLoaded', () => {
           favoriteBtn.addEventListener('click', (e) => {
             e.preventDefault();
             toggleFavorite(product);
-            if (isAuthenticated && Clerk.user) {
-              recommendationSystem.recordBehavior(Clerk.user.id, product.id, 'favorites');
-            }
+            trackUserBehavior(product.id, 'favorites');
           });
 
-          // Record view when product is displayed
-          if (isAuthenticated && Clerk.user) {
-            recommendationSystem.recordBehavior(Clerk.user.id, product.id, 'views');
-          }
+          // Track view when product is displayed
+          trackUserBehavior(product.id, 'views');
           
           productsContainer.appendChild(card);
         });
@@ -291,18 +445,56 @@ document.addEventListener('DOMContentLoaded', () => {
     .catch(err => console.error('Error fetching products:', err));
 
   // Cart icon toggle
-  document.querySelector('#cart')?.addEventListener('click', () => {
+  document.querySelector('#cart')?.addEventListener('click', (e) => {
+    e.stopPropagation(); // Prevent event from bubbling up
     slider.classList.add('activate');
   });
 
   // Close cart button
-  document.querySelector('.close-cart')?.addEventListener('click', () => {
+  document.querySelector('.close-cart')?.addEventListener('click', (e) => {
+    e.stopPropagation(); // Prevent event from bubbling up
     slider.classList.remove('activate');
   });
 
   // Close cart when clicking outside
   document.addEventListener('click', (e) => {
+    // Check if the click is outside the cart and not on the cart icon
     if (!slider.contains(e.target) && !e.target.closest('#cart')) {
+      slider.classList.remove('activate');
+    }
+  });
+
+  // Prevent cart from closing when clicking inside
+  slider.addEventListener('click', (e) => {
+    e.stopPropagation(); // Prevent event from bubbling up
+  });
+
+  // Add touch event handling for mobile
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  slider.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+  });
+
+  slider.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+  });
+
+  function handleSwipe() {
+    const swipeThreshold = 100; // Minimum distance for swipe
+    const swipeDistance = touchEndX - touchStartX;
+
+    // If swiped left (negative distance) and cart is open
+    if (swipeDistance < -swipeThreshold && slider.classList.contains('activate')) {
+      slider.classList.remove('activate');
+    }
+  }
+
+  // Add keyboard event handling
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && slider.classList.contains('activate')) {
       slider.classList.remove('activate');
     }
   });
@@ -749,6 +941,193 @@ document.addEventListener('DOMContentLoaded', () => {
       favoriteBtn.classList.toggle('active', isFavorite);
     }
   }
+
+  // Track user behavior
+  function trackUserBehavior(productId, action) {
+    if (isAuthenticated && Clerk.user) {
+      enhancedRecommendationSystem.recordBehavior(Clerk.user.id, productId, action);
+    }
+  }
+
+  // Store Tour Functionality
+  class StoreTour {
+    constructor() {
+      this.steps = [
+        {
+          target: '.search',
+          title: 'Search Products',
+          content: 'Find your favorite products using our search feature.',
+          position: 'bottom'
+        },
+        {
+          target: '#cart',
+          title: 'Shopping Cart',
+          content: 'View and manage your shopping cart here.',
+          position: 'left'
+        },
+        {
+          target: '.products',
+          title: 'Product Collection',
+          content: 'Browse through our wide range of products.',
+          position: 'top'
+        },
+        {
+          target: '.product-card',
+          title: 'Product Details',
+          content: 'Click on a product to view details, add to cart, or save to favorites.',
+          position: 'right'
+        },
+        {
+          target: '.hero__buttons',
+          title: 'Quick Actions',
+          content: 'Use these buttons to start shopping or contact us.',
+          position: 'bottom'
+        }
+      ];
+      
+      this.currentStep = 0;
+      this.isFirstVisit = !localStorage.getItem('hasVisited');
+      this.isTourActive = false;
+      
+      this.init();
+    }
+    
+    init() {
+      if (this.isFirstVisit) {
+        this.createTourElements();
+        // Delay tour start to ensure all elements are loaded
+        setTimeout(() => this.startTour(), 1000);
+      }
+    }
+    
+    createTourElements() {
+      // Create overlay
+      this.overlay = document.createElement('div');
+      this.overlay.className = 'tour-overlay';
+      document.body.appendChild(this.overlay);
+      
+      // Create tooltip
+      this.tooltip = document.createElement('div');
+      this.tooltip.className = 'tour-tooltip';
+      document.body.appendChild(this.tooltip);
+      
+      // Add close button to tooltip
+      const closeButton = document.createElement('button');
+      closeButton.className = 'tour-close';
+      closeButton.innerHTML = '×';
+      closeButton.addEventListener('click', () => this.endTour());
+      this.tooltip.appendChild(closeButton);
+      
+      // Add event listeners
+      this.overlay.addEventListener('click', (e) => {
+        if (e.target === this.overlay) {
+          this.endTour();
+        }
+      });
+    }
+    
+    startTour() {
+      if (this.isTourActive) return;
+      
+      this.isTourActive = true;
+      this.overlay.classList.add('active');
+      this.showStep(0);
+      
+      // Prevent body scrolling
+      document.body.style.overflow = 'hidden';
+    }
+    
+    showStep(index) {
+      if (index >= this.steps.length) {
+        this.endTour();
+        return;
+      }
+      
+      const step = this.steps[index];
+      const target = document.querySelector(step.target);
+      
+      if (!target) {
+        this.showStep(index + 1);
+        return;
+      }
+      
+      // Position tooltip
+      const rect = target.getBoundingClientRect();
+      this.tooltip.className = `tour-tooltip ${step.position}`;
+      
+      switch (step.position) {
+        case 'top':
+          this.tooltip.style.top = `${rect.top - this.tooltip.offsetHeight - 20}px`;
+          this.tooltip.style.left = `${rect.left + rect.width / 2 - this.tooltip.offsetWidth / 2}px`;
+          break;
+        case 'bottom':
+          this.tooltip.style.top = `${rect.bottom + 20}px`;
+          this.tooltip.style.left = `${rect.left + rect.width / 2 - this.tooltip.offsetWidth / 2}px`;
+          break;
+        case 'left':
+          this.tooltip.style.top = `${rect.top + rect.height / 2 - this.tooltip.offsetHeight / 2}px`;
+          this.tooltip.style.left = `${rect.left - this.tooltip.offsetWidth - 20}px`;
+          break;
+        case 'right':
+          this.tooltip.style.top = `${rect.top + rect.height / 2 - this.tooltip.offsetHeight / 2}px`;
+          this.tooltip.style.left = `${rect.right + 20}px`;
+          break;
+      }
+      
+      // Update tooltip content
+      this.tooltip.innerHTML = `
+        <button class="tour-close">×</button>
+        <h3>${step.title}</h3>
+        <p>${step.content}</p>
+        <div class="tour-buttons">
+          ${index > 0 ? '<button class="tour-button secondary prev">Previous</button>' : ''}
+          <button class="tour-button primary next">${index === this.steps.length - 1 ? 'Finish' : 'Next'}</button>
+          <button class="tour-button skip">Skip Tour</button>
+        </div>
+        <div class="tour-progress">
+          ${this.steps.map((_, i) => `
+            <div class="tour-progress-dot ${i === index ? 'active' : ''}"></div>
+          `).join('')}
+        </div>
+      `;
+      
+      this.tooltip.classList.add('active');
+      
+      // Add event listeners
+      const nextBtn = this.tooltip.querySelector('.next');
+      const prevBtn = this.tooltip.querySelector('.prev');
+      const skipBtn = this.tooltip.querySelector('.skip');
+      const closeBtn = this.tooltip.querySelector('.tour-close');
+      
+      nextBtn.addEventListener('click', () => this.showStep(index + 1));
+      if (prevBtn) prevBtn.addEventListener('click', () => this.showStep(index - 1));
+      skipBtn.addEventListener('click', () => this.endTour());
+      closeBtn.addEventListener('click', () => this.endTour());
+    }
+    
+    endTour() {
+      this.isTourActive = false;
+      this.overlay.classList.remove('active');
+      this.tooltip.classList.remove('active');
+      localStorage.setItem('hasVisited', 'true');
+      
+      // Restore body scrolling
+      document.body.style.overflow = '';
+      
+      // Remove tour elements
+      setTimeout(() => {
+        if (this.overlay && this.overlay.parentNode) {
+          this.overlay.parentNode.removeChild(this.overlay);
+        }
+        if (this.tooltip && this.tooltip.parentNode) {
+          this.tooltip.parentNode.removeChild(this.tooltip);
+        }
+      }, 300);
+    }
+  }
+
+  // Initialize store tour for new users
+  const storeTour = new StoreTour();
 
 });
 
