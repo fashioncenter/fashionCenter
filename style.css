@@ -482,6 +482,7 @@ header .search i:hover {
     object-fit: cover;
     border-radius: 20px;
     /* box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); */
+    filter: drop-shadow(20px 15px 5px #161616);
 }
 
 .hero__features {
