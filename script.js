@@ -1,4 +1,5 @@
 import { collection, addDoc, doc, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js";
+import { recommendationSystem } from './recommendation.js';
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -171,13 +172,31 @@ document.addEventListener('DOMContentLoaded', () => {
       const productsContainer = document.querySelector('.products');
       const searchBar = document.querySelector('.searchBar');
 
+      // Add favorite functionality
+      let favoriteItems = JSON.parse(localStorage.getItem('favoriteItems')) || [];
+
       function displayProducts(list) {
         productsContainer.innerHTML = '';
+        
+        // Get personalized recommendations if user is logged in
+        let recommendedProducts = [];
+        if (isAuthenticated && Clerk.user) {
+          recommendedProducts = recommendationSystem.getPersonalizedRecommendations(Clerk.user.id);
+        }
+
         list.forEach(product => {
+          const isFavorite = favoriteItems.some(item => item.id === product.id);
+          const isRecommended = recommendedProducts.includes(product.id);
+          
           const card = document.createElement('div');
           card.classList.add('product-card');
+          if (isRecommended) {
+            card.classList.add('recommended');
+          }
+          
           card.innerHTML = `
             <div class="badge">${escapeHTML(product.badge)}</div>
+            ${isRecommended ? '<div class="recommendation-badge">Recommended</div>' : ''}
             <div class="product-tumb"><img src="${escapeHTML(product.image)}" alt=""></div>
             <div class="product-details">
               <span class="product-catagory">${escapeHTML(product.category)}</span>
@@ -186,13 +205,48 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="product-bottom-details">
                 <div class="product-price"><small>$${product.price.original.toFixed(2)}</small> $${product.price.discounted.toFixed(2)}</div>
                 <div class="product-links">
-                  <a href="#"><i class="ri-heart-line"></i></a>
+                  <a href="#" class="share-btn" data-product='${JSON.stringify(product)}'><i class="ri-share-line"></i></a>
+                  <a href="#" class="favorite-btn ${isFavorite ? 'active' : ''}" data-product-id="${product.id}">
+                    <i class="ri-heart-${isFavorite ? 'fill' : 'line'}"></i>
+                  </a>
                   <a href="#"><i class="ri-shopping-cart-line"></i></a>
                 </div>
               </div>
             </div>
           `;
-          card.querySelector('.ri-shopping-cart-line').parentElement.addEventListener('click', e => { e.preventDefault(); addToCart(product); });
+          
+          // Add event listeners
+          card.querySelector('.ri-shopping-cart-line').parentElement.addEventListener('click', e => { 
+            e.preventDefault(); 
+            addToCart(product);
+            if (isAuthenticated && Clerk.user) {
+              recommendationSystem.recordBehavior(Clerk.user.id, product.id, 'purchases');
+            }
+          });
+          
+          // Add share button functionality
+          const shareBtn = card.querySelector('.share-btn');
+          shareBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const productData = JSON.parse(shareBtn.getAttribute('data-product'));
+            shareProduct(productData);
+          });
+          
+          // Add favorite button functionality
+          const favoriteBtn = card.querySelector('.favorite-btn');
+          favoriteBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleFavorite(product);
+            if (isAuthenticated && Clerk.user) {
+              recommendationSystem.recordBehavior(Clerk.user.id, product.id, 'favorites');
+            }
+          });
+
+          // Record view when product is displayed
+          if (isAuthenticated && Clerk.user) {
+            recommendationSystem.recordBehavior(Clerk.user.id, product.id, 'views');
+          }
+          
           productsContainer.appendChild(card);
         });
       }
@@ -532,5 +586,81 @@ document.addEventListener('DOMContentLoaded', () => {
       couponMessage.style.color = 'red';
     }
   });
+
+  // Function to handle product sharing
+  function shareProduct(product) {
+    const shareUrl = window.location.href;
+    const shareText = `Check out this amazing ${product.name} at M. Fashion! Only $${product.price.discounted.toFixed(2)}`;
+    
+    // Create share modal
+    const modal = document.createElement('div');
+    modal.className = 'share-modal';
+    modal.innerHTML = `
+      <div class="share-modal-content">
+        <h3>Share this product</h3>
+        <div class="share-buttons">
+          <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}" target="_blank" class="share-button facebook">
+            <i class="ri-facebook-fill"></i> Facebook
+          </a>
+          <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}" target="_blank" class="share-button twitter">
+            <i class="ri-twitter-fill"></i> Twitter
+          </a>
+          <a href="https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}" target="_blank" class="share-button whatsapp">
+            <i class="ri-whatsapp-fill"></i> WhatsApp
+          </a>
+          <button class="share-button copy-link" onclick="navigator.clipboard.writeText('${shareUrl}')">
+            <i class="ri-link"></i> Copy Link
+          </button>
+        </div>
+        <button class="close-share-modal">Close</button>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add event listener to close button
+    modal.querySelector('.close-share-modal').addEventListener('click', () => {
+      modal.remove();
+    });
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
+
+    // Show success message when link is copied
+    const copyButton = modal.querySelector('.copy-link');
+    copyButton.addEventListener('click', () => {
+      const originalText = copyButton.innerHTML;
+      copyButton.innerHTML = '<i class="ri-check-line"></i> Copied!';
+      setTimeout(() => {
+        copyButton.innerHTML = originalText;
+      }, 2000);
+    });
+  }
+
+  function toggleFavorite(product) {
+    const index = favoriteItems.findIndex(item => item.id === product.id);
+    if (index === -1) {
+      favoriteItems.push(product);
+      showCartMessage('Added to favorites');
+    } else {
+      favoriteItems.splice(index, 1);
+      showCartMessage('Removed from favorites');
+    }
+    localStorage.setItem('favoriteItems', JSON.stringify(favoriteItems));
+    updateFavoriteButton(product.id);
+  }
+
+  function updateFavoriteButton(productId) {
+    const favoriteBtn = document.querySelector(`.favorite-btn[data-product-id="${productId}"]`);
+    if (favoriteBtn) {
+      const isFavorite = favoriteItems.some(item => item.id === productId);
+      favoriteBtn.innerHTML = isFavorite ? '<i class="ri-heart-fill"></i>' : '<i class="ri-heart-line"></i>';
+      favoriteBtn.classList.toggle('active', isFavorite);
+    }
+  }
 
 });
