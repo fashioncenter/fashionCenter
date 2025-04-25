@@ -166,283 +166,83 @@ document.addEventListener('DOMContentLoaded', () => {
   refreshCart();
 
   // Fetch and display products
-  let products = []; // Make products array accessible globally
-  fetch('products.json')
-    .then(res => res.json())
-    .then(productsData => {
-      products = productsData; // Store products data
-      const productsContainer = document.querySelector('.products');
-      const searchBar = document.querySelector('.searchBar');
-
-      // Add dynamic search placeholder
-      function updateSearchPlaceholder() {
-        const searchBar = document.querySelector('.searchBar');
-        if (!searchBar) return;
-
-        // Get random product names for suggestions
-        const suggestions = products
-          .sort(() => Math.random() - 0.5)
-          .slice(0, 3)
-          .map(product => product.name);
-
-        let currentIndex = 0;
-        
-        function updatePlaceholder() {
-          searchBar.placeholder = `Search for ${suggestions[currentIndex]}...`;
-          currentIndex = (currentIndex + 1) % suggestions.length;
-        }
-
-        // Update placeholder every 3 seconds
-        updatePlaceholder();
-        setInterval(updatePlaceholder, 2000);
-      }
-
-      // Initialize dynamic placeholder
-      updateSearchPlaceholder();
-
-      // Add favorite functionality
-      let favoriteItems = JSON.parse(localStorage.getItem('favoriteItems')) || [];
-
-      // Enhanced Recommendation System
-      class EnhancedRecommendationSystem {
-        constructor() {
-          this.userBehavior = {};
-          this.productSimilarity = {};
-          this.categoryPreferences = {};
-          this.pricePreferences = {};
-        }
-
-        // Record user behavior
-        recordBehavior(userId, productId, action) {
-          if (!this.userBehavior[userId]) {
-            this.userBehavior[userId] = {};
-          }
-          if (!this.userBehavior[userId][productId]) {
-            this.userBehavior[userId][productId] = {
-              views: 0,
-              favorites: 0,
-              purchases: 0,
-              cartAdds: 0,
-              lastInteraction: null
-            };
-          }
-          
-          this.userBehavior[userId][productId][action]++;
-          this.userBehavior[userId][productId].lastInteraction = new Date();
-          
-          // Update category preferences
-          const product = products.find(p => p.id === productId);
-          if (product) {
-            if (!this.categoryPreferences[userId]) {
-              this.categoryPreferences[userId] = {};
+  function fetchAndDisplayProducts() {
+    fetch('products.json')
+        .then(res => res.json())
+        .then(productsData => {
+            const productsContainer = document.querySelector('.products-container');
+            if (!productsContainer) {
+                console.error('Products container not found');
+                return;
             }
-            this.categoryPreferences[userId][product.category] = 
-              (this.categoryPreferences[userId][product.category] || 0) + 1;
-          }
-        }
 
-        // Calculate product similarity
-        calculateProductSimilarity(product1, product2) {
-          let similarity = 0;
-          
-          // Category similarity
-          if (product1.category === product2.category) {
-            similarity += 0.4;
-          }
-          
-          // Price range similarity
-          const priceDiff = Math.abs(product1.price.discounted - product2.price.discounted);
-          const maxPrice = Math.max(product1.price.discounted, product2.price.discounted);
-          similarity += 0.3 * (1 - priceDiff / maxPrice);
-          
-          // Description similarity (simple keyword matching)
-          const words1 = product1.description.toLowerCase().split(' ');
-          const words2 = product2.description.toLowerCase().split(' ');
-          const commonWords = words1.filter(word => words2.includes(word));
-          similarity += 0.3 * (commonWords.length / Math.max(words1.length, words2.length));
-          
-          return similarity;
-        }
+            productsContainer.innerHTML = ''; // Clear existing products
 
-        // Get personalized recommendations
-        getPersonalizedRecommendations(userId, limit = 5) {
-          if (!this.userBehavior[userId]) return [];
-          
-          const userProducts = this.userBehavior[userId];
-          const recommendations = new Map();
-          
-          // Get user's preferred categories
-          const preferredCategories = Object.entries(this.categoryPreferences[userId] || {})
-            .sort((a, b) => b[1] - a[1])
-            .map(([category]) => category);
-          
-          // Calculate recommendation scores
-          products.forEach(product => {
-            if (userProducts[product.id]) return; // Skip products user has already interacted with
-            
-            let score = 0;
-            
-            // Category preference score
-            if (preferredCategories.includes(product.category)) {
-              score += 0.4;
-            }
-            
-            // Similarity score with user's favorite products
-            Object.entries(userProducts).forEach(([productId, behavior]) => {
-              if (behavior.favorites > 0) {
-                const similarProduct = products.find(p => p.id === parseInt(productId));
-                if (similarProduct) {
-                  score += 0.3 * this.calculateProductSimilarity(product, similarProduct);
-                }
-              }
-            });
-            
-            // Popularity score
-            const popularity = Object.values(this.userBehavior)
-              .filter(behavior => behavior[product.id])
-              .length;
-            score += 0.3 * (popularity / products.length);
-            
-            recommendations.set(product.id, score);
-          });
-          
-          // Return top recommendations
-          return Array.from(recommendations.entries())
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, limit)
-            .map(([productId]) => productId);
-        }
-
-        // Get trending products
-        getTrendingProducts(limit = 5) {
-          const productScores = new Map();
-          
-          products.forEach(product => {
-            let score = 0;
-            
-            // Calculate score based on recent interactions
-            Object.values(this.userBehavior).forEach(userBehavior => {
-              if (userBehavior[product.id]) {
-                const behavior = userBehavior[product.id];
-                const timeWeight = this.getTimeWeight(behavior.lastInteraction);
+            productsData.forEach(product => {
+                const card = document.createElement('div');
+                card.classList.add('product-card');
                 
-                score += (behavior.views * 0.2 + 
-                         behavior.favorites * 0.3 + 
-                         behavior.purchases * 0.4 + 
-                         behavior.cartAdds * 0.1) * timeWeight;
-              }
+                card.innerHTML = `
+                    <div class="product-tumb">
+                        <img src="${product.image}" alt="${product.name}">
+                    </div>
+                    <div class="product-details">
+                        <span class="product-catagory">${product.category}</span>
+                        <h4><a href="#">${product.name}</a></h4>
+                        <p>${product.description}</p>
+                        <div class="product-bottom-details">
+                            <div class="product-price">
+                                <small>PKR ${product.price.original.toFixed(2)}</small>
+                                PKR ${product.price.discounted.toFixed(2)}
+                            </div>
+                            <div class="product-links">
+                                <a href="#" class="share-btn" data-product-id="${product.id}">
+                                    <i class="ri-share-line"></i>
+                                </a>
+                                <a href="#" class="favorite-btn" data-product-id="${product.id}">
+                                    <i class="ri-heart-line"></i>
+                                </a>
+                                <a href="#" class="add-to-cart" data-product-id="${product.id}">
+                                    <i class="ri-shopping-cart-line"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Add event listeners
+                const addToCartBtn = card.querySelector('.add-to-cart');
+                addToCartBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    addToCart(product);
+                });
+
+                const favoriteBtn = card.querySelector('.favorite-btn');
+                favoriteBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    toggleFavorite(product);
+                });
+
+                const shareBtn = card.querySelector('.share-btn');
+                shareBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    shareProduct(product);
+                });
+
+                productsContainer.appendChild(card);
             });
-            
-            productScores.set(product.id, score);
-          });
-          
-          return Array.from(productScores.entries())
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, limit)
-            .map(([productId]) => productId);
-        }
-
-        // Get time weight for recent interactions
-        getTimeWeight(lastInteraction) {
-          if (!lastInteraction) return 0;
-          
-          const now = new Date();
-          const hoursSinceInteraction = (now - lastInteraction) / (1000 * 60 * 60);
-          
-          // Exponential decay: more recent interactions have higher weight
-          return Math.exp(-hoursSinceInteraction / 24); // 24-hour decay
-        }
-      }
-
-      // Initialize enhanced recommendation system
-      const enhancedRecommendationSystem = new EnhancedRecommendationSystem();
-
-      // Update product display with recommendations
-      function displayProducts(list) {
-        productsContainer.innerHTML = '';
-        
-        // Get personalized recommendations if user is logged in
-        let recommendedProducts = [];
-        let trendingProducts = [];
-        
-        if (isAuthenticated && Clerk.user) {
-          recommendedProducts = enhancedRecommendationSystem.getPersonalizedRecommendations(Clerk.user.id);
-          trendingProducts = enhancedRecommendationSystem.getTrendingProducts();
-        }
-
-        list.forEach(product => {
-          const isFavorite = favoriteItems.some(item => item.id === product.id);
-          const isRecommended = recommendedProducts.includes(product.id);
-          const isTrending = trendingProducts.includes(product.id);
-          
-          const card = document.createElement('div');
-          card.classList.add('product-card');
-          card.setAttribute('data-product-id', product.id);
-          
-          if (isRecommended) card.classList.add('recommended');
-          if (isTrending) card.classList.add('trending');
-          
-          card.innerHTML = `
-            <div class="badge">${escapeHTML(product.badge)}</div>
-            ${isRecommended ? '<div class="recommendation-badge">Recommended</div>' : ''}
-            ${isTrending ? '<div class="trending-badge">Trending</div>' : ''}
-            <div class="product-tumb"><img src="${escapeHTML(product.image)}" alt=""></div>
-            <div class="product-details">
-              <span class="product-catagory">${escapeHTML(product.category)}</span>
-              <h4><a href="#products/${product.id}">${escapeHTML(product.name)}</a></h4>
-              <p>${escapeHTML(product.description)}</p>
-              <div class="product-bottom-details">
-                <div class="product-price"><small>PKR ${product.price.original.toFixed(2)}</small> PKR ${product.price.discounted.toFixed(2)}</div>
-                <div class="product-links">
-                  <a href="#" class="share-btn" data-product-id="${product.id}"><i class="ri-share-line"></i></a>
-                  <a href="#" class="favorite-btn ${isFavorite ? 'active' : ''}" data-product-id="${product.id}">
-                    <i class="ri-heart-${isFavorite ? 'fill' : 'line'}"></i>
-                  </a>
-                  <a href="#"><i class="ri-shopping-cart-line"></i></a>
-                </div>
-              </div>
-            </div>
-          `;
-          
-          // Add event listeners
-          card.querySelector('.ri-shopping-cart-line').parentElement.addEventListener('click', e => { 
-            e.preventDefault(); 
-            addToCart(product);
-            trackUserBehavior(product.id, 'cartAdds');
-          });
-          
-          // Add share button functionality
-          const shareBtn = card.querySelector('.share-btn');
-          shareBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            shareProduct(product);
-          });
-          
-          // Add favorite button functionality
-          const favoriteBtn = card.querySelector('.favorite-btn');
-          favoriteBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            toggleFavorite(product);
-            trackUserBehavior(product.id, 'favorites');
-          });
-
-          // Track view when product is displayed
-          trackUserBehavior(product.id, 'views');
-          
-          productsContainer.appendChild(card);
+        })
+        .catch(error => {
+            console.error('Error fetching products:', error);
+            const productsContainer = document.querySelector('.products-container');
+            if (productsContainer) {
+                productsContainer.innerHTML = '<p class="error-message">Failed to load products. Please try again later.</p>';
+            }
         });
+  }
 
-        // Check if we need to navigate to a specific product
-        handleProductNavigation();
-      }
-
-      displayProducts(products);
-      if (searchBar) searchBar.addEventListener('input', () => {
-        const q = searchBar.value.toLowerCase();
-        displayProducts(products.filter(p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)));
-      });
-    })
-    .catch(err => console.error('Error fetching products:', err));
+  // Call the function when the page loads
+  fetchAndDisplayProducts();
 
   // Cart icon toggle
   document.querySelector('#cart')?.addEventListener('click', (e) => {
@@ -996,7 +796,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (this.isFirstVisit) {
         this.createTourElements();
         // Delay tour start to ensure all elements are loaded
-        setTimeout(() => this.startTour(), 1000);
+        setTimeout(() => this.startTour(), 1500);
       }
     }
     
@@ -1010,13 +810,6 @@ document.addEventListener('DOMContentLoaded', () => {
       this.tooltip = document.createElement('div');
       this.tooltip.className = 'tour-tooltip';
       document.body.appendChild(this.tooltip);
-      
-      // Add close button to tooltip
-      const closeButton = document.createElement('button');
-      closeButton.className = 'tour-close';
-      closeButton.innerHTML = '×';
-      closeButton.addEventListener('click', () => this.endTour());
-      this.tooltip.appendChild(closeButton);
       
       // Add event listeners
       this.overlay.addEventListener('click', (e) => {
@@ -1051,58 +844,73 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       
-      // Position tooltip
-      const rect = target.getBoundingClientRect();
-      this.tooltip.className = `tour-tooltip ${step.position}`;
+      // Scroll target into view
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
       
-      switch (step.position) {
-        case 'top':
-          this.tooltip.style.top = `${rect.top - this.tooltip.offsetHeight - 20}px`;
-          this.tooltip.style.left = `${rect.left + rect.width / 2 - this.tooltip.offsetWidth / 2}px`;
-          break;
-        case 'bottom':
-          this.tooltip.style.top = `${rect.bottom + 20}px`;
-          this.tooltip.style.left = `${rect.left + rect.width / 2 - this.tooltip.offsetWidth / 2}px`;
-          break;
-        case 'left':
-          this.tooltip.style.top = `${rect.top + rect.height / 2 - this.tooltip.offsetHeight / 2}px`;
-          this.tooltip.style.left = `${rect.left - this.tooltip.offsetWidth - 20}px`;
-          break;
-        case 'right':
-          this.tooltip.style.top = `${rect.top + rect.height / 2 - this.tooltip.offsetHeight / 2}px`;
-          this.tooltip.style.left = `${rect.right + 20}px`;
-          break;
-      }
-      
-      // Update tooltip content
-      this.tooltip.innerHTML = `
-        <button class="tour-close">×</button>
-        <h3>${step.title}</h3>
-        <p>${step.content}</p>
-        <div class="tour-buttons">
-          ${index > 0 ? '<button class="tour-button secondary prev">Previous</button>' : ''}
-          <button class="tour-button primary next">${index === this.steps.length - 1 ? 'Finish' : 'Next'}</button>
-          <button class="tour-button skip">Skip Tour</button>
-        </div>
-        <div class="tour-progress">
-          ${this.steps.map((_, i) => `
-            <div class="tour-progress-dot ${i === index ? 'active' : ''}"></div>
-          `).join('')}
-        </div>
-      `;
-      
-      this.tooltip.classList.add('active');
-      
-      // Add event listeners
-      const nextBtn = this.tooltip.querySelector('.next');
-      const prevBtn = this.tooltip.querySelector('.prev');
-      const skipBtn = this.tooltip.querySelector('.skip');
-      const closeBtn = this.tooltip.querySelector('.tour-close');
-      
-      nextBtn.addEventListener('click', () => this.showStep(index + 1));
-      if (prevBtn) prevBtn.addEventListener('click', () => this.showStep(index - 1));
-      skipBtn.addEventListener('click', () => this.endTour());
-      closeBtn.addEventListener('click', () => this.endTour());
+      // Wait for scroll to complete
+      setTimeout(() => {
+        // Position tooltip
+        const rect = target.getBoundingClientRect();
+        this.tooltip.className = `tour-tooltip ${step.position}`;
+        
+        // Calculate position based on viewport
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        let tooltipLeft, tooltipTop;
+        
+        switch (step.position) {
+          case 'top':
+            tooltipLeft = Math.min(Math.max(rect.left + rect.width / 2 - 150, 20), viewportWidth - 320);
+            tooltipTop = Math.max(rect.top - 180, 20);
+            break;
+          case 'bottom':
+            tooltipLeft = Math.min(Math.max(rect.left + rect.width / 2 - 150, 20), viewportWidth - 320);
+            tooltipTop = Math.min(rect.bottom + 20, viewportHeight - 200);
+            break;
+          case 'left':
+            tooltipLeft = Math.max(rect.left - 320, 20);
+            tooltipTop = Math.min(Math.max(rect.top + rect.height / 2 - 100, 20), viewportHeight - 200);
+            break;
+          case 'right':
+            tooltipLeft = Math.min(rect.right + 20, viewportWidth - 320);
+            tooltipTop = Math.min(Math.max(rect.top + rect.height / 2 - 100, 20), viewportHeight - 200);
+            break;
+        }
+        
+        this.tooltip.style.left = `${tooltipLeft}px`;
+        this.tooltip.style.top = `${tooltipTop}px`;
+        
+        // Update tooltip content
+        this.tooltip.innerHTML = `
+          <button class="tour-close">×</button>
+          <h3>${step.title}</h3>
+          <p>${step.content}</p>
+          <div class="tour-buttons">
+            ${index > 0 ? '<button class="tour-button secondary prev">Previous</button>' : ''}
+            <button class="tour-button primary next">${index === this.steps.length - 1 ? 'Finish' : 'Next'}</button>
+            <button class="tour-button skip">Skip Tour</button>
+          </div>
+          <div class="tour-progress">
+            ${this.steps.map((_, i) => `
+              <div class="tour-progress-dot ${i === index ? 'active' : ''}"></div>
+            `).join('')}
+          </div>
+        `;
+        
+        this.tooltip.classList.add('active');
+        
+        // Add event listeners
+        const nextBtn = this.tooltip.querySelector('.next');
+        const prevBtn = this.tooltip.querySelector('.prev');
+        const skipBtn = this.tooltip.querySelector('.skip');
+        const closeBtn = this.tooltip.querySelector('.tour-close');
+        
+        nextBtn.addEventListener('click', () => this.showStep(index + 1));
+        if (prevBtn) prevBtn.addEventListener('click', () => this.showStep(index - 1));
+        skipBtn.addEventListener('click', () => this.endTour());
+        closeBtn.addEventListener('click', () => this.endTour());
+      }, 500);
     }
     
     endTour() {
@@ -1128,6 +936,81 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize store tour for new users
   const storeTour = new StoreTour();
+
+  // Announcement System
+  class AnnouncementSystem {
+    constructor() {
+      this.announcement = {
+        id: 'welcome',
+        type: 'info',
+        message: 'Welcome to M. Fashion! Check out our new collection.',
+        icon: 'ri-megaphone-line',
+        duration: 5000 // 5 seconds
+      };
+      
+      this.announcementBar = document.querySelector('.announcement-bar');
+      this.announcementText = document.querySelector('.announcement-text');
+      this.announcementContent = document.querySelector('.announcement-content');
+      this.closeButton = document.querySelector('.announcement-close');
+      this.timeoutId = null;
+      
+      this.init();
+    }
+    
+    init() {
+      // Add event listener to close button
+      this.closeButton.addEventListener('click', () => this.hideAnnouncement());
+      
+      // Show announcement immediately
+      this.showAnnouncement();
+    }
+    
+    showAnnouncement() {
+      // Clear any existing timeout
+      if (this.timeoutId) {
+        clearTimeout(this.timeoutId);
+      }
+      
+      // Update announcement content
+      this.announcementBar.className = `announcement-bar ${this.announcement.type}`;
+      this.announcementContent.innerHTML = `
+        <i class="${this.announcement.icon}"></i>
+        <span class="announcement-text">${this.announcement.message}</span>
+      `;
+      
+      // Show announcement
+      this.announcementBar.classList.add('active', 'slide-down');
+      
+      // Set timeout to hide announcement
+      this.timeoutId = setTimeout(() => this.hideAnnouncement(), this.announcement.duration);
+    }
+    
+    hideAnnouncement() {
+      this.announcementBar.classList.remove('slide-down');
+      this.announcementBar.classList.add('slide-up');
+      
+      setTimeout(() => {
+        this.announcementBar.classList.remove('active', 'slide-up');
+      }, 300);
+    }
+    
+    updateAnnouncement(newAnnouncement) {
+      this.announcement = { ...this.announcement, ...newAnnouncement };
+      this.showAnnouncement();
+    }
+  }
+
+  // Initialize announcement system
+  const announcementSystem = new AnnouncementSystem();
+
+  // Example: Add a new announcement
+  // announcementSystem.addAnnouncement({
+  //   id: 'new-feature',
+  //   type: 'info',
+  //   message: 'New feature: Product sharing is now available!',
+  //   icon: 'ri-share-line',
+  //   duration: 0
+  // });
 
 });
 
