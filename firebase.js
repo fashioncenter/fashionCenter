@@ -11,35 +11,110 @@ const firebaseConfig = {
   appId: "1:915902882423:web:21a28ce957f594d1eadc72"
 };
 
-// Initialize Firebase
-try {
-  console.log("Initializing Firebase...");
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+// Check for internet connectivity
+function checkConnectivity() {
+  return navigator.onLine;
+}
+
+// Notify user about connection status
+function notifyConnectionStatus() {
+  const isOnline = checkConnectivity();
+  if (!isOnline) {
+    console.error("No internet connection detected");
+    showConnectionAlert("No internet connection. Please check your network and try again.");
+    return false;
+  }
+  return true;
+}
+
+// Show connection alert
+function showConnectionAlert(message) {
+  // Create or find the alert element
+  let alertEl = document.getElementById('connection-alert');
+  if (!alertEl) {
+    alertEl = document.createElement('div');
+    alertEl.id = 'connection-alert';
+    alertEl.style.position = 'fixed';
+    alertEl.style.top = '10px';
+    alertEl.style.left = '50%';
+    alertEl.style.transform = 'translateX(-50%)';
+    alertEl.style.padding = '10px 20px';
+    alertEl.style.backgroundColor = 'rgba(255, 0, 0, 0.8)';
+    alertEl.style.color = 'white';
+    alertEl.style.borderRadius = '5px';
+    alertEl.style.zIndex = '9999';
+    document.body.appendChild(alertEl);
+  }
   
-  // Make db globally accessible
-  window.db = db;
-  console.log("Firebase initialized successfully");
+  alertEl.textContent = message;
+  alertEl.style.display = 'block';
   
-  // Test the connection
-  setTimeout(async () => {
+  // Hide after 5 seconds
+  setTimeout(() => {
+    alertEl.style.display = 'none';
+  }, 5000);
+}
+
+// Initialize Firebase with retry mechanism
+async function initializeFirebase() {
+  if (!checkConnectivity()) {
+    notifyConnectionStatus();
+    return null;
+  }
+  
+  let retries = 3;
+  while (retries > 0) {
     try {
+      console.log("Initializing Firebase...");
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      
+      // Make db globally accessible
+      window.db = db;
+      console.log("Firebase initialized successfully");
+      
+      // Test the connection
       console.log("Testing Firebase connection...");
       const testTimestamp = new Date().toISOString();
       console.log("Connection test timestamp:", testTimestamp);
       
-      // Log that db is available
-      if (window.db) {
-        console.log("Firebase db is available globally");
-      } else {
-        console.error("Firebase db is NOT available globally");
-      }
+      // Add event listeners for online/offline status
+      window.addEventListener('online', () => {
+        console.log('App is now online');
+        showConnectionAlert('Connection restored. You can now place orders.');
+      });
+      
+      window.addEventListener('offline', () => {
+        console.error('App is now offline');
+        showConnectionAlert('No internet connection. Some features may not work.');
+      });
+      
+      return db;
     } catch (error) {
-      console.error("Firebase connection test failed:", error);
+      console.error(`Error initializing Firebase (retry ${4-retries}/3):`, error);
+      retries--;
+      
+      if (retries === 0) {
+        showConnectionAlert("Failed to connect to our services. Please try again later.");
+        return null;
+      }
+      
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
-  }, 1000);
+  }
+  return null;
+}
+
+// Create a db variable at module scope for export
+let db = null;
+
+// Execute initialization
+try {
+  db = initializeFirebase();
 } catch (error) {
-  console.error("Error initializing Firebase:", error);
+  console.error("Critical error initializing Firebase:", error);
+  showConnectionAlert("Service unavailable. Please try again later.");
 }
 
 export { db };

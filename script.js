@@ -2,6 +2,74 @@ import { collection, addDoc, doc, onSnapshot, query, where, getDocs } from "http
 import { recommendationSystem } from './recommendation.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Check if Firebase is initialized
+  let firebaseReady = false;
+  
+  // Function to check Firebase connection
+  function checkFirebaseConnection() {
+    if (typeof window.db === 'undefined') {
+      console.error('Firebase DB is not initialized');
+      showGlobalMessage('Service unavailable. Please try again later.', 'error');
+      return false;
+    }
+    
+    // Check if we're online
+    if (!navigator.onLine) {
+      console.error('Browser reports offline status');
+      showGlobalMessage('No internet connection. Please check your network.', 'error');
+      return false;
+    }
+    
+    firebaseReady = true;
+    return true;
+  }
+  
+  // Function to show global messages to user
+  function showGlobalMessage(message, type = 'info') {
+    // Create or get message element
+    let msgEl = document.getElementById('global-message');
+    if (!msgEl) {
+      msgEl = document.createElement('div');
+      msgEl.id = 'global-message';
+      msgEl.style.position = 'fixed';
+      msgEl.style.top = '10px';
+      msgEl.style.left = '50%';
+      msgEl.style.transform = 'translateX(-50%)';
+      msgEl.style.padding = '10px 20px';
+      msgEl.style.borderRadius = '5px';
+      msgEl.style.zIndex = '9999';
+      document.body.appendChild(msgEl);
+    }
+    
+    // Set styles based on message type
+    if (type === 'error') {
+      msgEl.style.backgroundColor = 'rgba(255, 0, 0, 0.8)';
+      msgEl.style.color = 'white';
+    } else if (type === 'success') {
+      msgEl.style.backgroundColor = 'rgba(0, 128, 0, 0.8)';
+      msgEl.style.color = 'white';
+    } else {
+      msgEl.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+      msgEl.style.color = 'white';
+    }
+    
+    msgEl.textContent = message;
+    msgEl.style.display = 'block';
+    
+    // Hide after 5 seconds
+    setTimeout(() => {
+      msgEl.style.display = 'none';
+    }, 5000);
+  }
+  
+  // Check for Firebase availability after a short delay to allow it to initialize
+  setTimeout(() => {
+    if (checkFirebaseConnection()) {
+      console.log('Firebase connection confirmed');
+    } else {
+      console.error('Firebase connection failed');
+    }
+  }, 1000);
 
   // Utility: Escape HTML entities
   function escapeHTML(str) {
@@ -208,6 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </a>
                             </div>
                         </div>
+                        <button class="buy-now-direct" data-product-id="${product.id}">Buy Now</button>
                     </div>
                 `;
 
@@ -228,6 +297,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 shareBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     shareProduct(product);
+                });
+                
+                // Add buy now direct button event listener
+                const buyNowDirectBtn = card.querySelector('.buy-now-direct');
+                buyNowDirectBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    buyNowDirect(product);
                 });
 
                 productsContainer.appendChild(card);
@@ -342,21 +418,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Update the Buy Now button click handler
   document.querySelector('.buy-now-btn')?.addEventListener('click', () => {
-    if (!cartItems.length) {
-      return showCartMessage('Your cart is empty!');
-    }
-    
-    // Check if user is logged in
-    if (!isAuthenticated) {
-      showCartMessage('Please login to place an order');
-      Clerk.openSignIn({ redirectUrl: window.location.href });
-      return;
-    }
+    try {
+      // Check if cart is empty
+      if (!cartItems || cartItems.length === 0) {
+        return showCartMessage('Your cart is empty!');
+      }
+      
+      // Check Firebase connectivity first
+      if (!firebaseReady && !checkFirebaseConnection()) {
+        showCartMessage('Service unavailable. Please try again later.');
+        return;
+      }
+      
+      // Check if user is logged in
+      if (!isAuthenticated) {
+        showCartMessage('Please login to place an order');
+        // Make sure Clerk is available
+        if (typeof Clerk !== 'undefined' && Clerk) {
+          Clerk.openSignIn({ redirectUrl: window.location.href });
+        } else {
+          console.error('Clerk authentication is not available');
+          showCartMessage('Authentication service unavailable. Please try again later.');
+        }
+        return;
+      }
 
-    if (shippingModal) {
+      // Check if shipping modal exists
+      if (!shippingModal) {
+        console.error('Shipping modal not found');
+        showCartMessage('Unable to proceed with checkout. Please try again later.');
+        return;
+      }
+
+      // Show shipping details modal
       shippingModal.style.display = 'block';
-    } else {
-      showCartMessage('Unable to open shipping details. Please try again.');
+    } catch (error) {
+      console.error('Error handling buy now click:', error);
+      showCartMessage('An error occurred. Please try again later.');
     }
   });
 
@@ -418,26 +516,64 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('.payment-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    // Check login status
-    if (!isAuthenticated) {
-      showCartMessage('Please login to complete your order');
-      Clerk.openSignIn({ redirectUrl: window.location.href });
-      return;
-    }
-
-    const activeMethod = document.querySelector('.payment-method-option.active');
-    if (!activeMethod) {
-      showCartMessage('Please select a payment method');
-      return;
-    }
-
-    const paymentMethod = activeMethod.getAttribute('data-method');
     try {
-      await completeCheckout(paymentMethod);
-      if (paymentModal) paymentModal.style.display = 'none';
+      // Check login status
+      if (!isAuthenticated) {
+        showCartMessage('Please login to complete your order');
+        if (typeof Clerk !== 'undefined' && Clerk) {
+          Clerk.openSignIn({ redirectUrl: window.location.href });
+        } else {
+          console.error('Clerk authentication is not available');
+          showCartMessage('Authentication service unavailable. Please try again later.');
+        }
+        return;
+      }
+
+      // Validate cart
+      if (!cartItems || cartItems.length === 0) {
+        showCartMessage('Your cart is empty. Please add items before checkout.');
+        return;
+      }
+
+      // Validate shipping info
+      if (!shippingData || !shippingData.name || !shippingData.address) {
+        showCartMessage('Please complete your shipping information first');
+        if (shippingModal) {
+          paymentModal.style.display = 'none';
+          shippingModal.style.display = 'block';
+        }
+        return;
+      }
+
+      const activeMethod = document.querySelector('.payment-method-option.active');
+      if (!activeMethod) {
+        showCartMessage('Please select a payment method');
+        return;
+      }
+
+      const paymentMethod = activeMethod.getAttribute('data-method');
+      
+      // Extra validation for specific payment methods
+      if (paymentMethod === 'easypaisa') {
+        const easypaisaNumber = document.getElementById('easypaisa-number')?.value;
+        if (!easypaisaNumber || easypaisaNumber.length < 11) {
+          showCartMessage('Please enter a valid Easypaisa number');
+          return;
+        }
+      }
+
+      showCartMessage('Processing your order...');
+      
+      try {
+        await completeCheckout(paymentMethod);
+        if (paymentModal) paymentModal.style.display = 'none';
+      } catch (error) {
+        console.error('Payment error:', error);
+        showCartMessage('Payment failed: ' + (error.message || 'Please try again.'));
+      }
     } catch (error) {
-      console.error('Payment error:', error);
-      showCartMessage('Payment failed. Please try again.');
+      console.error('Error in payment submission:', error);
+      showCartMessage('An error occurred. Please try again later.');
     }
   });
 
@@ -447,38 +583,110 @@ document.addEventListener('DOMContentLoaded', () => {
       throw new Error('Authentication required');
     }
 
-    const order = {
-      cart: cartItems,
-      shipping: shippingData,
-      paymentMethod,
-      total: cartItems.reduce((a, i) => a + i.price.discounted * i.quantity, 0),
-      createdAt: new Date(),
-      email: Clerk.user.primaryEmailAddress?.emailAddress,
-      userId: Clerk.user.id,
-      status: 'pending',
-      coupon: appliedCoupon ? {
-        code: appliedCoupon.code,
-        discount: appliedCoupon.discount
-      } : null
-    };
-
-    // Apply coupon discount if exists
-    if (appliedCoupon) {
-      order.total = order.total * (1 - appliedCoupon.discount / 100);
-    }
-
     try {
-      const orderRef = await addDoc(collection(window.db, 'orders'), order);
-      cartItems = [];
-      appliedCoupon = null; // Reset coupon after order
-      refreshCart();
-      showCartMessage('Thank you! Your order has been placed.');
-      
-      // Show order status modal
-      showOrderStatusModal(orderRef.id);
+      // Check for internet connectivity
+      if (!navigator.onLine) {
+        console.error('No internet connection detected');
+        showCartMessage('No internet connection. Please check your network and try again.');
+        return;
+      }
+
+      // Check if Firebase is initialized
+      if (!window.db) {
+        console.error('Firebase DB is not initialized');
+        showCartMessage('Service unavailable. Please try again later.');
+        return;
+      }
+
+      // Validate cart items and shipping data
+      if (!cartItems || cartItems.length === 0) {
+        showCartMessage('Your cart is empty. Please add items before checkout.');
+        return;
+      }
+
+      if (!shippingData || !shippingData.name || !shippingData.address) {
+        showCartMessage('Invalid shipping information. Please fill all required fields.');
+        return;
+      }
+
+      const order = {
+        cart: cartItems,
+        shipping: shippingData,
+        paymentMethod,
+        total: cartItems.reduce((a, i) => a + i.price.discounted * i.quantity, 0),
+        createdAt: new Date(),
+        email: Clerk.user.primaryEmailAddress?.emailAddress,
+        userId: Clerk.user.id,
+        status: 'pending',
+        coupon: appliedCoupon ? {
+          code: appliedCoupon.code,
+          discount: appliedCoupon.discount
+        } : null
+      };
+
+      // Apply coupon discount if exists
+      if (appliedCoupon) {
+        order.total = order.total * (1 - appliedCoupon.discount / 100);
+      }
+
+      // Use a try/catch specifically for the Firestore operation
+      try {
+        // Add an additional Firebase connectivity test
+        if (!testFirebaseConnection()) {
+          showCartMessage('Unable to connect to our services. Please try again later.');
+          return;
+        }
+
+        const ordersCollection = collection(window.db, 'orders');
+        const orderRef = await addDoc(ordersCollection, order);
+        
+        // Clear cart and reset coupon after successful order
+        cartItems = [];
+        appliedCoupon = null;
+        refreshCart();
+        showCartMessage('Thank you! Your order has been placed.');
+        
+        // Show order status modal
+        showOrderStatusModal(orderRef.id);
+      } catch (firestoreError) {
+        console.error('Firestore error:', firestoreError);
+        
+        // Provide more specific error messages based on the error code
+        if (firestoreError.code === 'permission-denied') {
+          showCartMessage('Permission denied. Please try logging in again.');
+        } else if (firestoreError.code === 'unavailable' || firestoreError.code === 'resource-exhausted') {
+          showCartMessage('Service temporarily unavailable. Please try again later.');
+        } else if (firestoreError.code === 'network-request-failed') {
+          showCartMessage('Network error. Please check your connection and try again.');
+        } else {
+          showCartMessage('Error submitting order. Please try again.');
+        }
+      }
     } catch (err) {
-      console.error(err);
-      showCartMessage('Error submitting order. Please try again.');
+      console.error('Checkout error:', err);
+      showCartMessage('Error processing your order. Please try again.');
+    }
+  }
+
+  // Function to test Firebase connection
+  function testFirebaseConnection() {
+    try {
+      // Basic check if Firebase is available
+      if (!window.db) {
+        console.error('Firebase DB not available');
+        return false;
+      }
+      
+      // Check if we're online
+      if (!navigator.onLine) {
+        console.error('Browser reports offline status');
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error testing Firebase connection:', error);
+      return false;
     }
   }
 
@@ -571,6 +779,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const couponMessage = document.getElementById('couponMessage');
 
   applyCouponBtn?.addEventListener('click', async () => {
+    if (!couponInput) {
+      console.error('Coupon input element not found');
+      return;
+    }
+
+    if (!couponMessage) {
+      console.error('Coupon message element not found');
+      return;
+    }
+
     const code = couponInput.value.trim().toUpperCase();
     if (!code) {
       couponMessage.textContent = 'Please enter a coupon code';
@@ -578,32 +796,73 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    couponMessage.textContent = 'Checking coupon...';
+    couponMessage.style.color = 'blue';
+
     try {
+      // Check internet connectivity
+      if (!navigator.onLine) {
+        console.error('No internet connection detected');
+        couponMessage.textContent = 'No internet connection. Please check your network.';
+        couponMessage.style.color = 'red';
+        return;
+      }
+
+      // Check if Firebase is initialized
+      if (!window.db) {
+        console.error('Firebase DB is not initialized');
+        couponMessage.textContent = 'Service unavailable. Please try again later.';
+        couponMessage.style.color = 'red';
+        return;
+      }
+
+      // Test Firebase connection before proceeding
+      if (!testFirebaseConnection()) {
+        couponMessage.textContent = 'Unable to connect to our services. Please try again later.';
+        couponMessage.style.color = 'red';
+        return;
+      }
+
       // Check if coupon exists and is valid
       const couponsRef = collection(window.db, 'coupons');
       const q = query(couponsRef, where('code', '==', code));
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
-        couponMessage.textContent = 'Invalid coupon code';
-        couponMessage.style.color = 'red';
-        return;
-      }
-
-      const coupon = querySnapshot.docs[0].data();
-      const expiryDate = new Date(coupon.expiry);
       
-      if (expiryDate < new Date()) {
-        couponMessage.textContent = 'Coupon has expired';
-        couponMessage.style.color = 'red';
-        return;
-      }
+      try {
+        const querySnapshot = await getDocs(q);
 
-      // Apply coupon
-      appliedCoupon = coupon;
-      couponMessage.textContent = `Coupon applied! ${coupon.discount}% off`;
-      couponMessage.style.color = 'green';
-      updateCartTotal();
+        if (querySnapshot.empty) {
+          couponMessage.textContent = 'Invalid coupon code';
+          couponMessage.style.color = 'red';
+          return;
+        }
+
+        const coupon = querySnapshot.docs[0].data();
+        const expiryDate = new Date(coupon.expiry);
+        
+        if (expiryDate < new Date()) {
+          couponMessage.textContent = 'Coupon has expired';
+          couponMessage.style.color = 'red';
+          return;
+        }
+
+        // Apply coupon
+        appliedCoupon = coupon;
+        couponMessage.textContent = `Coupon applied! ${coupon.discount}% off`;
+        couponMessage.style.color = 'green';
+        updateCartTotal();
+      } catch (firestoreError) {
+        console.error('Firestore error when checking coupon:', firestoreError);
+        
+        // Provide more specific error messages based on the error code
+        if (firestoreError.code === 'unavailable' || firestoreError.code === 'resource-exhausted') {
+          couponMessage.textContent = 'Service temporarily unavailable. Please try again later.';
+        } else if (firestoreError.code === 'network-request-failed') {
+          couponMessage.textContent = 'Network error. Please check your connection.';
+        } else {
+          couponMessage.textContent = 'Error checking coupon. Please try again.';
+        }
+        couponMessage.style.color = 'red';
+      }
     } catch (error) {
       console.error('Error applying coupon:', error);
       couponMessage.textContent = 'Error applying coupon';
@@ -1063,6 +1322,42 @@ document.addEventListener('DOMContentLoaded', () => {
         placeholderInterval = setInterval(updatePlaceholder, 2000);
       }
     });
+  }
+
+  // Function to initiate direct buy for a product
+  function buyNowDirect(product) {
+    // Check Firebase connectivity first
+    if (!firebaseReady && !checkFirebaseConnection()) {
+      showGlobalMessage('Service unavailable. Please try again later.', 'error');
+      return;
+    }
+    
+    // Check if user is logged in
+    if (!isAuthenticated) {
+      showGlobalMessage('Please login to place an order', 'error');
+      // Make sure Clerk is available
+      if (typeof Clerk !== 'undefined' && Clerk) {
+        Clerk.openSignIn({ redirectUrl: window.location.href });
+      } else {
+        console.error('Clerk authentication is not available');
+        showGlobalMessage('Authentication service unavailable. Please try again later.', 'error');
+      }
+      return;
+    }
+
+    // Create a cart with just this product
+    cartItems = [{...product, quantity: 1}];
+    refreshCart();
+    
+    // Check if shipping modal exists
+    if (!shippingModal) {
+      console.error('Shipping modal not found');
+      showGlobalMessage('Unable to proceed with checkout. Please try again later.', 'error');
+      return;
+    }
+
+    // Show shipping details modal
+    shippingModal.style.display = 'block';
   }
 
 });

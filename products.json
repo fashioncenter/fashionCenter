@@ -1,26 +1,14 @@
 [
     {
         "id": 1,
-        "name": "Garnier Skin Naturals Bright Complete Foam Face Wash, 100ml",
-        "category": "Face Wash",
-        "description": "Say goodbye to dull skin with this brightening foam cleanser Garnier Light Complete Brightening Foam is a gentle, easy to rinse foam with the power of Pure Lemon Extract to intensively.",
+        "name": "Women's Plain Saddle Crossbody Bag",
+        "category": "Bag",
+        "description": "A crossbody bag is a type of bag that is worn over the shoulder and is typically used for carrying personal items such as a wallet, phone, and keys.",
         "price": {
-            "original": 1999,
-            "discounted": 860
+            "original": 2199,
+            "discounted": 1499
         },
-        "image": "Assets/facewash.png",
+        "image": "Assets/bag.jpeg",
         "badge": "Discount"
-    },
-    {
-        "id": 2,
-        "name": "Baseus Bowie H1s Noise Cancellation Wireless Headphones",
-        "category": "headphones",
-        "description": "Free Shipping & Cash On Delivery all over Pakistan. Exclusively",
-        "price": {
-            "original": 3999,
-            "discounted": 2199
-        },
-        "image": "Assets/headPhone.png",
-        "badge": "Hot"
     }
 ]
