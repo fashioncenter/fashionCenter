@@ -1271,7 +1271,7 @@ document.addEventListener('DOMContentLoaded', () => {
       this.announcement = {
         id: 'welcome',
         type: 'info',
-        message: 'Welcome to M. Fashion! Check out our new collection.',
+        message: 'Warning! We are currently support Cash On delivery',
         icon: 'ri-megaphone-line',
         duration: 5000 // 5 seconds
       };
