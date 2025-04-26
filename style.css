@@ -971,7 +971,7 @@ a {
     height: 100%;
     overflow: auto;
     background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(10px);
 }
 
 .modal-content {
@@ -990,13 +990,6 @@ a {
     margin: 0 auto;
 }
 
-.shipping-form-container h2 {
-    text-align: center;
-    color: #dfd8d8;
-    margin-bottom: 30px;
-    font-size: 24px;
-}
-
 .form-group {
     margin-bottom: 20px;
 }
@@ -1004,7 +997,7 @@ a {
 .form-group label {
     display: block;
     margin-bottom: 10px;
-    color: #333;
+    color: #dadada;
     font-weight: 500;
     font-size: 14px;
     letter-spacing: 0.3px;
@@ -4768,4 +4761,17 @@ header.announcement-active {
     .order-total {
         font-size: 16px;
     }
+}
+
+/* Search Result Styles */
+.products-container .no-results {
+  text-align: center;
+  padding: 40px 20px;
+  font-size: 18px;
+  color: #555;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  margin: 20px auto;
+  max-width: 600px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }

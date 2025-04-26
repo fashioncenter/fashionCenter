@@ -2,18 +2,15 @@ import { collection, addDoc, doc, onSnapshot, query, where, getDocs } from "http
 import { recommendationSystem } from './recommendation.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Check if Firebase is initialized
   let firebaseReady = false;
-  
-  // Function to check Firebase connection
+
   function checkFirebaseConnection() {
     if (typeof window.db === 'undefined') {
       console.error('Firebase DB is not initialized');
       showGlobalMessage('Service unavailable. Please try again later.', 'error');
       return false;
     }
-    
-    // Check if we're online
+
     if (!navigator.onLine) {
       console.error('Browser reports offline status');
       showGlobalMessage('No internet connection. Please check your network.', 'error');
@@ -23,8 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     firebaseReady = true;
     return true;
   }
-  
-  // Function to show global messages to user
+
   function showGlobalMessage(message, type = 'info') {
     // Create or get message element
     let msgEl = document.getElementById('global-message');
@@ -40,8 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
       msgEl.style.zIndex = '9999';
       document.body.appendChild(msgEl);
     }
-    
-    // Set styles based on message type
+
     if (type === 'error') {
       msgEl.style.backgroundColor = 'rgba(255, 0, 0, 0.8)';
       msgEl.style.color = 'white';
@@ -55,14 +50,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     msgEl.textContent = message;
     msgEl.style.display = 'block';
-    
-    // Hide after 5 seconds
+
     setTimeout(() => {
       msgEl.style.display = 'none';
     }, 5000);
   }
-  
-  // Check for Firebase availability after a short delay to allow it to initialize
+
   setTimeout(() => {
     if (checkFirebaseConnection()) {
       console.log('Firebase connection confirmed');
@@ -71,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 1000);
 
-  // Utility: Escape HTML entities
   function escapeHTML(str) {
     if (typeof str !== 'string') return str;
     const entityMap = {
@@ -85,7 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return str.replace(/[&<>"'\/]/g, s => entityMap[s]);
   }
 
-  // --- Cart & Product Functionality ---
   let cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
   let favoriteItems = JSON.parse(localStorage.getItem('favoriteItems')) || [];
   const slider = document.querySelector('.side_cart_view');
@@ -93,7 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let appliedCoupon = null; // Track applied coupon
   let isAuthenticated = false;
 
-  // Show message within cart slider
   function showCartMessage(message) {
     let msgDiv = slider.querySelector('.cart-message');
     if (!msgDiv) {
@@ -124,8 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartTotalElem = document.querySelector('.cart__total');
     if (!cartTotalElem) return;
     let totalPrice = cartItems.reduce((acc, item) => acc + item.price.discounted * item.quantity, 0);
-    
-    // Apply coupon discount if exists
+
     if (appliedCoupon) {
       const discount = (totalPrice * appliedCoupon.discount) / 100;
       totalPrice -= discount;
@@ -173,14 +162,12 @@ document.addEventListener('DOMContentLoaded', () => {
       cartItemsContainer.appendChild(itemDiv);
     });
 
-    // Update buy now button based on auth state
     const buyNowBtn = document.querySelector('.buy-now-btn');
     if (buyNowBtn) {
       buyNowBtn.textContent = isAuthenticated ? 'Buy Now' : 'Login to Order';
       buyNowBtn.disabled = !isAuthenticated;
     }
 
-    // Attach control handlers
     cartItemsContainer.querySelectorAll('.remove-item').forEach(btn => {
       btn.addEventListener('click', () => {
       const index = parseInt(btn.getAttribute('data-index'), 10);
@@ -231,86 +218,139 @@ document.addEventListener('DOMContentLoaded', () => {
     showCartMessage('Item added to cart');
   }
 
-  // Initial render
   refreshCart();
 
-  // Fetch and display products
+  // Add placeholder animation for search
+  const searchInput = document.querySelector('.searchBar');
+  const placeholders = [
+    'Search for fashion items...',
+    'Looking for accessories?',
+    'Find your style...',
+    'Discover new trends...',
+    'Search for shoes...',
+    'Find the perfect outfit...',
+    'Looking for jewelry?',
+    'Search for bags...',
+    'Find your favorite brands...',
+    'Discover exclusive deals...'
+  ];
+
+  let currentPlaceholderIndex = 0;
+  let placeholderInterval;
+  let allProducts = []; // Store all products for filtering
+
+  function updatePlaceholder() {
+    if (searchInput && !searchInput.value) {
+      searchInput.placeholder = placeholders[currentPlaceholderIndex];
+      currentPlaceholderIndex = (currentPlaceholderIndex + 1) % placeholders.length;
+    }
+  }
+
+  // Function to filter products based on search query
+  function searchProducts(query) {
+    if (!query) {
+      // If search is empty, display all products
+      displayProducts(allProducts);
+      return;
+    }
+    
+    query = query.toLowerCase().trim();
+    const filteredProducts = allProducts.filter(product => {
+      // Search in name, description, and category
+      return product.name.toLowerCase().includes(query) || 
+             product.description.toLowerCase().includes(query) || 
+             product.category.toLowerCase().includes(query);
+    });
+    
+    displayProducts(filteredProducts);
+    
+    // Show message if no products found
+    const productsContainer = document.querySelector('.products-container');
+    if (filteredProducts.length === 0 && productsContainer) {
+      productsContainer.innerHTML = '<p class="no-results">No products found. Try a different search term.</p>';
+    }
+  }
+
+  // Function to display products
+  function displayProducts(products) {
+    const productsContainer = document.querySelector('.products-container');
+    if (!productsContainer) {
+      console.error('Products container not found');
+      return;
+    }
+
+    productsContainer.innerHTML = '';
+
+    products.forEach(product => {
+      const card = document.createElement('div');
+      card.classList.add('product-card');
+      
+      card.innerHTML = `
+          <div class="product-tumb">
+              <img src="${product.image}" alt="${product.name}">
+          </div>
+          <div class="product-details">
+              <span class="product-catagory">${product.category}</span>
+              <h4><a href="#">${product.name}</a></h4>
+              <p>${product.description}</p>
+              <div class="product-bottom-details">
+                  <div class="product-price">
+                      <small>PKR ${product.price.original.toFixed(2)}</small>
+                      PKR ${product.price.discounted.toFixed(2)}
+                  </div>
+                  <div class="product-links">
+                      <a href="#" class="share-btn" data-product-id="${product.id}">
+                          <i class="ri-share-line"></i>
+                      </a>
+                      <a href="#" class="favorite-btn" data-product-id="${product.id}">
+                          <i class="ri-heart-line"></i>
+                      </a>
+                      <a href="#" class="add-to-cart" data-product-id="${product.id}">
+                          <i class="ri-shopping-cart-line"></i>
+                      </a>
+                  </div>
+              </div>
+              <button class="buy-now-direct" data-product-id="${product.id}">Buy Now</button>
+          </div>
+      `;
+
+      const addToCartBtn = card.querySelector('.add-to-cart');
+      addToCartBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          addToCart(product);
+      });
+
+      const favoriteBtn = card.querySelector('.favorite-btn');
+      favoriteBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          toggleFavorite(product);
+      });
+
+      const shareBtn = card.querySelector('.share-btn');
+      shareBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          shareProduct(product);
+      });
+
+      const buyNowDirectBtn = card.querySelector('.buy-now-direct');
+      buyNowDirectBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          buyNowDirect(product);
+      });
+
+      productsContainer.appendChild(card);
+    });
+
+    initializeFavoriteButtons();
+  }
+
+  // Modified fetchAndDisplayProducts function
   function fetchAndDisplayProducts() {
     fetch('products.json')
         .then(res => res.json())
         .then(productsData => {
-            const productsContainer = document.querySelector('.products-container');
-            if (!productsContainer) {
-                console.error('Products container not found');
-                return;
-            }
-
-            productsContainer.innerHTML = ''; // Clear existing products
-
-            productsData.forEach(product => {
-                const card = document.createElement('div');
-                card.classList.add('product-card');
-                
-                card.innerHTML = `
-                    <div class="product-tumb">
-                        <img src="${product.image}" alt="${product.name}">
-                    </div>
-                    <div class="product-details">
-                        <span class="product-catagory">${product.category}</span>
-                        <h4><a href="#">${product.name}</a></h4>
-                        <p>${product.description}</p>
-                        <div class="product-bottom-details">
-                            <div class="product-price">
-                                <small>PKR ${product.price.original.toFixed(2)}</small>
-                                PKR ${product.price.discounted.toFixed(2)}
-                            </div>
-                            <div class="product-links">
-                                <a href="#" class="share-btn" data-product-id="${product.id}">
-                                    <i class="ri-share-line"></i>
-                                </a>
-                                <a href="#" class="favorite-btn" data-product-id="${product.id}">
-                                    <i class="ri-heart-line"></i>
-                                </a>
-                                <a href="#" class="add-to-cart" data-product-id="${product.id}">
-                                    <i class="ri-shopping-cart-line"></i>
-                                </a>
-                            </div>
-                        </div>
-                        <button class="buy-now-direct" data-product-id="${product.id}">Buy Now</button>
-                    </div>
-                `;
-
-                // Add event listeners
-                const addToCartBtn = card.querySelector('.add-to-cart');
-                addToCartBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    addToCart(product);
-                });
-
-                const favoriteBtn = card.querySelector('.favorite-btn');
-                favoriteBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    toggleFavorite(product);
-                });
-
-                const shareBtn = card.querySelector('.share-btn');
-                shareBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    shareProduct(product);
-                });
-                
-                // Add buy now direct button event listener
-                const buyNowDirectBtn = card.querySelector('.buy-now-direct');
-                buyNowDirectBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    buyNowDirect(product);
-                });
-
-                productsContainer.appendChild(card);
-            });
-
-            // Initialize favorite buttons after products are loaded
-            initializeFavoriteButtons();
+            allProducts = productsData; // Store all products
+            displayProducts(productsData);
         })
         .catch(error => {
             console.error('Error fetching products:', error);
@@ -321,12 +361,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
   }
 
-  // Call the function when the page loads
+  // Call function to load products
   fetchAndDisplayProducts();
 
-  // Cart icon toggle
+  // Initialize placeholder animation
+  if (searchInput) {
+    // Set initial placeholder
+    searchInput.placeholder = placeholders[0];
+    
+    // Start the interval
+    placeholderInterval = setInterval(updatePlaceholder, 2000);
+    
+    // Add search functionality
+    searchInput.addEventListener('input', () => {
+      if (searchInput.value) {
+        clearInterval(placeholderInterval);
+        searchProducts(searchInput.value);
+      } else {
+        placeholderInterval = setInterval(updatePlaceholder, 2000);
+        displayProducts(allProducts); // Show all products when search is cleared
+      }
+    });
+  }
+
   document.querySelector('#cart')?.addEventListener('click', (e) => {
-    e.stopPropagation(); // Prevent event from bubbling up
+    e.stopPropagation();
     slider.classList.add('activate');
   });
 
@@ -1280,49 +1339,6 @@ document.addEventListener('DOMContentLoaded', () => {
   //   icon: 'ri-share-line',
   //   duration: 0
   // });
-
-  // Add placeholder animation for search
-  const searchInput = document.querySelector('.searchBar');
-  const placeholders = [
-    'Search for fashion items...',
-    'Looking for accessories?',
-    'Find your style...',
-    'Discover new trends...',
-    'Search for shoes...',
-    'Find the perfect outfit...',
-    'Looking for jewelry?',
-    'Search for bags...',
-    'Find your favorite brands...',
-    'Discover exclusive deals...'
-  ];
-
-  let currentPlaceholderIndex = 0;
-  let placeholderInterval;
-
-  function updatePlaceholder() {
-    if (searchInput && !searchInput.value) {
-      searchInput.placeholder = placeholders[currentPlaceholderIndex];
-      currentPlaceholderIndex = (currentPlaceholderIndex + 1) % placeholders.length;
-    }
-  }
-
-  // Initialize placeholder animation
-  if (searchInput) {
-    // Set initial placeholder
-    searchInput.placeholder = placeholders[0];
-    
-    // Start the interval
-    placeholderInterval = setInterval(updatePlaceholder, 2000);
-    
-    // Clear interval when user starts typing
-    searchInput.addEventListener('input', () => {
-      if (searchInput.value) {
-        clearInterval(placeholderInterval);
-      } else {
-        placeholderInterval = setInterval(updatePlaceholder, 2000);
-      }
-    });
-  }
 
   // Function to initiate direct buy for a product
   function buyNowDirect(product) {
