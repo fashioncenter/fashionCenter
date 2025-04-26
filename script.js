@@ -309,12 +309,14 @@ document.addEventListener('DOMContentLoaded', () => {
               </div>
               <button class="carousel-next" type="button"><i class="ri-arrow-right-s-line"></i></button>
             </div>
+            <div class="magnifier-lens"></div>
           </div>
         `;
       } else {
         imageHtml = `
           <div class="product-tumb">
             <img src="${product.image}" alt="${product.name}" onerror="this.onerror=null; console.error('Failed to load image: ${product.image}'); this.src='Assets/logo.png';">
+            <div class="magnifier-lens"></div>
           </div>
         `;
       }
@@ -416,12 +418,232 @@ document.addEventListener('DOMContentLoaded', () => {
             updateCarousel(dotIndex);
           });
         });
+        
+        // Add magnifier functionality
+        setupImageMagnifier(carousel, product.images);
+        
+        // Add click event for full preview
+        carousel.addEventListener('click', (e) => {
+          // Ignore clicks on controls
+          if (!e.target.closest('.carousel-controls')) {
+            showImagePreview(product.images, currentIndex);
+          }
+        });
+      } else {
+        // Add magnifier for single image
+        const productTumb = card.querySelector('.product-tumb');
+        setupImageMagnifier(productTumb, [product.image]);
+        
+        // Add click event for full preview
+        productTumb.addEventListener('click', () => {
+          showImagePreview([product.image], 0);
+        });
       }
 
       productsContainer.appendChild(card);
     });
 
     initializeFavoriteButtons();
+  }
+
+  // Function to setup image magnifier effect
+  function setupImageMagnifier(container, images) {
+    const lens = container.querySelector('.magnifier-lens');
+    const productTumb = container.classList.contains('product-tumb') ? container : container.querySelector('.product-tumb');
+    
+    if (!lens || !productTumb) return;
+    
+    productTumb.addEventListener('mousemove', (e) => {
+      // Get current active image
+      let activeImage;
+      if (container.classList.contains('image-carousel')) {
+        activeImage = container.querySelector('.carousel-image.active');
+      } else {
+        activeImage = container.querySelector('img');
+      }
+      
+      if (!activeImage) return;
+      
+      // Only show magnifier on desktop
+      if (window.innerWidth <= 768) return;
+      
+      const rect = productTumb.getBoundingClientRect();
+      
+      // Calculate mouse position relative to the container
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      // Move lens to mouse position
+      lens.style.left = x + 'px';
+      lens.style.top = y + 'px';
+      
+      // Calculate magnification offset
+      const lensSize = 150; // Should match CSS width/height
+      const zoomFactor = 2;
+      
+      // Set background image and position for magnification effect
+      lens.style.backgroundImage = `url('${activeImage.src}')`;
+      lens.style.backgroundSize = (rect.width * zoomFactor) + 'px ' + (rect.height * zoomFactor) + 'px';
+      
+      // Calculate background position based on mouse position
+      const bgX = (x / rect.width) * 100;
+      const bgY = (y / rect.height) * 100;
+      
+      lens.style.backgroundPosition = `${bgX}% ${bgY}%`;
+    });
+    
+    // Hide lens when mouse leaves the container
+    productTumb.addEventListener('mouseleave', () => {
+      lens.style.display = 'none';
+    });
+    
+    // Show lens when mouse enters the container
+    productTumb.addEventListener('mouseenter', () => {
+      // Only on desktop
+      if (window.innerWidth > 768) {
+        lens.style.display = 'block';
+      }
+    });
+  }
+
+  // Function to show full image preview
+  function showImagePreview(images, initialIndex = 0) {
+    // Create overlay element
+    const overlay = document.createElement('div');
+    overlay.className = 'image-preview-overlay';
+    
+    // Create container for the image and controls
+    const container = document.createElement('div');
+    container.className = 'image-preview-container';
+    
+    // Create image element
+    const img = document.createElement('img');
+    img.className = 'image-preview';
+    img.src = images[initialIndex];
+    img.alt = 'Product preview';
+    
+    // Create close button
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'image-preview-close';
+    closeBtn.innerHTML = '<i class="ri-close-line"></i>';
+    
+    // Add elements to container
+    container.appendChild(img);
+    container.appendChild(closeBtn);
+    
+    // Only add controls if there are multiple images
+    if (images.length > 1) {
+      // Create controls
+      const controls = document.createElement('div');
+      controls.className = 'image-preview-controls';
+      
+      // Create navigation buttons
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'image-preview-nav prev';
+      prevBtn.innerHTML = '<i class="ri-arrow-left-s-line"></i>';
+      
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'image-preview-nav next';
+      nextBtn.innerHTML = '<i class="ri-arrow-right-s-line"></i>';
+      
+      controls.appendChild(prevBtn);
+      controls.appendChild(nextBtn);
+      
+      // Create dots container
+      const dots = document.createElement('div');
+      dots.className = 'image-preview-dots';
+      
+      // Add dots for each image
+      images.forEach((_, index) => {
+        const dot = document.createElement('span');
+        dot.className = `image-preview-dot ${index === initialIndex ? 'active' : ''}`;
+        dot.setAttribute('data-index', index);
+        dots.appendChild(dot);
+      });
+      
+      // Add controls and dots to container
+      container.appendChild(controls);
+      container.appendChild(dots);
+      
+      // Current image index
+      let currentIndex = initialIndex;
+      
+      // Function to update displayed image
+      const updateImage = (index) => {
+        img.src = images[index];
+        
+        // Update dots
+        const allDots = dots.querySelectorAll('.image-preview-dot');
+        allDots.forEach(dot => dot.classList.remove('active'));
+        allDots[index].classList.add('active');
+        
+        // Update current index
+        currentIndex = index;
+      };
+      
+      // Add event listener for previous button
+      prevBtn.addEventListener('click', () => {
+        const newIndex = (currentIndex - 1 + images.length) % images.length;
+        updateImage(newIndex);
+      });
+      
+      // Add event listener for next button
+      nextBtn.addEventListener('click', () => {
+        const newIndex = (currentIndex + 1) % images.length;
+        updateImage(newIndex);
+      });
+      
+      // Add event listeners for dots
+      dots.querySelectorAll('.image-preview-dot').forEach(dot => {
+        dot.addEventListener('click', () => {
+          const index = parseInt(dot.getAttribute('data-index'));
+          updateImage(index);
+        });
+      });
+      
+      // Add keyboard navigation
+      document.addEventListener('keydown', function keyHandler(e) {
+        if (e.key === 'ArrowLeft') {
+          prevBtn.click();
+        } else if (e.key === 'ArrowRight') {
+          nextBtn.click();
+        } else if (e.key === 'Escape') {
+          closePreview();
+        }
+      });
+      
+      // Cleanup function
+      function cleanupKeyHandler() {
+        document.removeEventListener('keydown', keyHandler);
+      }
+    }
+    
+    // Add overlay to body
+    overlay.appendChild(container);
+    document.body.appendChild(overlay);
+    
+    // Show overlay with animation
+    setTimeout(() => {
+      overlay.classList.add('active');
+    }, 10);
+    
+    // Function to close preview
+    function closePreview() {
+      overlay.classList.remove('active');
+      setTimeout(() => {
+        overlay.remove();
+      }, 300);
+    }
+    
+    // Close on button click
+    closeBtn.addEventListener('click', closePreview);
+    
+    // Close on overlay click (outside image)
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        closePreview();
+      }
+    });
   }
 
   // Modified fetchAndDisplayProducts function
