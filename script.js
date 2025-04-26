@@ -285,10 +285,42 @@ document.addEventListener('DOMContentLoaded', () => {
       const card = document.createElement('div');
       card.classList.add('product-card');
       
-      card.innerHTML = `
-          <div class="product-tumb">
-              <img src="${product.image}" alt="${product.name}">
+      // Check if product has multiple images
+      const hasMultipleImages = product.images && product.images.length > 1;
+      
+      // Debug log for image paths
+      console.log('Product images:', hasMultipleImages ? product.images : product.image);
+      
+      let imageHtml = '';
+      if (hasMultipleImages) {
+        imageHtml = `
+          <div class="product-tumb image-carousel">
+            <div class="carousel-images">
+              ${product.images.map((img, index) => 
+                `<img src="${img}" alt="${product.name}" class="carousel-image ${index === 0 ? 'active' : ''}" data-index="${index}" onerror="this.onerror=null; console.error('Failed to load image: ${img}'); this.src='Assets/logo.png';">`
+              ).join('')}
+            </div>
+            <div class="carousel-controls">
+              <button class="carousel-prev" type="button"><i class="ri-arrow-left-s-line"></i></button>
+              <div class="carousel-indicators">
+                ${product.images.map((_, index) => 
+                  `<span class="carousel-dot ${index === 0 ? 'active' : ''}" data-index="${index}"></span>`
+                ).join('')}
+              </div>
+              <button class="carousel-next" type="button"><i class="ri-arrow-right-s-line"></i></button>
+            </div>
           </div>
+        `;
+      } else {
+        imageHtml = `
+          <div class="product-tumb">
+            <img src="${product.image}" alt="${product.name}" onerror="this.onerror=null; console.error('Failed to load image: ${product.image}'); this.src='Assets/logo.png';">
+          </div>
+        `;
+      }
+      
+      card.innerHTML = `
+          ${imageHtml}
           <div class="product-details">
               <span class="product-catagory">${product.category}</span>
               <h4><a href="#">${product.name}</a></h4>
@@ -337,6 +369,54 @@ document.addEventListener('DOMContentLoaded', () => {
           e.preventDefault();
           buyNowDirect(product);
       });
+      
+      // Add carousel functionality if multiple images
+      if (hasMultipleImages) {
+        const carousel = card.querySelector('.image-carousel');
+        const prevBtn = carousel.querySelector('.carousel-prev');
+        const nextBtn = carousel.querySelector('.carousel-next');
+        const images = carousel.querySelectorAll('.carousel-image');
+        const dots = carousel.querySelectorAll('.carousel-dot');
+        
+        // Set current image index
+        let currentIndex = 0;
+        
+        // Function to update displayed image
+        const updateCarousel = (index) => {
+          // Hide all images and remove active class from dots
+          images.forEach(img => img.classList.remove('active'));
+          dots.forEach(dot => dot.classList.remove('active'));
+          
+          // Show selected image and activate corresponding dot
+          images[index].classList.add('active');
+          dots[index].classList.add('active');
+          
+          // Update current index
+          currentIndex = index;
+        };
+        
+        // Add event listeners to previous and next buttons
+        prevBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const newIndex = (currentIndex - 1 + images.length) % images.length;
+          updateCarousel(newIndex);
+        });
+        
+        nextBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const newIndex = (currentIndex + 1) % images.length;
+          updateCarousel(newIndex);
+        });
+        
+        // Add event listeners to indicator dots
+        dots.forEach(dot => {
+          dot.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dotIndex = parseInt(dot.getAttribute('data-index'));
+            updateCarousel(dotIndex);
+          });
+        });
+      }
 
       productsContainer.appendChild(card);
     });
@@ -935,6 +1015,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const shareUrl = `${window.location.origin}${window.location.pathname}#products/${product.id}`;
     const shareText = `Check out this amazing ${product.name} at M. Fashion! Only $${product.price.discounted.toFixed(2)}`;
     
+    // Determine if product has multiple images
+    const hasMultipleImages = product.images && product.images.length > 1;
+    
+    // Create image carousel for share modal
+    let imageContent = '';
+    if (hasMultipleImages) {
+      imageContent = `
+        <div class="share-image-carousel">
+          <div class="share-carousel-images">
+            ${product.images.map((img, index) => 
+              `<img src="${img}" alt="${product.name}" class="share-carousel-image ${index === 0 ? 'active' : ''}" data-index="${index}">`
+            ).join('')}
+          </div>
+          <div class="share-carousel-controls">
+            <button class="share-carousel-prev" type="button"><i class="ri-arrow-left-s-line"></i></button>
+            <div class="share-carousel-indicators">
+              ${product.images.map((_, index) => 
+                `<span class="share-carousel-dot ${index === 0 ? 'active' : ''}" data-index="${index}"></span>`
+              ).join('')}
+            </div>
+            <button class="share-carousel-next" type="button"><i class="ri-arrow-right-s-line"></i></button>
+          </div>
+        </div>
+      `;
+    } else {
+      imageContent = `<img src="${product.image}" alt="${product.name}">`;
+    }
+    
     // Create share modal
     const modal = document.createElement('div');
     modal.className = 'share-modal';
@@ -942,7 +1050,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="share-modal-content">
         <h3>Share this product</h3>
         <div class="share-preview">
-          <img src="${product.image}" alt="${product.name}">
+          ${imageContent}
           <div class="share-preview-info">
             <h4>${product.name}</h4>
             <p>${product.description}</p>
@@ -980,6 +1088,54 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       modal.classList.add('active');
     }, 10);
+    
+    // Add carousel functionality if multiple images
+    if (hasMultipleImages) {
+      const carousel = modal.querySelector('.share-image-carousel');
+      const prevBtn = carousel.querySelector('.share-carousel-prev');
+      const nextBtn = carousel.querySelector('.share-carousel-next');
+      const images = carousel.querySelectorAll('.share-carousel-image');
+      const dots = carousel.querySelectorAll('.share-carousel-dot');
+      
+      // Set current image index
+      let currentIndex = 0;
+      
+      // Function to update displayed image
+      const updateCarousel = (index) => {
+        // Hide all images and remove active class from dots
+        images.forEach(img => img.classList.remove('active'));
+        dots.forEach(dot => dot.classList.remove('active'));
+        
+        // Show selected image and activate corresponding dot
+        images[index].classList.add('active');
+        dots[index].classList.add('active');
+        
+        // Update current index
+        currentIndex = index;
+      };
+      
+      // Add event listeners to previous and next buttons
+      prevBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const newIndex = (currentIndex - 1 + images.length) % images.length;
+        updateCarousel(newIndex);
+      });
+      
+      nextBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const newIndex = (currentIndex + 1) % images.length;
+        updateCarousel(newIndex);
+      });
+      
+      // Add event listeners to indicator dots
+      dots.forEach(dot => {
+        dot.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const dotIndex = parseInt(dot.getAttribute('data-index'));
+          updateCarousel(dotIndex);
+        });
+      });
+    }
     
     // Add event listener to close button
     modal.querySelector('.close-share-modal').addEventListener('click', () => {

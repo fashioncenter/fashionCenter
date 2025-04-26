@@ -9,6 +9,11 @@
             "discounted": 1499
         },
         "image": "Assets/bag.jpeg",
+        "images": [
+            "Assets/bag.jpeg",
+            "Assets/bag_1.jpg",
+            "Assets/bag_2.jpg"
+        ],
         "badge": "Discount"
     }
 ]

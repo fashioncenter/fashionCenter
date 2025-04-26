@@ -4775,3 +4775,269 @@ header.announcement-active {
   max-width: 600px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
+
+/* Product Image Carousel Styles */
+.image-carousel {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 300px;
+  padding-top: 0 !important; /* Overrides product-tumb padding-top */
+}
+
+.product-tumb.image-carousel {
+  padding-top: 0;
+}
+
+.carousel-images {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.carousel-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.carousel-image.active {
+  opacity: 1;
+  z-index: 1;
+}
+
+.carousel-controls {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+  z-index: 10;
+}
+
+.carousel-prev,
+.carousel-next {
+  background-color: rgba(255, 255, 255, 0.7);
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.carousel-prev:hover,
+.carousel-next:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.carousel-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  z-index: 10;
+}
+
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.carousel-dot.active {
+  background-color: #fff;
+  transform: scale(1.2);
+}
+
+@media (max-width: 600px) {
+  .image-carousel {
+    height: 250px;
+  }
+  
+  .carousel-prev,
+  .carousel-next {
+    width: 25px;
+    height: 25px;
+  }
+  
+  .carousel-dot {
+    width: 6px;
+    height: 6px;
+  }
+}
+
+/* Share Modal Carousel Styles */
+.share-image-carousel {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 200px;
+  border-radius: 5px;
+}
+
+.share-carousel-images {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.share-carousel-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.share-carousel-image.active {
+  opacity: 1;
+  z-index: 1;
+}
+
+.share-carousel-controls {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+  z-index: 2;
+}
+
+.share-carousel-prev,
+.share-carousel-next {
+  background-color: rgba(255, 255, 255, 0.7);
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.share-carousel-prev:hover,
+.share-carousel-next:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.share-carousel-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.share-carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.share-carousel-dot.active {
+  background-color: #fff;
+  transform: scale(1.2);
+}
+
+@media (min-width: 768px) {
+  .share-preview {
+    flex-direction: row;
+  }
+  
+  .share-image-carousel,
+  .share-preview img {
+    width: 40%;
+    height: 200px;
+  }
+  
+  .share-preview-info {
+    width: 60%;
+  }
+}
+
+@media (max-width: 600px) {
+  .share-image-carousel {
+    height: 180px;
+  }
+  
+  .share-carousel-prev,
+  .share-carousel-next {
+    width: 25px;
+    height: 25px;
+  }
+  
+  .share-carousel-dot {
+    width: 6px;
+    height: 6px;
+  }
+}
+
+/* Fix for image carousel inside product-tumb */
+.product-tumb.image-carousel {
+  padding-top: 0 !important;
+  height: 300px !important;
+  position: relative;
+  overflow: hidden;
+  background: #f8f9fa;
+  border-radius: 20px 20px 0 0;
+}
+
+/* Make carousel dots more visible */
+.carousel-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.carousel-dot.active {
+  background-color: #e4cd00;
+  transform: scale(1.2);
+}
+
+/* Add overlay to make carousel buttons more visible */
+.carousel-controls {
+  padding: 0 15px;
+}
+
+.carousel-prev i,
+.carousel-next i {
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Enhance share carousel styling */
+.share-image-carousel {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
