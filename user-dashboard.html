@@ -9,7 +9,7 @@
   <meta name="google-site-verification" content="8FWnTiy_yuKdrRvfV9cU8uk2HpgnaPARoMNkJVwqGPM" />
   
   <!-- Security Headers -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://www.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://www.gstatic.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://www.gstatic.com https://cdn.jsdelivr.net https://*.clerk.accounts.dev https://*.firebaseio.com https://identitytoolkit.googleapis.com https://*.googleapis.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.clerk.accounts.dev https://*.firebaseio.com https://identitytoolkit.googleapis.com https://*.googleapis.com;">
   <meta http-equiv="X-Frame-Options" content="DENY">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   
@@ -32,6 +32,44 @@
   <title>My Orders - M. Fashion</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
+  
+  <!-- Initialize Firebase directly -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js";
+
+    // Firebase configuration - same as in firebase.js
+    const firebaseConfig = {
+      apiKey: "AIzaSyCwcdBRc5bpkxu_k-u6blRl2pVycko1I1o",
+      authDomain: "ecommerce-f550e.firebaseapp.com",
+      projectId: "ecommerce-f550e", 
+      storageBucket: "ecommerce-f550e.appspot.com",
+      messagingSenderId: "915902882423",
+      appId: "1:915902882423:web:21a28ce957f594d1eadc72"
+    };
+
+    // Initialize Firebase
+    try {
+      console.log("Initializing Firebase directly in user dashboard...");
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      
+      // Make db globally accessible
+      window.db = db;
+      console.log("Firebase initialized successfully in user dashboard");
+    } catch (error) {
+      console.error("Error initializing Firebase:", error);
+    }
+  </script>
+  
+  <!-- Clerk browser bundle -->
+  <script
+    crossorigin="anonymous"
+    data-clerk-publishable-key="pk_test_bW92aW5nLXN0dXJnZW9uLTczLmNsZXJrLmFjY291bnRzLmRldiQ"
+    src="https://moving-sturgeon-73.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+    type="text/javascript"
+  ></script>
+  
   <style>
     .dashboard-container {
       max-width: 1200px;
@@ -328,16 +366,6 @@
       }
     }
   </style>
-  <!-- Import Firebase -->
-  <script type="module" src="firebase.js"></script>
-  <!-- Clerk browser bundle -->
-  <script
-    async
-    crossorigin="anonymous"
-    data-clerk-publishable-key="pk_test_bW92aW5nLXN0dXJnZW9uLTczLmNsZXJrLmFjY291bnRzLmRldiQ"
-    src="https://moving-sturgeon-73.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
-    type="text/javascript"
-  ></script>
 </head>
 <body>
   <header>
@@ -367,11 +395,70 @@
   </div>
 
   <script type="module">
-    import { collection, query, where, orderBy, onSnapshot, getDocs } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js';
-    const db = window.db;
+    import { collection, query, where, orderBy, onSnapshot, getDocs, doc, getDoc, limit } from 'https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js';
+    
+    // Check if db is available
+    const checkDbAvailable = () => {
+      return new Promise((resolve, reject) => {
+        if (window.db) {
+          resolve(window.db);
+        } else {
+          let attempts = 0;
+          const maxAttempts = 10;
+          const checkInterval = setInterval(() => {
+            attempts++;
+            if (window.db) {
+              clearInterval(checkInterval);
+              resolve(window.db);
+            } else if (attempts >= maxAttempts) {
+              clearInterval(checkInterval);
+              reject(new Error("Firebase database not initialized"));
+            }
+          }, 300);
+        }
+      });
+    };
+
+    // Check if Clerk is available
+    function checkClerkLoaded() {
+      return new Promise((resolve, reject) => {
+        if (window.Clerk) {
+          resolve(window.Clerk);
+        } else {
+          const maxAttempts = 20;
+          let attempts = 0;
+          
+          const checkInterval = setInterval(() => {
+            attempts++;
+            if (window.Clerk) {
+              clearInterval(checkInterval);
+              resolve(window.Clerk);
+            } else if (attempts >= maxAttempts) {
+              clearInterval(checkInterval);
+              reject(new Error("Clerk failed to load after multiple attempts"));
+            }
+          }, 300);
+        }
+      });
+    }
 
     window.addEventListener('load', async () => {
       try {
+        // Show loading state
+        document.getElementById('ordersList').innerHTML = `
+          <div class="no-orders">
+            <h3>Loading your dashboard...</h3>
+            <p>Please wait a moment while we retrieve your information.</p>
+          </div>
+        `;
+        
+        // Wait for both Clerk and Firebase to be available
+        const [Clerk, db] = await Promise.all([
+          checkClerkLoaded(),
+          checkDbAvailable()
+        ]);
+        
+        // Initialize Clerk
         await Clerk.load();
         console.log('Clerk loaded successfully');
 
@@ -472,69 +559,86 @@
           });
         }
 
-        // First, try to get orders directly
+        // Fetch orders directly first, without relying on the query
         try {
-          console.log('Attempting to fetch orders...');
+          console.log('Attempting direct fetch of all orders...');
           const ordersRef = collection(db, 'orders');
-          const ordersSnapshot = await getDocs(ordersRef);
-          console.log('Initial orders fetch:', ordersSnapshot.docs.length, 'orders found');
+          const allOrdersSnapshot = await getDocs(ordersRef);
+          
+          if (allOrdersSnapshot.empty) {
+            console.log('No orders found in the database');
+            document.getElementById('ordersList').innerHTML = `
+              <div class="no-orders">
+                <h3>No orders found in database</h3>
+                <p>Start shopping to see your orders here!</p>
+                <a href="index.html" class="button">Go Shopping</a>
+              </div>
+            `;
+            return;
+          }
+
+          console.log('All orders in database:', allOrdersSnapshot.docs.length);
           
           // Filter orders for this user
-          const userOrders = ordersSnapshot.docs.filter(doc => {
-            const order = doc.data();
-            return order.email === userEmailAddress;
+          const userOrders = allOrdersSnapshot.docs.filter(doc => {
+            const orderData = doc.data();
+            console.log('Order data:', orderData);
+            return orderData.email === userEmailAddress || 
+                  orderData.userEmail === userEmailAddress || 
+                  orderData.customer?.email === userEmailAddress;
           });
-          console.log('Filtered orders for user:', userOrders.length, 'orders found');
+          
+          console.log('Filtered orders for user:', userOrders.length);
           
           if (userOrders.length > 0) {
             renderOrders(userOrders);
-          }
-        } catch (error) {
-          console.error('Error in initial orders fetch:', error);
-        }
-
-        // Then set up real-time listener
-        try {
-          console.log('Setting up real-time listener...');
-          // Simplified query without orderBy to avoid needing composite index
-          const ordersQuery = query(
-            collection(db, 'orders'),
-            where('email', '==', userEmailAddress)
-          );
-
-          const unsubscribe = onSnapshot(ordersQuery, 
-            (snapshot) => {
-              console.log('Real-time update received:', snapshot.docs.length, 'orders');
-              // Sort the results in memory instead of in the query
-              const sortedDocs = snapshot.docs.sort((a, b) => {
-                const dateA = a.data().createdAt?.toDate ? a.data().createdAt.toDate() : new Date(a.data().createdAt);
-                const dateB = b.data().createdAt?.toDate ? b.data().createdAt.toDate() : new Date(b.data().createdAt);
-                return dateB - dateA; // Sort in descending order (newest first)
-              });
-              renderOrders(sortedDocs);
-            },
-            (error) => {
-              console.error('Error in real-time listener:', error);
+          } else {
+            // If no orders found for user, try a direct query
+            console.log('No orders found for user by filtering, trying direct query...');
+            
+            // Try different field names that might contain the email
+            const emailQueries = [
+              query(collection(db, 'orders'), where('email', '==', userEmailAddress)),
+              query(collection(db, 'orders'), where('userEmail', '==', userEmailAddress)),
+              query(collection(db, 'orders'), where('customer.email', '==', userEmailAddress))
+            ];
+            
+            let foundOrders = false;
+            
+            for (const q of emailQueries) {
+              try {
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                  console.log('Found orders with query:', querySnapshot.docs.length);
+                  renderOrders(querySnapshot.docs);
+                  foundOrders = true;
+                  break;
+                }
+              } catch (error) {
+                console.warn('Query failed:', error);
+                // Continue to the next query
+              }
+            }
+            
+            if (!foundOrders) {
               document.getElementById('ordersList').innerHTML = `
                 <div class="no-orders">
-                  <h3>Error Loading Orders</h3>
-                  <p>Please try refreshing the page.</p>
-                  <p class="error-details">${error.message}</p>
+                  <h3>No orders found for your account</h3>
+                  <p>Start shopping to see your orders here!</p>
+                  <a href="index.html" class="button">Go Shopping</a>
                 </div>
               `;
             }
-          );
-
-          // Cleanup listener on page unload
-          window.addEventListener('unload', () => {
-            console.log('Cleaning up listener');
-            unsubscribe();
-          });
+          }
+          
+          // Set up real-time listener for future updates
+          setupRealTimeListener(db, userEmailAddress);
+          
         } catch (error) {
-          console.error('Error setting up real-time listener:', error);
+          console.error('Error fetching orders:', error);
           document.getElementById('ordersList').innerHTML = `
             <div class="no-orders">
-              <h3>Error Setting Up Order Updates</h3>
+              <h3>Error Loading Orders</h3>
               <p>Please try refreshing the page.</p>
               <p class="error-details">${error.message}</p>
             </div>
@@ -552,6 +656,44 @@
         `;
       }
     });
+    
+    // Set up real-time listener for order updates
+    function setupRealTimeListener(db, userEmail) {
+      try {
+        console.log('Setting up real-time listener for:', userEmail);
+        const ordersQuery = query(
+          collection(db, 'orders'),
+          where('email', '==', userEmail),
+          limit(20) // Limit to reasonable number
+        );
+
+        const unsubscribe = onSnapshot(ordersQuery, 
+          (snapshot) => {
+            console.log('Real-time update received:', snapshot.docs.length, 'orders');
+            // Sort the results in memory
+            const sortedDocs = snapshot.docs.sort((a, b) => {
+              const dateA = a.data().createdAt?.toDate ? a.data().createdAt.toDate() : new Date(a.data().createdAt || 0);
+              const dateB = b.data().createdAt?.toDate ? b.data().createdAt.toDate() : new Date(b.data().createdAt || 0);
+              return dateB - dateA; // Sort in descending order (newest first)
+            });
+            if (sortedDocs.length > 0) {
+              renderOrders(sortedDocs);
+            }
+          },
+          (error) => {
+            console.error('Error in real-time listener:', error);
+          }
+        );
+
+        // Cleanup listener on page unload
+        window.addEventListener('unload', () => {
+          console.log('Cleaning up listener');
+          unsubscribe();
+        });
+      } catch (error) {
+        console.error('Error setting up real-time listener:', error);
+      }
+    }
   </script>
 </body>
 </html> 
