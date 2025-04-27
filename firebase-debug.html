@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase Debug</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      background-color: #f9f9f9;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+    button {
+      background-color: #e4cd00;
+      border: none;
+      color: black;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background-color: #d4bd00;
+    }
+    pre {
+      background-color: #f3f3f3;
+      padding: 10px;
+      border-radius: 4px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+  <link rel="canonical" href="https://codetoweb.tech/firebase-debug">
+</head>
+<body>
+  <h1>Firebase Debug Tool</h1>
+  
+  <div class="card">
+    <h2>Firebase Initialization</h2>
+    <div id="init-status">Checking...</div>
+    <button id="test-init">Test Initialization</button>
+  </div>
+  
+  <div class="card">
+    <h2>Permissions Test</h2>
+    <div id="permissions-status">Not tested</div>
+    <button id="test-read">Test Read Permission</button>
+    <button id="test-write">Test Write Permission</button>
+  </div>
+  
+  <div class="card">
+    <h2>Admin Registration Test</h2>
+    <div id="admin-test-status">Not tested</div>
+    <input type="text" id="test-email" placeholder="Test Email" value="test@example.com">
+    <input type="password" id="test-password" placeholder="Test Password" value="test123">
+    <button id="test-admin-registration">Test Admin Registration</button>
+  </div>
+  
+  <div class="card">
+    <h2>Console Output</h2>
+    <pre id="console-output"></pre>
+  </div>
+  
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js";
+    import { 
+      getFirestore, 
+      collection, 
+      addDoc, 
+      getDocs, 
+      query, 
+      where,
+      deleteDoc,
+      doc
+    } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js";
+    
+    // Custom console output
+    const consoleOutput = document.getElementById('console-output');
+    function log(message, data = null) {
+      const timestamp = new Date().toLocaleTimeString();
+      let logMessage = `[${timestamp}] ${message}`;
+      
+      if (data) {
+        if (typeof data === 'object') {
+          logMessage += `\n${JSON.stringify(data, null, 2)}`;
+        } else {
+          logMessage += `\n${data}`;
+        }
+      }
+      
+      consoleOutput.textContent += logMessage + '\n\n';
+      console.log(message, data);
+    }
+    
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyApjH4ppFf8UEpe1GpTq7CoHjV5T-rxlBQ",
+      authDomain: "mfashion-20874.firebaseapp.com",
+      databaseURL: "https://mfashion-20874-default-rtdb.firebaseio.com",
+      projectId: "mfashion-20874",
+      storageBucket: "mfashion-20874.firebasestorage.app",
+      messagingSenderId: "339078516901",
+      appId: "1:339078516901:web:589193af5fb650f5773d4c",
+      measurementId: "G-SM73TL9NKE"
+    };
+    
+    let app, db;
+    
+    // Initialize Firebase
+    document.getElementById('test-init').addEventListener('click', async () => {
+      const initStatus = document.getElementById('init-status');
+      
+      try {
+        log("Initializing Firebase...");
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        
+        window.db = db;
+        log("Firebase initialized successfully");
+        initStatus.textContent = "✅ Firebase initialized successfully";
+        initStatus.className = "success";
+      } catch (error) {
+        log("Error initializing Firebase:", error);
+        initStatus.textContent = `❌ Error: ${error.message}`;
+        initStatus.className = "error";
+      }
+    });
+    
+    // Test read permission
+    document.getElementById('test-read').addEventListener('click', async () => {
+      const permissionsStatus = document.getElementById('permissions-status');
+      
+      if (!window.db) {
+        permissionsStatus.textContent = "❌ Firebase not initialized. Initialize first.";
+        permissionsStatus.className = "error";
+        return;
+      }
+      
+      try {
+        log("Testing read permission...");
+        const adminsRef = collection(db, 'admins');
+        const snapshot = await getDocs(adminsRef);
+        
+        log(`Successfully read admins collection. Found ${snapshot.docs.length} documents.`);
+        permissionsStatus.textContent = `✅ Read permission OK. Found ${snapshot.docs.length} admin documents.`;
+        permissionsStatus.className = "success";
+      } catch (error) {
+        log("Error testing read permission:", error);
+        permissionsStatus.textContent = `❌ Read Error: ${error.message}`;
+        permissionsStatus.className = "error";
+      }
+    });
+    
+    // Test write permission
+    document.getElementById('test-write').addEventListener('click', async () => {
+      const permissionsStatus = document.getElementById('permissions-status');
+      
+      if (!window.db) {
+        permissionsStatus.textContent = "❌ Firebase not initialized. Initialize first.";
+        permissionsStatus.className = "error";
+        return;
+      }
+      
+      try {
+        log("Testing write permission...");
+        const testDoc = {
+          email: "test@example.com",
+          testField: true,
+          createdAt: new Date()
+        };
+        
+        const docRef = await addDoc(collection(db, 'debug_test'), testDoc);
+        log(`Successfully wrote to debug_test collection with ID: ${docRef.id}`);
+        
+        // Clean up test document
+        await deleteDoc(doc(db, 'debug_test', docRef.id));
+        log(`Successfully deleted test document with ID: ${docRef.id}`);
+        
+        permissionsStatus.textContent = "✅ Write permission OK";
+        permissionsStatus.className = "success";
+      } catch (error) {
+        log("Error testing write permission:", error);
+        permissionsStatus.textContent = `❌ Write Error: ${error.message}`;
+        permissionsStatus.className = "error";
+      }
+    });
+    
+    // Test admin registration
+    document.getElementById('test-admin-registration').addEventListener('click', async () => {
+      const adminTestStatus = document.getElementById('admin-test-status');
+      const testEmail = document.getElementById('test-email').value;
+      const testPassword = document.getElementById('test-password').value;
+      
+      if (!window.db) {
+        adminTestStatus.textContent = "❌ Firebase not initialized. Initialize first.";
+        adminTestStatus.className = "error";
+        return;
+      }
+      
+      if (!testEmail || !testPassword) {
+        adminTestStatus.textContent = "❌ Please provide both email and password";
+        adminTestStatus.className = "error";
+        return;
+      }
+      
+      try {
+        log(`Testing admin registration with email: ${testEmail}`);
+        
+        // Check if admin already exists
+        const adminsRef = collection(db, 'admins');
+        const q = query(adminsRef, where('email', '==', testEmail));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          log(`Admin with email ${testEmail} already exists`);
+          adminTestStatus.textContent = `❌ Admin with email ${testEmail} already exists`;
+          adminTestStatus.className = "error";
+          return;
+        }
+        
+        // Add new admin
+        log("Adding new admin...");
+        const adminRef = await addDoc(collection(db, 'admins'), {
+          email: testEmail,
+          password: testPassword, 
+          createdAt: new Date(),
+          isTest: true
+        });
+        
+        log(`Successfully registered test admin with ID: ${adminRef.id}`);
+        adminTestStatus.textContent = `✅ Admin registered successfully with ID: ${adminRef.id}`;
+        adminTestStatus.className = "success";
+      } catch (error) {
+        log("Error testing admin registration:", error);
+        adminTestStatus.textContent = `❌ Registration Error: ${error.message}`;
+        adminTestStatus.className = "error";
+      }
+    });
+  </script>
+</body>
+</html> 

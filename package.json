@@ -3,24 +3,42 @@
     "body-parser": "^2.2.0",
     "express": "^5.1.0",
     "firebase": "^11.6.0",
+    "firebase-admin": "^13.3.0",
     "stripe": "^18.0.0"
   },
   "scripts": {
-    "start": "node server.js"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "generate-sitemap": "node sitemap-generator.js",
+    "update-canonicals": "node canonicals.js",
+    "ping-search-engines": "node ping-search-engines.js",
+    "update-seo": "npm run generate-sitemap && npm run update-canonicals && npm run ping-search-engines",
+    "cron-seo": "node cron-seo-update.js"
   },
   "name": "fashioncenter",
-  "description": "",
+  "description": "M. Fashion - Trendy Clothing & Fashion Store",
   "version": "1.0.0",
-  "main": "script.js",
+  "main": "server.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/fashioncenter/fashionCenter.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "fashion",
+    "clothing",
+    "ecommerce",
+    "online store",
+    "shopping"
+  ],
+  "author": "M. Fashion",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/fashioncenter/fashionCenter/issues"
   },
-  "homepage": "https://github.com/fashioncenter/fashionCenter#readme"
+  "homepage": "https://github.com/fashioncenter/fashionCenter#readme",
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  },
+  "type": "module"
 }

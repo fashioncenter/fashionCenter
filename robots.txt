@@ -1,13 +1,37 @@
+# robots.txt for https://codetoweb.tech/
+# Updated: June 1, 2024
+
 User-agent: *
 Allow: /
 Allow: /sitemap.xml
 Allow: /products.json
+
+# Optimize crawling rate based on user-agent
+User-agent: Googlebot
+Crawl-delay: 5
+
+User-agent: bingbot
+Crawl-delay: 10
+
+User-agent: Yandex
+Crawl-delay: 10
 
 # Disallow admin and private areas
 Disallow: /admin/
 Disallow: /private/
 Disallow: /temp/
 Disallow: /backup/
+Disallow: /*?sort=
+Disallow: /*?filter=
+Disallow: /*?search=
+Disallow: /*?utm_source=
+Disallow: /*?utm_medium=
+Disallow: /*?utm_campaign=
+
+# Block access to error pages
+Disallow: /error/
+Disallow: /404.html
+Disallow: /500.html
 
 # Allow all product pages
 Allow: /products/
@@ -17,9 +41,8 @@ Allow: /category/
 Allow: /Assets/
 Allow: /css/
 Allow: /js/
+Allow: /images/
 
-# Sitemap location
+# Sitemaps
 Sitemap: https://codetoweb.tech/sitemap.xml
-
-# Crawl delay to prevent server overload
-Crawl-delay: 10
+Sitemap: https://codetoweb.tech/product-sitemap.xml

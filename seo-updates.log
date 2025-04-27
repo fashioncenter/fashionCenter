@@ -1,0 +1,25 @@
+{
+  "timestamp": "2025-04-27T21:43:31.145Z",
+  "duration": "7.544 seconds",
+  "tasksRun": 3,
+  "successCount": 2,
+  "failCount": 1,
+  "results": [
+    {
+      "success": true,
+      "task": "Generate Sitemaps",
+      "output": "\n> fashioncenter@1.0.0 generate-sitemap\n> node sitemap-generator.js\n\nStarting sitemap generation...\nProduct sitemap generated at ./product-sitemap.xml\nSitemap index generated at ./sitemap-index.xml\nSitemap generation completed!\n"
+    },
+    {
+      "success": true,
+      "task": "Update Canonical URLs",
+      "output": "\n> fashioncenter@1.0.0 update-canonicals\n> node canonicals.js\n\nStarting canonical URL updates...\nProcessing HTML files in ./...\nProcessing HTML files in Assets...\n✅ Added canonical link to Auth.html: https://codetoweb.tech/Auth\n✅ Added canonical link to about.html: https://codetoweb.tech/about\n✅ Added canonical link to admin-setup.html: https://codetoweb.tech/admin-setup\n✅ Added canonical link to admin.html: https://codetoweb.tech/admin\n✅ Added canonical link to contact.html: https://codetoweb.tech/contact\n✅ Added canonical link to faq.html: https://codetoweb.tech/faq\n✅ Added canonical link to firebase-debug.html: https://codetoweb.tech/firebase-debug\n✅ Added canonical link to google300ce70e8e01f7b9.html: https://codetoweb.tech/google300ce70e8e01f7b9\n✅ Added canonical link to help-center.html: https://codetoweb.tech/help-center\n✅ Added canonical link to index.html: https://codetoweb.tech/\n✅ Added canonical link to return-policy.html: https://codetoweb.tech/return-policy\n✅ Added canonical link to shipping-policy.html: https://codetoweb.tech/shipping-policy\n✅ Added canonical link to user-dashboard.html: https://codetoweb.tech/user-dashboard\nSuccessfully updated canonical URLs for all pages.\n"
+    },
+    {
+      "success": false,
+      "task": "Ping Search Engines",
+      "output": "❌ Failed to ping Google: 404\n❌ Failed to ping Bing: 410\n",
+      "error": true
+    }
+  ]
+}

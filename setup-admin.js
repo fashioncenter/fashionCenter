@@ -1,13 +1,15 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCwcdBRc5bpkxu_k-u6blRl2pVycko1I1o",
-  authDomain: "ecommerce-f550e.firebaseapp.com",
-  projectId: "ecommerce-f550e",
-  storageBucket: "ecommerce-f550e.appspot.com",
-  messagingSenderId: "915902882423",
-  appId: "1:915902882423:web:21a28ce957f594d1eadc72"
+  apiKey: "AIzaSyApjH4ppFf8UEpe1GpTq7CoHjV5T-rxlBQ",
+  authDomain: "mfashion-20874.firebaseapp.com",
+  databaseURL: "https://mfashion-20874-default-rtdb.firebaseio.com",
+  projectId: "mfashion-20874",
+  storageBucket: "mfashion-20874.firebasestorage.app",
+  messagingSenderId: "339078516901",
+  appId: "1:339078516901:web:589193af5fb650f5773d4c",
+  measurementId: "G-SM73TL9NKE"
 };
 
 // Initialize Firebase
@@ -15,15 +17,19 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // Add admin
-async function addAdmin(email) {
+async function addAdmin(email, password) {
   try {
-    await addDoc(collection(db, 'admins'), {
+    console.log(`Attempting to add admin: ${email}`);
+    const result = await addDoc(collection(db, 'admins'), {
       email,
-      createdAt: new Date()
+      password, // In production, always hash passwords
+      createdAt: serverTimestamp()
     });
-    console.log('Admin added successfully!');
+    console.log('Admin added successfully! Document ID:', result.id);
+    return result;
   } catch (error) {
     console.error('Error adding admin:', error);
+    throw error;
   }
 }
 

@@ -31,5 +31,37 @@
             "Assets/facial_cleanser_1.jpeg"
         ],
         "badge": "Discount"
+    },
+    {
+        "id": 3,
+        "name": "Stylish Hand Bag",
+        "category": "Bag",
+        "description": "Stylish Women's PUR leather Hand Bag Set - 5 Pcs",
+        "price": {
+            "original": 2699,
+            "discounted": 2500
+        },
+        "image": "Assets/Bags.jpeg",
+        "images": [
+            "Assets/Bags.jpeg",
+            "Assets/Bags.jpg"
+        ],
+        "badge": "Discount"
+    },
+    {
+        "id": 4,
+        "name": "Facial Cleanser",
+        "category": "FashWash",
+        "description": "All English men's facial cleanser 100g SADOER cool men's facial cleanser cross-border foreign trade wholesale.",
+        "price": {
+            "original": 2699,
+            "discounted": 1000
+        },
+        "image": "Assets/facewash.jpeg",
+        "images": [
+            "Assets/facewash.jpeg",
+            "Assets/facewash_1.jpeg"
+        ],
+        "badge": "Discount"
     }
 ]
