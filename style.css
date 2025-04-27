@@ -215,6 +215,10 @@ header .order i {
     margin-bottom: 10px;
 }
 
+.product-priceses .product-price h1 {
+    font-size: 13px;
+}
+
 .product___price {
     font-size: 14px;
     color: #666;

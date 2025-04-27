@@ -15,5 +15,21 @@
             "Assets/bag_2.jpg"
         ],
         "badge": "Discount"
+    },
+    {
+        "id": 1,
+        "name": "Facial Cleanser",
+        "category": "FashWash",
+        "description": "Charis orignal face wash with 100% natural ingredients and no harmful chemicals.",
+        "price": {
+            "original": 1999,
+            "discounted": 999
+        },
+        "image": "Assets/facial_cleanser.jpeg",
+        "images": [
+            "Assets/facial_cleanser.jpeg",
+            "Assets/facial_cleanser_1.jpeg"
+        ],
+        "badge": "Discount"
     }
 ]
