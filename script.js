@@ -1451,7 +1451,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Track user behavior
   function trackUserBehavior(productId, action) {
     if (isAuthenticated && Clerk.user) {
-      enhancedRecommendationSystem.recordBehavior(Clerk.user.id, productId, action);
+      recommendationSystem.recordBehavior(Clerk.user.id, productId, action);
     }
   }
 
