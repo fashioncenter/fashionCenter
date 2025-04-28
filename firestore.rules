@@ -6,9 +6,19 @@ service cloud.firestore {
       allow read, write: if true;  // Temporarily allow all access for initial setup
     }
     
+    // Settings collection
+    match /settings/{settingId} {
+      allow read, write: if true;  // Allow access to settings
+    }
+    
     // Test collection for debugging
     match /debug_test/{docId} {
       allow read, write: if true;
+    }
+    
+    // Coupons collection
+    match /coupons/{couponId} {
+      allow read, write: if true;  // Temporarily allow all access for coupons
     }
     
     // Orders collection

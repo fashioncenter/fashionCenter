@@ -321,12 +321,76 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       }
       
+      // Get product ratings from recommendation system
+      let starsHtml = '';
+      
+      // Import recommendation system to get current ratings
+      import('./recommendation.js')
+        .then(module => {
+          const averageRating = module.recommendationSystem.getAverageRating(product.id);
+          const ratingCount = module.recommendationSystem.productRatings[product.id]?.ratingCount || 0;
+          
+          if (ratingCount > 0) {
+            // If product has ratings, show them
+            const fullStars = Math.floor(averageRating);
+            const hasHalfStar = averageRating % 1 >= 0.5;
+            const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+            
+            starsHtml = `
+              <div class="product-rating">
+                ${Array(fullStars).fill('<i class="ri-star-fill"></i>').join('')}
+                ${hasHalfStar ? '<i class="ri-star-half-line"></i>' : ''}
+                ${Array(emptyStars).fill('<i class="ri-star-line"></i>').join('')}
+                <span class="rating-count">(${ratingCount})</span>
+              </div>
+            `;
+          } else {
+            // If no ratings yet, show empty stars with a message
+            starsHtml = `
+              <div class="product-rating">
+                ${Array(5).fill('<i class="ri-star-line"></i>').join('')}
+                <span class="rating-count">(0)</span>
+                <span class="be-first-rating">Be the first to rate!</span>
+              </div>
+            `;
+          }
+          
+          // Update the DOM with rating stars
+          const ratingContainer = card.querySelector('.rating-container');
+          if (ratingContainer) {
+            ratingContainer.innerHTML = starsHtml;
+          }
+        })
+        .catch(error => {
+          console.error('Error getting product ratings:', error);
+          // Fallback to empty stars
+          starsHtml = `
+            <div class="product-rating">
+              ${Array(5).fill('<i class="ri-star-line"></i>').join('')}
+              <span class="rating-count">(0)</span>
+            </div>
+          `;
+          
+          // Update the DOM with rating stars
+          const ratingContainer = card.querySelector('.rating-container');
+          if (ratingContainer) {
+            ratingContainer.innerHTML = starsHtml;
+          }
+        });
+      
       card.innerHTML = `
           ${imageHtml}
           <div class="product-details">
               <span class="product-catagory">${product.category}</span>
               <h4><a href="#">${product.name}</a></h4>
               <p>${product.description}</p>
+              <div class="rating-container">
+                <div class="product-rating">
+                  ${Array(5).fill('<i class="ri-star-line"></i>').join('')}
+                  <span class="rating-count">(0)</span>
+                  <span class="be-first-rating">Be the first to rate!</span>
+                </div>
+              </div>
               <div class="product-bottom-details">
                   <div class="product-price">
                       <small>PKR ${product.price.original.toFixed(2)}</small>
@@ -344,7 +408,11 @@ document.addEventListener('DOMContentLoaded', () => {
                       </a>
                   </div>
               </div>
-              <button class="buy-now-direct" data-product-id="${product.id}">Buy Now</button>
+              <div class="product-action-buttons">
+                  <button class="buy-now-direct" data-product-id="${product.id}">Buy Now</button>
+                  <button class="rate-product" data-product-id="${product.id}">Rate Product</button>
+                  <button class="comment-product" data-product-id="${product.id}"><i class="ri-chat-3-line"></i> Comments</button>
+              </div>
           </div>
       `;
 
@@ -370,6 +438,18 @@ document.addEventListener('DOMContentLoaded', () => {
       buyNowDirectBtn.addEventListener('click', (e) => {
           e.preventDefault();
           buyNowDirect(product);
+      });
+      
+      const rateProductBtn = card.querySelector('.rate-product');
+      rateProductBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          openRatingModal(product);
+      });
+      
+      const commentProductBtn = card.querySelector('.comment-product');
+      commentProductBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          openCommentModal(product);
       });
       
       // Add carousel functionality if multiple images
@@ -652,7 +732,22 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(res => res.json())
         .then(productsData => {
             allProducts = productsData; // Store all products
-            displayProducts(productsData);
+            
+            // Import the recommendation system
+            import('./recommendation.js')
+              .then(module => {
+                // Get current user ID if available
+                const userId = localStorage.getItem('userId');
+                
+                // Use recommendation system to rank products
+                const rankedProducts = module.recommendationSystem.rankProducts(productsData, userId);
+                displayProducts(rankedProducts);
+              })
+              .catch(error => {
+                console.error('Error importing recommendation module:', error);
+                // Fallback to unranked display
+                displayProducts(productsData);
+              });
         })
         .catch(error => {
             console.error('Error fetching products:', error);
@@ -1752,6 +1847,448 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Show shipping details modal
     shippingModal.style.display = 'block';
+  }
+
+  // Function to open the rating modal
+  function openRatingModal(product) {
+    // Check if a modal already exists and remove it
+    const existingModal = document.querySelector('.rating-modal');
+    if (existingModal) {
+      existingModal.remove();
+    }
+    
+    // Create modal element
+    const modal = document.createElement('div');
+    modal.classList.add('rating-modal');
+    
+    // Generate rating stars
+    const starsHtml = `
+      <div class="rating-stars">
+        <i class="ri-star-line" data-rating="1"></i>
+        <i class="ri-star-line" data-rating="2"></i>
+        <i class="ri-star-line" data-rating="3"></i>
+        <i class="ri-star-line" data-rating="4"></i>
+        <i class="ri-star-line" data-rating="5"></i>
+      </div>
+    `;
+    
+    // Modal content
+    modal.innerHTML = `
+      <div class="rating-modal-content">
+        <span class="close-rating-modal">&times;</span>
+        <h3>Rate "${product.name}"</h3>
+        ${starsHtml}
+        <div class="rating-value">0/5</div>
+        <button class="submit-rating" disabled>Submit Rating</button>
+      </div>
+    `;
+    
+    // Append to body
+    document.body.appendChild(modal);
+    
+    // Event handlers
+    const closeBtn = modal.querySelector('.close-rating-modal');
+    closeBtn.addEventListener('click', () => {
+      modal.remove();
+    });
+    
+    // Handle star rating
+    let selectedRating = 0;
+    const stars = modal.querySelectorAll('.rating-stars i');
+    const ratingValue = modal.querySelector('.rating-value');
+    const submitButton = modal.querySelector('.submit-rating');
+    
+    stars.forEach(star => {
+      // Hover effects
+      star.addEventListener('mouseover', () => {
+        const rating = parseInt(star.getAttribute('data-rating'));
+        
+        // Highlight stars up to the hovered one
+        stars.forEach(s => {
+          const starRating = parseInt(s.getAttribute('data-rating'));
+          if (starRating <= rating) {
+            s.className = 'ri-star-fill';
+          } else {
+            s.className = 'ri-star-line';
+          }
+        });
+        
+        ratingValue.textContent = `${rating}/5`;
+      });
+      
+      // Click to select rating
+      star.addEventListener('click', () => {
+        selectedRating = parseInt(star.getAttribute('data-rating'));
+        
+        // Enable submit button
+        submitButton.disabled = false;
+        
+        // Fix the filled stars
+        stars.forEach(s => {
+          const starRating = parseInt(s.getAttribute('data-rating'));
+          if (starRating <= selectedRating) {
+            s.className = 'ri-star-fill';
+          } else {
+            s.className = 'ri-star-line';
+          }
+        });
+      });
+    });
+    
+    // Reset stars when mouse leaves the container
+    const starsContainer = modal.querySelector('.rating-stars');
+    starsContainer.addEventListener('mouseleave', () => {
+      stars.forEach(s => {
+        const starRating = parseInt(s.getAttribute('data-rating'));
+        if (starRating <= selectedRating) {
+          s.className = 'ri-star-fill';
+        } else {
+          s.className = 'ri-star-line';
+        }
+      });
+      
+      ratingValue.textContent = selectedRating > 0 ? `${selectedRating}/5` : '0/5';
+    });
+    
+    // Submit rating
+    submitButton.addEventListener('click', () => {
+      if (selectedRating > 0) {
+        // Get userId (or generate one if not logged in)
+        let userId = localStorage.getItem('userId');
+        if (!userId) {
+          userId = 'guest_' + Math.random().toString(36).substring(2, 15);
+          localStorage.setItem('userId', userId);
+        }
+        
+        // Import recommendation system and record rating
+        import('./recommendation.js')
+          .then(module => {
+            module.recommendationSystem.recordRating(userId, product.id, selectedRating);
+            
+            // Check if this was the first rating for this product
+            const isFirstRating = module.recommendationSystem.productRatings[product.id].ratingCount === 1;
+            const message = isFirstRating ? 
+              `Thank you for being the first to rate "${product.name}"!` : 
+              `Your rating of ${selectedRating}/5 for "${product.name}" has been recorded.`;
+            
+            // Show confirmation
+            modal.innerHTML = `
+              <div class="rating-modal-content">
+                <span class="close-rating-modal">&times;</span>
+                <h3>Thank You!</h3>
+                <p>${message}</p>
+                <button class="close-rating-confirmation">Close</button>
+              </div>
+            `;
+            
+            // New close button event
+            modal.querySelector('.close-rating-modal').addEventListener('click', () => {
+              modal.remove();
+            });
+            
+            modal.querySelector('.close-rating-confirmation').addEventListener('click', () => {
+              modal.remove();
+              // Refresh products list to show updated ratings
+              fetchAndDisplayProducts();
+            });
+          })
+          .catch(error => {
+            console.error('Error recording rating:', error);
+            modal.innerHTML = `
+              <div class="rating-modal-content">
+                <span class="close-rating-modal">&times;</span>
+                <h3>Error</h3>
+                <p>There was a problem submitting your rating. Please try again later.</p>
+                <button class="close-rating-confirmation">Close</button>
+              </div>
+            `;
+            
+            // Close button event
+            modal.querySelector('.close-rating-confirmation').addEventListener('click', () => {
+              modal.remove();
+            });
+          });
+      }
+    });
+  }
+
+  // Function to open the comment modal
+  function openCommentModal(product) {
+    // Check if a modal already exists and remove it
+    const existingModal = document.querySelector('.comment-modal');
+    if (existingModal) {
+      existingModal.remove();
+    }
+    
+    // Get current comments from localStorage
+    const commentsData = localStorage.getItem('productComments');
+    let allComments = commentsData ? JSON.parse(commentsData) : {};
+    let productComments = allComments[product.id] || [];
+    
+    // Create modal element
+    const modal = document.createElement('div');
+    modal.classList.add('comment-modal');
+    
+    // Generate comments HTML
+    let commentsHtml = '';
+    if (productComments.length > 0) {
+      commentsHtml = productComments.map(comment => {
+        // Format date
+        const commentDate = new Date(comment.date);
+        const formattedDate = commentDate.toLocaleDateString() + ' ' + commentDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+        
+        // Set profile image - use provided image if available, otherwise default icon
+        const profileImg = comment.profileImgUrl 
+          ? `<img src="${comment.profileImgUrl}" alt="${comment.username}" class="comment-user-img">`
+          : `<i class="ri-user-3-fill"></i>`;
+        
+        return `
+          <div class="comment-item" data-comment-id="${comment.id}">
+            <div class="comment-header">
+              <div class="comment-user">
+                ${profileImg}
+                <span class="comment-username">${comment.username}</span>
+              </div>
+              <span class="comment-date">${formattedDate}</span>
+            </div>
+            <div class="comment-text">${escapeHTML(comment.text)}</div>
+            <div class="comment-actions">
+              <button class="comment-like" data-comment-id="${comment.id}">
+                <i class="ri-thumb-up-line"></i> <span>${comment.likes || 0}</span>
+              </button>
+              <button class="comment-dislike" data-comment-id="${comment.id}">
+                <i class="ri-thumb-down-line"></i> <span>${comment.dislikes || 0}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      commentsHtml = '<p class="no-comments">No comments yet. Be the first to comment!</p>';
+    }
+    
+    // Modal content
+    modal.innerHTML = `
+      <div class="comment-modal-content">
+        <span class="close-comment-modal">&times;</span>
+        <h3>Comments for "${product.name}"</h3>
+        
+        <div class="comment-form">
+          <textarea placeholder="Write your comment here..." id="new-comment-text" maxlength="500"></textarea>
+          <div class="comment-form-footer">
+            <span class="comment-chars-left">500 characters left</span>
+            <button class="submit-comment" data-product-id="${product.id}">Post Comment</button>
+          </div>
+        </div>
+        
+        <div class="comments-container">
+          ${commentsHtml}
+        </div>
+      </div>
+    `;
+    
+    // Append to body
+    document.body.appendChild(modal);
+    
+    // Set up event listeners
+    
+    // Close button event
+    const closeBtn = modal.querySelector('.close-comment-modal');
+    closeBtn.addEventListener('click', () => {
+      modal.remove();
+    });
+    
+    // Character counter for textarea
+    const textarea = modal.querySelector('#new-comment-text');
+    const charsLeftSpan = modal.querySelector('.comment-chars-left');
+    
+    textarea.addEventListener('input', () => {
+      const remaining = 500 - textarea.value.length;
+      charsLeftSpan.textContent = `${remaining} characters left`;
+      
+      // Change color when getting low
+      if (remaining < 50) {
+        charsLeftSpan.style.color = '#ff6b6b';
+      } else {
+        charsLeftSpan.style.color = '';
+      }
+    });
+    
+    // Submit comment button
+    const submitBtn = modal.querySelector('.submit-comment');
+    submitBtn.addEventListener('click', async () => {
+      const commentText = textarea.value.trim();
+      
+      if (commentText) {
+        // Check if Clerk is available
+        if (!window.Clerk) {
+          console.warn("Clerk not available, using guest user");
+        }
+        
+        try {
+          // Get user info from Clerk if available
+          let userId, username, profileImgUrl;
+          
+          if (window.Clerk && window.Clerk.user) {
+            // User is logged in with Clerk
+            const user = window.Clerk.user;
+            userId = user.id;
+            username = user.firstName && user.lastName 
+              ? `${user.firstName} ${user.lastName}` 
+              : (user.firstName || user.username || 'User');
+            
+            // Get profile image URL
+            profileImgUrl = user.imageUrl;
+          } else {
+            // Generate guest ID if not already stored
+            userId = localStorage.getItem('userId');
+            if (!userId) {
+              userId = 'guest_' + Math.random().toString(36).substring(2, 15);
+              localStorage.setItem('userId', userId);
+            }
+            username = 'Guest User';
+            profileImgUrl = null;
+          }
+          
+          // Create comment object
+          const newComment = {
+            id: Date.now(), // Use timestamp as ID
+            userId: userId,
+            username: username,
+            profileImgUrl: profileImgUrl,
+            text: commentText,
+            date: new Date().toISOString(),
+            likes: 0,
+            dislikes: 0
+          };
+          
+          // Add to product comments
+          if (!allComments[product.id]) {
+            allComments[product.id] = [];
+          }
+          
+          allComments[product.id].unshift(newComment); // Add to beginning of array
+          
+          // Save back to localStorage
+          localStorage.setItem('productComments', JSON.stringify(allComments));
+          
+          // Update the UI
+          const commentsContainer = modal.querySelector('.comments-container');
+          const noCommentsMsg = commentsContainer.querySelector('.no-comments');
+          
+          if (noCommentsMsg) {
+            // Remove "no comments" message if it exists
+            commentsContainer.innerHTML = '';
+          }
+          
+          // Create new comment element
+          const commentDiv = document.createElement('div');
+          commentDiv.classList.add('comment-item', 'comment-new');
+          commentDiv.setAttribute('data-comment-id', newComment.id);
+          
+          // Format date
+          const commentDate = new Date(newComment.date);
+          const formattedDate = commentDate.toLocaleDateString() + ' ' + commentDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+          
+          // Set profile image - use provided image if available, otherwise default icon
+          const profileImg = newComment.profileImgUrl 
+            ? `<img src="${newComment.profileImgUrl}" alt="${newComment.username}" class="comment-user-img">`
+            : `<i class="ri-user-3-fill"></i>`;
+          
+          commentDiv.innerHTML = `
+            <div class="comment-header">
+              <div class="comment-user">
+                ${profileImg}
+                <span class="comment-username">${newComment.username}</span>
+              </div>
+              <span class="comment-date">${formattedDate}</span>
+            </div>
+            <div class="comment-text">${escapeHTML(newComment.text)}</div>
+            <div class="comment-actions">
+              <button class="comment-like" data-comment-id="${newComment.id}">
+                <i class="ri-thumb-up-line"></i> <span>0</span>
+              </button>
+              <button class="comment-dislike" data-comment-id="${newComment.id}">
+                <i class="ri-thumb-down-line"></i> <span>0</span>
+              </button>
+            </div>
+          `;
+          
+          // Add to the beginning of the container
+          commentsContainer.insertBefore(commentDiv, commentsContainer.firstChild);
+          
+          // Clear the textarea
+          textarea.value = '';
+          charsLeftSpan.textContent = '500 characters left';
+          
+          // Remove highlight after 2 seconds
+          setTimeout(() => {
+            commentDiv.classList.remove('comment-new');
+          }, 2000);
+        } catch (error) {
+          console.error('Error posting comment:', error);
+          alert('There was an error posting your comment. Please try again.');
+        }
+      }
+    });
+    
+    // Setup like/dislike buttons for existing comments
+    const commentLikeBtns = modal.querySelectorAll('.comment-like');
+    const commentDislikeBtns = modal.querySelectorAll('.comment-dislike');
+    
+    commentLikeBtns.forEach(likeBtn => {
+      likeBtn.addEventListener('click', function() {
+        const commentId = this.getAttribute('data-comment-id');
+        const commentIndex = allComments[product.id].findIndex(c => c.id.toString() === commentId);
+        
+        if (commentIndex !== -1) {
+          // Increment likes
+          allComments[product.id][commentIndex].likes = (allComments[product.id][commentIndex].likes || 0) + 1;
+          
+          // Update UI
+          const countSpan = this.querySelector('span');
+          countSpan.textContent = parseInt(countSpan.textContent) + 1;
+          
+          // Change icon to filled
+          this.querySelector('i').className = 'ri-thumb-up-fill';
+          
+          // Disable both buttons
+          this.disabled = true;
+          const dislikeBtn = this.parentNode.querySelector('.comment-dislike');
+          dislikeBtn.disabled = true;
+          
+          // Save to localStorage
+          localStorage.setItem('productComments', JSON.stringify(allComments));
+        }
+      });
+    });
+    
+    commentDislikeBtns.forEach(dislikeBtn => {
+      dislikeBtn.addEventListener('click', function() {
+        const commentId = this.getAttribute('data-comment-id');
+        const commentIndex = allComments[product.id].findIndex(c => c.id.toString() === commentId);
+        
+        if (commentIndex !== -1) {
+          // Increment dislikes
+          allComments[product.id][commentIndex].dislikes = (allComments[product.id][commentIndex].dislikes || 0) + 1;
+          
+          // Update UI
+          const countSpan = this.querySelector('span');
+          countSpan.textContent = parseInt(countSpan.textContent) + 1;
+          
+          // Change icon to filled
+          this.querySelector('i').className = 'ri-thumb-down-fill';
+          
+          // Disable both buttons
+          this.disabled = true;
+          const likeBtn = this.parentNode.querySelector('.comment-like');
+          likeBtn.disabled = true;
+          
+          // Save to localStorage
+          localStorage.setItem('productComments', JSON.stringify(allComments));
+        }
+      });
+    });
   }
 
 });

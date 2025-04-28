@@ -805,7 +805,19 @@
   <script type="module">
     // Import Firebase modules directly in this page
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js";
+    import { 
+      getFirestore, 
+      doc, 
+      setDoc, 
+      getDoc, 
+      collection, 
+      query, 
+      where, 
+      getDocs, 
+      orderBy, 
+      deleteDoc, 
+      serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js";
 
     // Firebase configuration - same as in firebase.js
     const firebaseConfig = {
@@ -921,7 +933,7 @@
             </div>
             <div class="stat-card">
               <h3>Total Revenue</h3>
-              <div class="value" id="totalRevenue">Rs. 0</div>
+              <div class="value" id="totalRevenue">PKR 0</div>
               <div class="trend up" id="revenueTrend">
                 <i class="ri-arrow-up-line"></i>
                 <span>0% from last month</span>
@@ -929,7 +941,7 @@
             </div>
             <div class="stat-card">
               <h3>Average Order Value</h3>
-              <div class="value" id="avgOrderValue">Rs. 0</div>
+              <div class="value" id="avgOrderValue">PKR 0</div>
               <div class="trend up" id="avgOrderTrend">
                 <i class="ri-arrow-up-line"></i>
                 <span>0% from last month</span>
@@ -1012,6 +1024,7 @@
               <div class="form-group">
                 <label>Currency</label>
                 <select id="storeCurrency">
+                  <option value="PKR">Pakistan Rupee (PKR)</option>
                   <option value="Rs.">Indian Rupee (Rs.)</option>
                   <option value="$">US Dollar ($)</option>
                   <option value="€">Euro (€)</option>
@@ -1065,9 +1078,9 @@
 
             <!-- Payment Settings -->
             <div class="settings-card">
-              <h3><i class="ri-secure-payment-line"></i> Payment Settings</h3>
+              <h3><i class="ri-secure-payment-line"></i> Payment Methods</h3>
               <div class="form-group">
-                <label>Payment Methods</label>
+                <label>Available Payment Methods</label>
                 <div style="margin-bottom: 10px;">
                   <label class="toggle-switch">
                     <input type="checkbox" id="enableCashOnDelivery" checked>
@@ -1307,8 +1320,8 @@
             // Update UI
             document.getElementById('totalOrders').textContent = totalOrders;
             document.getElementById('pendingOrders').textContent = pendingOrders;
-            document.getElementById('totalRevenue').textContent = `Rs. ${totalRevenue.toFixed(2)}`;
-            document.getElementById('avgOrderValue').textContent = `Rs. ${avgOrderValue.toFixed(2)}`;
+            document.getElementById('totalRevenue').textContent = `PKR ${totalRevenue.toFixed(2)}`;
+            document.getElementById('avgOrderValue').textContent = `PKR ${avgOrderValue.toFixed(2)}`;
 
             // Update trends with icons and colors
             updateTrendDisplay('totalOrdersTrend', ordersTrend, 'month');
@@ -1507,7 +1520,7 @@
                 <td>${order.id}</td>
                 <td>${order.email || 'guest'}</td>
                 <td>${formattedDate}</td>
-                <td>Rs. ${(order.total || 0).toFixed(2)}</td>
+                <td>PKR ${(order.total || 0).toFixed(2)}</td>
                 <td><span class="status-badge ${statusClass}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></td>
                 <td class="action-buttons">
                   ${actionButtons}
@@ -1528,7 +1541,7 @@
                         <img src="${item.image || ''}" alt="${item.name}" onerror="this.src='placeholder.jpg'">
                         <div class="order-item-info">
                           <div class="order-item-name">${item.name}</div>
-                          <div class="order-item-price">Rs. ${item.price} x ${item.quantity}</div>
+                          <div class="order-item-price">PKR ${item.price} x ${item.quantity}</div>
                         </div>
                       </div>
                     `).join('')}
@@ -1683,6 +1696,10 @@
         // Setup window-level function for settings
         window.saveStoreSettings = async function() {
           try {
+            const storeSettingsMsg = document.getElementById('storeSettingsMsg');
+            storeSettingsMsg.textContent = 'Saving settings...';
+            storeSettingsMsg.className = 'settings-msg';
+            
             const settings = {
               name: document.getElementById('storeName').value,
               description: document.getElementById('storeDescription').value,
@@ -1691,19 +1708,30 @@
               updatedBy: localStorage.getItem('adminEmail')
             };
 
-            await setDoc(doc(db, 'settings', 'store'), settings);
+            // Log the attempt
+            console.log('Attempting to save store settings:', settings);
             
-            document.getElementById('storeSettingsMsg').textContent = 'Store settings saved successfully!';
-            document.getElementById('storeSettingsMsg').className = 'settings-msg success';
+            // Ensure database is initialized
+            if (!window.db) {
+              throw new Error('Database not initialized.');
+            }
+            
+            // Save to Firestore
+            await setDoc(doc(db, 'settings', 'store'), settings);
+            console.log('Store settings saved successfully!');
+            
+            storeSettingsMsg.textContent = 'Store settings saved successfully!';
+            storeSettingsMsg.className = 'settings-msg success';
             
             // Show success message for 3 seconds
             setTimeout(() => {
-              document.getElementById('storeSettingsMsg').textContent = '';
+              storeSettingsMsg.textContent = '';
             }, 3000);
           } catch (error) {
             console.error('Error saving store settings:', error);
-            document.getElementById('storeSettingsMsg').textContent = 'Error saving settings. Please try again.';
-            document.getElementById('storeSettingsMsg').className = 'settings-msg error';
+            const errorMsg = document.getElementById('storeSettingsMsg');
+            errorMsg.textContent = `Error: ${error.message || 'Unknown error. Please try again.'}`;
+            errorMsg.className = 'settings-msg error';
           }
         };
 
@@ -1767,6 +1795,10 @@
 
         window.saveEmailSettings = async function() {
           try {
+            const emailSettingsMsg = document.getElementById('emailSettingsMsg');
+            emailSettingsMsg.textContent = 'Saving settings...';
+            emailSettingsMsg.className = 'settings-msg';
+            
             const settings = {
               orderConfirmationTemplate: document.getElementById('orderConfirmationTemplate').value,
               shippingTemplate: document.getElementById('shippingTemplate').value,
@@ -1775,24 +1807,39 @@
               updatedBy: localStorage.getItem('adminEmail')
             };
 
-            await setDoc(doc(db, 'settings', 'email'), settings);
+            // Log the attempt
+            console.log('Attempting to save email settings:', settings);
             
-            document.getElementById('emailSettingsMsg').textContent = 'Email settings saved successfully!';
-            document.getElementById('emailSettingsMsg').className = 'settings-msg success';
+            // Ensure database is initialized
+            if (!window.db) {
+              throw new Error('Database not initialized.');
+            }
+            
+            // Save to Firestore
+            await setDoc(doc(db, 'settings', 'email'), settings);
+            console.log('Email settings saved successfully!');
+            
+            emailSettingsMsg.textContent = 'Email settings saved successfully!';
+            emailSettingsMsg.className = 'settings-msg success';
             
             // Show success message for 3 seconds
             setTimeout(() => {
-              document.getElementById('emailSettingsMsg').textContent = '';
+              emailSettingsMsg.textContent = '';
             }, 3000);
           } catch (error) {
             console.error('Error saving email settings:', error);
-            document.getElementById('emailSettingsMsg').textContent = 'Error saving settings. Please try again.';
-            document.getElementById('emailSettingsMsg').className = 'settings-msg error';
+            const errorMsg = document.getElementById('emailSettingsMsg');
+            errorMsg.textContent = `Error: ${error.message || 'Unknown error. Please try again.'}`;
+            errorMsg.className = 'settings-msg error';
           }
         };
 
         window.savePaymentSettings = async function() {
           try {
+            const paymentSettingsMsg = document.getElementById('paymentSettingsMsg');
+            paymentSettingsMsg.textContent = 'Saving settings...';
+            paymentSettingsMsg.className = 'settings-msg';
+            
             const settings = {
               cashOnDelivery: document.getElementById('enableCashOnDelivery').checked,
               cardPayment: document.getElementById('enableCardPayment').checked,
@@ -1801,65 +1848,145 @@
               updatedBy: localStorage.getItem('adminEmail')
             };
 
-            await setDoc(doc(db, 'settings', 'payment'), settings);
+            // Log the attempt
+            console.log('Attempting to save payment settings:', settings);
             
-            document.getElementById('paymentSettingsMsg').textContent = 'Payment settings saved successfully!';
-            document.getElementById('paymentSettingsMsg').className = 'settings-msg success';
+            // Ensure database is initialized
+            if (!window.db) {
+              throw new Error('Database not initialized.');
+            }
+            
+            // Save to Firestore
+            await setDoc(doc(db, 'settings', 'payment'), settings);
+            console.log('Payment settings saved successfully!');
+            
+            paymentSettingsMsg.textContent = 'Payment settings saved successfully!';
+            paymentSettingsMsg.className = 'settings-msg success';
             
             // Show success message for 3 seconds
             setTimeout(() => {
-              document.getElementById('paymentSettingsMsg').textContent = '';
+              paymentSettingsMsg.textContent = '';
             }, 3000);
           } catch (error) {
             console.error('Error saving payment settings:', error);
-            document.getElementById('paymentSettingsMsg').textContent = 'Error saving settings. Please try again.';
-            document.getElementById('paymentSettingsMsg').className = 'settings-msg error';
+            const errorMsg = document.getElementById('paymentSettingsMsg');
+            errorMsg.textContent = `Error: ${error.message || 'Unknown error. Please try again.'}`;
+            errorMsg.className = 'settings-msg error';
           }
         };
 
         // Load existing settings
         async function loadSettings() {
           try {
+            console.log("Starting to load settings...");
+            
             // Show loading state
             document.getElementById('storeSettingsMsg').textContent = 'Loading settings...';
             document.getElementById('emailSettingsMsg').textContent = 'Loading settings...';
             document.getElementById('paymentSettingsMsg').textContent = 'Loading settings...';
             
-            // Load store settings
-            const storeSettings = await getDoc(doc(db, 'settings', 'store'));
-            if (storeSettings.exists()) {
-              const data = storeSettings.data();
-              document.getElementById('storeName').value = data.name || '';
-              document.getElementById('storeDescription').value = data.description || '';
-              document.getElementById('storeCurrency').value = data.currency || 'Rs.';
-            }
-
-            // Load email settings
-            const emailSettings = await getDoc(doc(db, 'settings', 'email'));
-            if (emailSettings.exists()) {
-              const data = emailSettings.data();
-              document.getElementById('orderConfirmationTemplate').value = data.orderConfirmationTemplate || '';
-              document.getElementById('shippingTemplate').value = data.shippingTemplate || '';
+            // Initialize default settings
+            const defaultStoreSettings = {
+              name: 'M. Fashion',
+              description: 'Pakistani Fashion Store',
+              currency: 'PKR',
+              updatedAt: serverTimestamp(),
+              updatedBy: localStorage.getItem('adminEmail') || 'system'
+            };
+            
+            const defaultEmailSettings = {
+              orderConfirmationTemplate: 'Thank you for your order! Your order #{{orderId}} has been confirmed.',
+              shippingTemplate: 'Your order #{{orderId}} has been shipped and will arrive soon!',
+              sendOrderUpdates: true,
+              updatedAt: serverTimestamp(),
+              updatedBy: localStorage.getItem('adminEmail') || 'system'
+            };
+            
+            const defaultPaymentSettings = {
+              cashOnDelivery: true,
+              cardPayment: true,
+              upi: true,
+              updatedAt: serverTimestamp(),
+              updatedBy: localStorage.getItem('adminEmail') || 'system'
+            };
+            
+            // Helper function to safely process each setting type
+            const processSetting = async (settingType, defaultSettings, formUpdateFn) => {
+              try {
+                console.log(`Processing ${settingType} settings...`);
+                const settingRef = doc(db, 'settings', settingType);
+                const settingSnapshot = await getDoc(settingRef);
+                
+                if (settingSnapshot.exists()) {
+                  console.log(`${settingType} settings exist, loading them`);
+                  const data = settingSnapshot.data();
+                  formUpdateFn(data);
+                } else {
+                  console.log(`${settingType} settings don't exist, creating defaults`);
+                  try {
+                    await setDoc(settingRef, defaultSettings);
+                    console.log(`Default ${settingType} settings created successfully`);
+                    formUpdateFn(defaultSettings);
+                  } catch (createError) {
+                    console.error(`Error creating default ${settingType} settings:`, createError);
+                    // Continue anyway and try to populate the form with defaults
+                    formUpdateFn(defaultSettings);
+                  }
+                }
+                document.getElementById(`${settingType}SettingsMsg`).textContent = '';
+              } catch (error) {
+                console.error(`Error processing ${settingType} settings:`, error);
+                document.getElementById(`${settingType}SettingsMsg`).textContent = `Error: ${error.message}`;
+                document.getElementById(`${settingType}SettingsMsg`).className = 'settings-msg error';
+                // Still update the form with defaults to ensure UI is usable
+                formUpdateFn(defaultSettings);
+              }
+            };
+            
+            // Process store settings
+            await processSetting('store', defaultStoreSettings, (data) => {
+              document.getElementById('storeName').value = data.name || 'M. Fashion';
+              document.getElementById('storeDescription').value = data.description || 'Pakistani Fashion Store';
+              document.getElementById('storeCurrency').value = data.currency || 'PKR';
+            });
+            
+            // Process email settings
+            await processSetting('email', defaultEmailSettings, (data) => {
+              document.getElementById('orderConfirmationTemplate').value = data.orderConfirmationTemplate || defaultEmailSettings.orderConfirmationTemplate;
+              document.getElementById('shippingTemplate').value = data.shippingTemplate || defaultEmailSettings.shippingTemplate;
               document.getElementById('sendOrderUpdates').checked = data.sendOrderUpdates ?? true;
-            }
-
-            // Load payment settings
-            const paymentSettings = await getDoc(doc(db, 'settings', 'payment'));
-            if (paymentSettings.exists()) {
-              const data = paymentSettings.data();
+            });
+            
+            // Process payment settings
+            await processSetting('payment', defaultPaymentSettings, (data) => {
               document.getElementById('enableCashOnDelivery').checked = data.cashOnDelivery ?? true;
               document.getElementById('enableCardPayment').checked = data.cardPayment ?? true;
               document.getElementById('enableUPI').checked = data.upi ?? true;
-            }
+            });
             
-            // Clear loading messages
-            document.getElementById('storeSettingsMsg').textContent = '';
-            document.getElementById('emailSettingsMsg').textContent = '';
-            document.getElementById('paymentSettingsMsg').textContent = '';
+            console.log("All settings loaded successfully");
+            
           } catch (error) {
-            console.error('Error loading settings:', error);
-            document.getElementById('storeSettingsMsg').textContent = 'Error loading settings';
+            console.error('Top-level error loading settings:', error);
+            // Update all error messages with the specific error
+            const errorMsg = `Error: ${error.message || 'Unknown error'}`;
+            document.getElementById('storeSettingsMsg').textContent = errorMsg;
             document.getElementById('storeSettingsMsg').className = 'settings-msg error';
+            document.getElementById('emailSettingsMsg').textContent = errorMsg;
+            document.getElementById('emailSettingsMsg').className = 'settings-msg error';
+            document.getElementById('paymentSettingsMsg').textContent = errorMsg;
+            document.getElementById('paymentSettingsMsg').className = 'settings-msg error';
+            
+            // Still attempt to populate forms with default values so UI is usable
+            document.getElementById('storeName').value = 'M. Fashion';
+            document.getElementById('storeDescription').value = 'Pakistani Fashion Store';
+            document.getElementById('storeCurrency').value = 'PKR';
+            document.getElementById('orderConfirmationTemplate').value = 'Thank you for your order! Your order #{{orderId}} has been confirmed.';
+            document.getElementById('shippingTemplate').value = 'Your order #{{orderId}} has been shipped and will arrive soon!';
+            document.getElementById('sendOrderUpdates').checked = true;
+            document.getElementById('enableCashOnDelivery').checked = true;
+            document.getElementById('enableCardPayment').checked = true;
+            document.getElementById('enableUPI').checked = true;
           }
         }
 

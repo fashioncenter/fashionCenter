@@ -3,6 +3,7 @@ class RecommendationSystem {
   constructor() {
     this.userBehavior = {};
     this.productSimilarity = {};
+    this.productRatings = {};
     this.initializeFromStorage();
   }
 
@@ -12,11 +13,17 @@ class RecommendationSystem {
     if (storedBehavior) {
       this.userBehavior = JSON.parse(storedBehavior);
     }
+    
+    const storedRatings = localStorage.getItem('productRatings');
+    if (storedRatings) {
+      this.productRatings = JSON.parse(storedRatings);
+    }
   }
 
   // Save data to localStorage
   saveToStorage() {
     localStorage.setItem('userBehavior', JSON.stringify(this.userBehavior));
+    localStorage.setItem('productRatings', JSON.stringify(this.productRatings));
   }
 
   // Record user behavior
@@ -34,6 +41,92 @@ class RecommendationSystem {
     
     this.userBehavior[userId][productId][action]++;
     this.saveToStorage();
+  }
+  
+  // Record a product rating
+  recordRating(userId, productId, rating) {
+    if (!this.productRatings[productId]) {
+      this.productRatings[productId] = {
+        totalRating: 0,
+        ratingCount: 0,
+        userRatings: {}
+      };
+    }
+    
+    // If user already rated, adjust the total
+    if (this.productRatings[productId].userRatings[userId]) {
+      this.productRatings[productId].totalRating -= this.productRatings[productId].userRatings[userId];
+    } else {
+      // Otherwise increment the count for new ratings
+      this.productRatings[productId].ratingCount++;
+    }
+    
+    // Add the new rating
+    this.productRatings[productId].userRatings[userId] = rating;
+    this.productRatings[productId].totalRating += rating;
+    
+    this.saveToStorage();
+  }
+  
+  // Get average rating for a product
+  getAverageRating(productId) {
+    if (!this.productRatings[productId] || this.productRatings[productId].ratingCount === 0) {
+      return 0;
+    }
+    
+    return this.productRatings[productId].totalRating / this.productRatings[productId].ratingCount;
+  }
+  
+  // Rank products based on ratings and other factors
+  rankProducts(products, userId = null) {
+    // Make a copy to avoid modifying original array
+    const rankedProducts = [...products];
+    
+    // Calculate score for each product
+    const productsWithScores = rankedProducts.map(product => {
+      // Base score from average rating (scale 0-5)
+      let score = this.getAverageRating(product.id) || 0;
+      
+      // Popularity factor based on number of ratings (0-2)
+      const ratingCount = this.productRatings[product.id]?.ratingCount || 0;
+      const popularityFactor = Math.min(2, ratingCount / 10);
+      
+      // Price factor - more discount means higher score (0-1)
+      const discountPercentage = product.price.original > 0 ? 
+        (product.price.original - product.price.discounted) / product.price.original : 0;
+      const priceFactor = discountPercentage;
+      
+      // User personalization if userId is provided
+      let personalizationFactor = 0;
+      if (userId && this.userBehavior[userId] && this.userBehavior[userId][product.id]) {
+        const behavior = this.userBehavior[userId][product.id];
+        // Calculate based on views, favorites and purchases (0-2)
+        personalizationFactor = (behavior.views * 0.1 + 
+                                behavior.favorites * 0.5 + 
+                                behavior.purchases * 1.0);
+        personalizationFactor = Math.min(2, personalizationFactor);
+      }
+      
+      // Final weighted score combines all factors
+      const finalScore = (score * 2) + // Rating has highest weight
+                          (popularityFactor * 1) + 
+                          (priceFactor * 0.5) + 
+                          (personalizationFactor * 1.5);
+      
+      return {
+        ...product,
+        score: finalScore
+      };
+    });
+    
+    // Sort by score in descending order
+    return productsWithScores
+      .sort((a, b) => b.score - a.score)
+      .map(product => {
+        // Remove score from the returned object
+        const { score, ...cleanProduct } = product;
+        return cleanProduct;
+      });
   }
 
   // Calculate similarity between products
@@ -54,6 +147,18 @@ class RecommendationSystem {
 
         // Weight the different types of behavior
         similarity += (viewsSimilarity * 0.3 + favoritesSimilarity * 0.4 + purchasesSimilarity * 0.3);
+        totalUsers++;
+      }
+    }
+    
+    // Also consider ratings similarity if available
+    if (this.productRatings[productId1] && this.productRatings[productId2]) {
+      const rating1 = this.getAverageRating(productId1);
+      const rating2 = this.getAverageRating(productId2);
+      
+      if (rating1 > 0 && rating2 > 0) {
+        const ratingSimilarity = 1 - (Math.abs(rating1 - rating2) / 5); // Normalize to 0-1
+        similarity += ratingSimilarity;
         totalUsers++;
       }
     }
