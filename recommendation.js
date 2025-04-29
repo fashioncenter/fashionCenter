@@ -1,134 +1,155 @@
 // Recommendation System using Collaborative Filtering
+import { getDatabase, ref, set, get, update, child } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js";
+
 class RecommendationSystem {
   constructor() {
     this.userBehavior = {};
     this.productSimilarity = {};
-    this.productRatings = {};
-    this.initializeFromStorage();
-  }
-
-  // Initialize data from localStorage
-  initializeFromStorage() {
-    const storedBehavior = localStorage.getItem('userBehavior');
-    if (storedBehavior) {
-      this.userBehavior = JSON.parse(storedBehavior);
-    }
+    this.db = null;
+    this.dbRef = null;
     
-    const storedRatings = localStorage.getItem('productRatings');
-    if (storedRatings) {
-      this.productRatings = JSON.parse(storedRatings);
+    // Firebase configuration
+    this.firebaseConfig = {
+      apiKey: "AIzaSyApjH4ppFf8UEpe1GpTq7CoHjV5T-rxlBQ",
+      authDomain: "mfashion-20874.firebaseapp.com",
+      databaseURL: "https://mfashion-20874-default-rtdb.firebaseio.com",
+      projectId: "mfashion-20874",
+      storageBucket: "mfashion-20874.firebasestorage.app",
+      messagingSenderId: "339078516901",
+      appId: "1:339078516901:web:589193af5fb650f5773d4c",
+      measurementId: "G-SM73TL9NKE"
+    };
+    
+    // Initialize Firebase and then load data
+    this.initFirebase().then(() => {
+      this.loadFromFirebase();
+    }).catch(error => {
+      console.error("Failed to initialize Firebase:", error);
+      // Fall back to localStorage if Firebase fails
+      this.loadFromLocalStorage();
+    });
+  }
+
+  // Initialize Firebase
+  async initFirebase() {
+    try {
+      const app = initializeApp(this.firebaseConfig);
+      this.db = getDatabase(app);
+      this.dbRef = ref(this.db);
+      console.log("Firebase Realtime Database initialized for recommendations");
+      return true;
+    } catch (error) {
+      console.error("Error initializing Firebase:", error);
+      return false;
     }
   }
 
-  // Save data to localStorage
-  saveToStorage() {
-    localStorage.setItem('userBehavior', JSON.stringify(this.userBehavior));
-    localStorage.setItem('productRatings', JSON.stringify(this.productRatings));
+  // Load data from Firebase
+  async loadFromFirebase() {
+    try {
+      if (!this.db) {
+        console.warn("Firebase not initialized, can't load data");
+        return false;
+      }
+
+      // Get user behavior data
+      const behaviorSnapshot = await get(child(this.dbRef, 'userBehavior'));
+      if (behaviorSnapshot.exists()) {
+        this.userBehavior = behaviorSnapshot.val();
+        console.log("Loaded user behavior from Firebase");
+      } else {
+        console.log("No user behavior found in Firebase");
+        this.userBehavior = {};
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error loading from Firebase:", error);
+      return false;
+    }
+  }
+
+  // Save data to Firebase
+  async saveToFirebase() {
+    try {
+      if (!this.db) {
+        console.warn("Firebase not initialized, can't save data");
+        return false;
+      }
+      
+      // Save user behavior data
+      await set(ref(this.db, 'userBehavior'), this.userBehavior);
+      
+      console.log("Data saved to Firebase successfully");
+      return true;
+    } catch (error) {
+      console.error("Error saving to Firebase:", error);
+      return false;
+    }
+  }
+
+  // Fallback: Load from localStorage
+  loadFromLocalStorage() {
+    try {
+      const storedBehavior = localStorage.getItem('userBehavior');
+      if (storedBehavior) {
+        this.userBehavior = JSON.parse(storedBehavior);
+      }
+      console.log("Loaded data from localStorage as fallback");
+    } catch (error) {
+      console.error('Error loading from localStorage:', error);
+      this.userBehavior = {};
+    }
+  }
+
+  // Fallback: Save to localStorage
+  saveToLocalStorage() {
+    try {
+      localStorage.setItem('userBehavior', JSON.stringify(this.userBehavior));
+      return true;
+    } catch (error) {
+      console.error('Error saving to localStorage:', error);
+      return false;
+    }
   }
 
   // Record user behavior
-  recordBehavior(userId, productId, action) {
-    if (!this.userBehavior[userId]) {
-      this.userBehavior[userId] = {};
-    }
-    if (!this.userBehavior[userId][productId]) {
-      this.userBehavior[userId][productId] = {
-        views: 0,
-        favorites: 0,
-        purchases: 0
-      };
+  async recordBehavior(userId, productId, action) {
+    if (!userId || !productId || !action) {
+      console.error('Invalid parameters for recordBehavior');
+      return false;
     }
     
-    this.userBehavior[userId][productId][action]++;
-    this.saveToStorage();
-  }
-  
-  // Record a product rating
-  recordRating(userId, productId, rating) {
-    if (!this.productRatings[productId]) {
-      this.productRatings[productId] = {
-        totalRating: 0,
-        ratingCount: 0,
-        userRatings: {}
-      };
-    }
-    
-    // If user already rated, adjust the total
-    if (this.productRatings[productId].userRatings[userId]) {
-      this.productRatings[productId].totalRating -= this.productRatings[productId].userRatings[userId];
-    } else {
-      // Otherwise increment the count for new ratings
-      this.productRatings[productId].ratingCount++;
-    }
-    
-    // Add the new rating
-    this.productRatings[productId].userRatings[userId] = rating;
-    this.productRatings[productId].totalRating += rating;
-    
-    this.saveToStorage();
-  }
-  
-  // Get average rating for a product
-  getAverageRating(productId) {
-    if (!this.productRatings[productId] || this.productRatings[productId].ratingCount === 0) {
-      return 0;
-    }
-    
-    return this.productRatings[productId].totalRating / this.productRatings[productId].ratingCount;
-  }
-  
-  // Rank products based on ratings and other factors
-  rankProducts(products, userId = null) {
-    // Make a copy to avoid modifying original array
-    const rankedProducts = [...products];
-    
-    // Calculate score for each product
-    const productsWithScores = rankedProducts.map(product => {
-      // Base score from average rating (scale 0-5)
-      let score = this.getAverageRating(product.id) || 0;
-      
-      // Popularity factor based on number of ratings (0-2)
-      const ratingCount = this.productRatings[product.id]?.ratingCount || 0;
-      const popularityFactor = Math.min(2, ratingCount / 10);
-      
-      // Price factor - more discount means higher score (0-1)
-      const discountPercentage = product.price.original > 0 ? 
-        (product.price.original - product.price.discounted) / product.price.original : 0;
-      const priceFactor = discountPercentage;
-      
-      // User personalization if userId is provided
-      let personalizationFactor = 0;
-      if (userId && this.userBehavior[userId] && this.userBehavior[userId][product.id]) {
-        const behavior = this.userBehavior[userId][product.id];
-        // Calculate based on views, favorites and purchases (0-2)
-        personalizationFactor = (behavior.views * 0.1 + 
-                                behavior.favorites * 0.5 + 
-                                behavior.purchases * 1.0);
-        personalizationFactor = Math.min(2, personalizationFactor);
+    try {
+      if (!this.userBehavior[userId]) {
+        this.userBehavior[userId] = {};
+      }
+      if (!this.userBehavior[userId][productId]) {
+        this.userBehavior[userId][productId] = {
+          views: 0,
+          favorites: 0,
+          purchases: 0
+        };
       }
       
-      // Final weighted score combines all factors
-      const finalScore = (score * 2) + // Rating has highest weight
-                          (popularityFactor * 1) + 
-                          (priceFactor * 0.5) + 
-                          (personalizationFactor * 1.5);
+      this.userBehavior[userId][productId][action]++;
       
-      return {
-        ...product,
-        score: finalScore
-      };
-    });
-    
-    // Sort by score in descending order
-    return productsWithScores
-      .sort((a, b) => b.score - a.score)
-      .map(product => {
-        // Remove score from the returned object
-        const { score, ...cleanProduct } = product;
-        return cleanProduct;
-      });
+      // Try to save to Firebase first
+      const firebaseSaved = await this.saveToFirebase();
+      
+      // If Firebase fails, save to localStorage as backup
+      if (!firebaseSaved) {
+        return this.saveToLocalStorage();
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error recording behavior:', error);
+      return false;
+    }
   }
-
+  
   // Calculate similarity between products
   calculateProductSimilarity(productId1, productId2) {
     let similarity = 0;
@@ -147,18 +168,6 @@ class RecommendationSystem {
 
         // Weight the different types of behavior
         similarity += (viewsSimilarity * 0.3 + favoritesSimilarity * 0.4 + purchasesSimilarity * 0.3);
-        totalUsers++;
-      }
-    }
-    
-    // Also consider ratings similarity if available
-    if (this.productRatings[productId1] && this.productRatings[productId2]) {
-      const rating1 = this.getAverageRating(productId1);
-      const rating2 = this.getAverageRating(productId2);
-      
-      if (rating1 > 0 && rating2 > 0) {
-        const ratingSimilarity = 1 - (Math.abs(rating1 - rating2) / 5); // Normalize to 0-1
-        similarity += ratingSimilarity;
         totalUsers++;
       }
     }
@@ -214,6 +223,62 @@ class RecommendationSystem {
       .sort((a, b) => b[1] - a[1])
       .slice(0, limit)
       .map(([productId]) => productId);
+  }
+  
+  // Rank products based on user behavior and other factors
+  rankProducts(products, userId = null) {
+    // Make a copy to avoid modifying original array
+    const rankedProducts = [...products];
+    
+    // Calculate score for each product
+    const productsWithScores = rankedProducts.map(product => {
+      // Base score (0-5) - now based only on popularity and user personalization
+      let score = 0;
+      
+      // Popularity factor based on interactions (0-2)
+      let interactionCount = 0;
+      for (const uid in this.userBehavior) {
+        if (this.userBehavior[uid][product.id]) {
+          interactionCount++;
+        }
+      }
+      const popularityFactor = Math.min(2, interactionCount / 5);
+      
+      // Price factor - more discount means higher score (0-1)
+      const discountPercentage = product.price.original > 0 ? 
+        (product.price.original - product.price.discounted) / product.price.original : 0;
+      const priceFactor = discountPercentage;
+      
+      // User personalization if userId is provided
+      let personalizationFactor = 0;
+      if (userId && this.userBehavior[userId] && this.userBehavior[userId][product.id]) {
+        const behavior = this.userBehavior[userId][product.id];
+        // Calculate based on views, favorites and purchases (0-2)
+        personalizationFactor = (behavior.views * 0.1 + 
+                                behavior.favorites * 0.5 + 
+                                behavior.purchases * 1.0);
+        personalizationFactor = Math.min(2, personalizationFactor);
+      }
+      
+      // Final weighted score combines all factors
+      const finalScore = (popularityFactor * 1) + 
+                        (priceFactor * 0.5) + 
+                        (personalizationFactor * 1.5);
+      
+      return {
+        ...product,
+        score: finalScore
+      };
+    });
+    
+    // Sort by score in descending order
+    return productsWithScores
+      .sort((a, b) => b.score - a.score)
+      .map(product => {
+        // Remove score from the returned object
+        const { score, ...cleanProduct } = product;
+        return cleanProduct;
+      });
   }
 }
 

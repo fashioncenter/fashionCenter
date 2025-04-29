@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details - Fashion Center</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="shortcut icon" href="Assets/logo.png" type="image/x-icon">
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #16c79a;
+            --accent-color: #f8f9fa;
+            --text-color: #343a40;
+            --light-gray: #f1f3f5;
+            --dark-gray: #6c757d;
+            --border-radius: 12px;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            background-color: #f9f9f9;
+            color: var(--text-color);
+        }
+
+        .breadcrumb {
+            max-width: 1200px;
+            margin: 1.5rem auto 0;
+            padding: 0 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--dark-gray);
+        }
+
+        .breadcrumb a {
+            color: var(--dark-gray);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .breadcrumb a:hover {
+            color: var(--primary-color);
+        }
+
+        .breadcrumb .separator {
+            color: var(--dark-gray);
+            margin: 0 0.25rem;
+        }
+
+        .product-detail-container {
+            max-width: 1200px;
+            margin: 1.5rem auto 5rem;
+            padding: 0 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+        }
+
+        .product-images {
+            position: relative;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .main-image-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: var(--border-radius);
+            background: var(--light-gray);
+            margin-bottom: 1.5rem;
+            aspect-ratio: 1 / 1;
+        }
+
+        .main-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.5s ease;
+        }
+
+        .main-image:hover {
+            transform: scale(1.05);
+        }
+
+        .zoom-icon {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--text-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .zoom-icon:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+
+        .image-badges {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            padding: 0.35rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .new-badge {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .discount-badge {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .thumbnail-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .thumbnail {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .thumbnail:hover {
+            transform: translateY(-3px);
+        }
+
+        .thumbnail.active {
+            border-color: var(--primary-color);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.2);
+        }
+
+        .product-info {
+            padding: 2rem;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+        }
+
+        .product-category {
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--dark-gray);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        .product-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+            color: #111;
+        }
+
+        .product-rating {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .product-rating .stars {
+            color: #ffc107;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .product-rating .stars i {
+            margin-right: 3px;
+        }
+
+        .rating-count {
+            color: var(--dark-gray);
+            font-size: 0.9rem;
+            margin-left: 5px;
+        }
+        
+        .rate-product {
+            background: #fff;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: 5px;
+        }
+        
+        .rate-product:hover {
+            background: #f5f5f5;
+            border-color: #ccc;
+            transform: translateY(-1px);
+        }
+        
+        .rate-product i {
+            font-size: 14px;
+        }
+
+        .product-price-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .product-price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .product-original-price {
+            font-size: 1.2rem;
+            text-decoration: line-through;
+            color: var(--dark-gray);
+        }
+
+        .product-discount {
+            background: #eaf7f0;
+            color: var(--secondary-color);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .product-description {
+            margin-bottom: 2rem;
+            line-height: 1.8;
+            color: #555;
+            font-size: 1.05rem;
+        }
+
+        .product-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            background: var(--light-gray);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #ebebeb;
+        }
+
+        .quantity-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: transparent;
+            color: #333;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quantity-btn:hover {
+            background: #e9ecef;
+        }
+
+        .quantity-input {
+            width: 60px;
+            height: 40px;
+            border: none;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 500;
+            background: transparent;
+        }
+
+        .add-to-cart-btn, .buy-now-btn {
+            flex: 1;
+            min-width: 180px;
+            padding: 0.85rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .add-to-cart-btn {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .add-to-cart-btn:hover {
+            background: #0069d9;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 105, 217, 0.3);
+        }
+
+        .buy-now-btn {
+            background: var(--secondary-color);
+            color: white;
+        }
+        
+        .buy-now-btn:hover {
+            background: #13b38a;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(19, 179, 138, 0.3);
+        }
+
+        .product-meta {
+            margin-top: auto;
+            padding-top: 2rem;
+            border-top: 1px solid #eee;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .meta-item {
+            background: var(--light-gray);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .meta-item:hover {
+            background: #e9ecef;
+            transform: translateY(-3px);
+        }
+
+        .meta-item i {
+            display: block;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .meta-item strong {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            color: var(--dark-gray);
+        }
+
+        .meta-item span {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .share-section {
+            margin-top: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .share-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--dark-gray);
+        }
+
+        .share-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .share-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            background: var(--dark-gray);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        }
+
+        .facebook {
+            background: #1877f2;
+        }
+
+        .twitter {
+            background: #000;
+        }
+
+        .whatsapp {
+            background: #25D366;
+        }
+
+        .copy-link {
+            background: #6c757d;
+        }
+
+        .return-policy {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--dark-gray);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .return-policy i {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+        }
+
+        /* Product tabs */
+        .product-tabs {
+            max-width: 1200px;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .tabs-navigation {
+            display: flex;
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 2rem;
+        }
+
+        .tab-button {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            color: var(--dark-gray);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Related products */
+        .related-products {
+            max-width: 1200px;
+            margin: 5rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .related-products h2 {
+            font-size: 1.8rem;
+            margin-bottom: 2rem;
+            position: relative;
+            display: inline-block;
+        }
+
+        .related-products h2::after {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--primary-color);
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+        }
+
+        /* Media Queries */
+        @media (max-width: 992px) {
+            .product-detail-container {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .products-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .product-title {
+                font-size: 1.8rem;
+            }
+            
+            .product-price {
+                font-size: 1.6rem;
+            }
+            
+            .products-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .thumbnail-container {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .product-meta {
+                grid-template-columns: 1fr;
+            }
+            
+            .product-actions {
+                flex-direction: column;
+            }
+            
+            .add-to-cart-btn, .buy-now-btn {
+                width: 100%;
+            }
+            
+            .thumbnail-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Message toast */
+        .toast-message {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: 500;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .toast-message.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Direct Buy Now floating card */
+        .direct-buy-card {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            z-index: 99;
+            transform: translateY(100px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            width: auto;
+            max-width: 400px;
+        }
+
+        .direct-buy-card.visible {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .direct-buy-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            object-fit: cover;
+            margin-right: 12px;
+            border: 1px solid #eee;
+        }
+
+        .direct-buy-info {
+            flex: 1;
+            margin-right: 15px;
+            overflow: hidden;
+        }
+
+        .direct-buy-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .direct-buy-price {
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 1rem;
+        }
+
+        .direct-buy-btn {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .direct-buy-btn:hover {
+            background: #13b38a;
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(19, 179, 138, 0.3);
+        }
+
+        @media (max-width: 576px) {
+            .direct-buy-card {
+                left: 20px;
+                right: 20px;
+                max-width: none;
+            }
+        }
+
+        /* Rating Modal Styles */
+        .rating-modal {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .rating-modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .close-rating-modal {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s;
+        }
+
+        .close-rating-modal:hover {
+            color: #333;
+        }
+
+        .rating-modal h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .rating-stars {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            font-size: 28px;
+            color: #ffc107;
+        }
+
+        .rating-stars i {
+            margin: 0 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .rating-stars i:hover {
+            transform: scale(1.2);
+        }
+
+        .rating-value {
+            margin: 10px 0 20px;
+            font-weight: bold;
+            color: #666;
+        }
+
+        .submit-rating, .close-rating-confirmation {
+            background: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .submit-rating:hover, .close-rating-confirmation:hover {
+            background: #0069d9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .submit-rating:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* User Ratings Styles */
+        .user-ratings-container {
+            margin-top: 1rem;
+        }
+        
+        .user-ratings-container h3 {
+            margin-bottom: 1.5rem;
+            font-size: 1.4rem;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+        
+        .all-user-ratings {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .user-rating-item {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 1rem;
+            border-left: 3px solid #007bff;
+            transition: all 0.2s;
+        }
+        
+        .user-rating-item:hover {
+            box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+            transform: translateY(-2px);
+        }
+        
+        .user-rating-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .user-id {
+            font-weight: 600;
+            color: #444;
+        }
+        
+        .rating-date {
+            font-size: 0.8rem;
+            color: #777;
+        }
+        
+        .user-stars {
+            display: flex;
+            color: #ffc107;
+            font-size: 1rem;
+        }
+        
+        #noRatingsMessage {
+            color: #888;
+            font-style: italic;
+            text-align: center;
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="breadcrumb">
+        <a href="index.html"><i class="ri-home-line"></i> Home</a>
+        <span class="separator">/</span>
+        <span id="productCategoryBreadcrumb">Category</span>
+        <span class="separator">/</span>
+        <span id="productNameBreadcrumb">Product</span>
+    </div>
+
+    <div class="product-detail-container">
+        <div class="product-images">
+            <div class="main-image-container">
+                <div id="imageBadges" class="image-badges">
+                    <!-- Badges will be added dynamically -->
+                </div>
+                <img id="mainImage" class="main-image" src="" alt="Product Image">
+                <div class="zoom-icon" id="zoomImage">
+                    <i class="ri-zoom-in-line"></i>
+                </div>
+            </div>
+            <div class="thumbnail-container" id="thumbnailContainer">
+                <!-- Thumbnails will be added dynamically -->
+            </div>
+        </div>
+        
+        <div class="product-info">
+            <div class="product-category" id="productCategory"></div>
+            <h1 id="productTitle" class="product-title"></h1>
+            
+            <div class="product-rating">
+                <div class="stars" id="productRating">
+                    <!-- Stars will be added dynamically -->
+                </div>
+                <span class="rating-count" id="ratingCount"></span>
+                <button class="rate-product disabled" id="rateProductBtn" title="Rating functionality is not available in this version">
+                    <i class="ri-star-line"></i> Rate this product
+                </button>
+            </div>
+            
+            <div class="product-price-container">
+                <div id="productPrice" class="product-price"></div>
+                <div id="productOriginalPrice" class="product-original-price"></div>
+                <div id="productDiscount" class="product-discount"></div>
+            </div>
+            
+            <p id="productDescription" class="product-description"></p>
+            
+            <div class="product-actions">
+                <div class="quantity-selector">
+                    <button class="quantity-btn" id="decreaseQuantity">
+                        <i class="ri-subtract-line"></i>
+                    </button>
+                    <input type="number" class="quantity-input" id="quantity" value="1" min="1">
+                    <button class="quantity-btn" id="increaseQuantity">
+                        <i class="ri-add-line"></i>
+                    </button>
+                </div>
+                
+                <button class="add-to-cart-btn" id="addToCart">
+                    <i class="ri-shopping-cart-line"></i> Add to Cart
+                </button>
+                
+                <button class="buy-now-btn" id="buyNow">
+                    <i class="ri-shopping-bag-line"></i> Buy Now
+                </button>
+            </div>
+            
+            <div class="product-meta">
+                <div class="meta-item">
+                    <i class="ri-box-3-line"></i>
+                    <strong>Availability</strong>
+                    <span id="productAvailability"></span>
+                </div>
+                <div class="meta-item">
+                    <i class="ri-store-line"></i>
+                    <strong>Brand</strong>
+                    <span id="productBrand"></span>
+                </div>
+                <div class="meta-item">
+                    <i class="ri-truck-line"></i>
+                    <strong>Delivery</strong>
+                    <span>2-5 Business Days</span>
+                </div>
+            </div>
+            
+            <div class="share-section">
+                <span class="share-label">Share:</span>
+                <div class="share-buttons">
+                    <button class="share-btn facebook" id="shareFacebook">
+                        <i class="ri-facebook-fill"></i>
+                    </button>
+                    <button class="share-btn twitter" id="shareTwitter">
+                        <i class="ri-twitter-x-fill"></i>
+                    </button>
+                    <button class="share-btn whatsapp" id="shareWhatsapp">
+                        <i class="ri-whatsapp-fill"></i>
+                    </button>
+                    <button class="share-btn copy-link" id="copyLink">
+                        <i class="ri-link"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="return-policy">
+                <i class="ri-refresh-line"></i>
+                <span>30-Day Return Policy. <a href="return-policy.html">Learn more</a></span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="product-tabs">
+        <div class="tabs-navigation">
+            <button class="tab-button active" data-tab="description">Description</button>
+            <button class="tab-button" data-tab="specifications">Specifications</button>
+            <button class="tab-button" data-tab="reviews">Reviews</button>
+        </div>
+        
+        <div id="descriptionTab" class="tab-content active">
+            <div id="fullDescription">
+                <!-- Full description will be added dynamically -->
+            </div>
+        </div>
+        
+        <div id="specificationsTab" class="tab-content">
+            <div id="specifications">
+                <!-- Specifications will be added dynamically -->
+            </div>
+        </div>
+        
+        <div id="reviewsTab" class="tab-content">
+            <div id="reviews">
+                <!-- Display all user ratings here -->
+                <div class="user-ratings-container">
+                    <h3>User Ratings</h3>
+                    <div id="allUserRatings" class="all-user-ratings">
+                        <!-- User ratings will be added dynamically -->
+                        <p id="noRatingsMessage">No ratings yet. Be the first to rate this product!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="related-products">
+        <h2>You Might Also Like</h2>
+        <div class="products-grid" id="relatedProducts">
+            <!-- Related products will be added dynamically -->
+        </div>
+    </div>
+    
+    <div id="directBuyCard" class="direct-buy-card">
+        <img id="directBuyImage" class="direct-buy-image" src="" alt="">
+        <div class="direct-buy-info">
+            <div id="directBuyName" class="direct-buy-name"></div>
+            <div id="directBuyPrice" class="direct-buy-price"></div>
+        </div>
+        <button id="directBuyBtn" class="direct-buy-btn">
+            <i class="ri-shopping-bag-line"></i> Buy Now
+        </button>
+    </div>
+    
+    <div id="toastMessage" class="toast-message"></div>
+    
+    <script type="module">
+        import { collection, doc, getDoc, getDocs, query, where, limit } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js";
+        
+        // Get product ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        let productId = urlParams.get('id');
+
+        if (!productId) {
+            window.location.href = '/';
+        }
+
+        // Try to fetch product details from Firestore, fallback to products.json
+        async function loadProductDetails() {
+            if (!productId) {
+                document.querySelector('.product-detail-container').innerHTML = '<div style="padding:2rem; text-align: center;"><i class="ri-error-warning-line" style="font-size: 3rem; color: #dc3545; margin-bottom: 1rem;"></i><h2>Product Not Found</h2><p>Sorry, the product you are looking for does not exist or has been removed.</p><a href="index.html" style="display: inline-block; margin-top: 1rem; padding: 0.5rem 1rem; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">Go to Homepage</a></div>';
+                return;
+            }
+            
+            let product = null;
+            
+            // Try from products.json first (for demo/development)
+            try {
+                const response = await fetch('products.json');
+                const products = await response.json();
+                product = products.find(p => String(p.id) === String(productId));
+            } catch (error) {
+                console.error('Error fetching from JSON:', error);
+            }
+            
+            // Try to get from Firebase if available
+            if (!product && window.db) {
+                try {
+                    const docRef = doc(window.db, 'products', productId);
+                    const docSnap = await getDoc(docRef);
+                    
+                    if (docSnap.exists()) {
+                        product = docSnap.data();
+                    }
+                } catch (error) {
+                    console.error('Error fetching from Firebase:', error);
+                }
+            }
+            
+            if (product) {
+                console.log("Product loaded:", product);
+                
+                // Display the product details first
+                displayProductDetails(product);
+                
+                // Then try to get product recommendations (but not ratings)
+                try {
+                    import('./recommendation.js')
+                        .then(module => {
+                            console.log("Recommendation system loaded for product suggestions");
+                            
+                            // Skip rating loading as rating functionality has been removed
+                            // Use recommendation system only for related products
+                            
+                            // Get recommended products if available
+                            const userId = localStorage.getItem('userId');
+                            if (userId && module.recommendationSystem.getPersonalizedRecommendations) {
+                                const recommendations = module.recommendationSystem.getPersonalizedRecommendations(userId, 4);
+                                if (recommendations && recommendations.length > 0) {
+                                    // Use recommendations to fetch products
+                                    console.log("Found personalized recommendations:", recommendations);
+                                    // Implementation for showing personalized recommendations would go here
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading recommendation system:', error);
+                        });
+                } catch (error) {
+                    console.error('Error with recommendations:', error);
+                }
+                
+                fetchRelatedProducts(product.category);
+            } else {
+                document.querySelector('.product-detail-container').innerHTML = '<div style="padding:2rem; text-align: center;"><i class="ri-error-warning-line" style="font-size: 3rem; color: #dc3545; margin-bottom: 1rem;"></i><h2>Product Not Found</h2><p>Sorry, the product you are looking for does not exist or has been removed.</p><a href="index.html" style="display: inline-block; margin-top: 1rem; padding: 0.5rem 1rem; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">Go to Homepage</a></div>';
+            }
+        }
+
+        function generateRatingStars(rating) {
+            console.log("Generating stars for rating:", rating);
+            const fullStars = Math.floor(rating);
+            const halfStar = rating % 1 >= 0.5;
+            const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+            
+            let starsHTML = '';
+            
+            // Add full stars
+            for (let i = 0; i < fullStars; i++) {
+                starsHTML += '<i class="ri-star-fill"></i>';
+            }
+            
+            // Add half star if needed
+            if (halfStar) {
+                starsHTML += '<i class="ri-star-half-line"></i>';
+            }
+            
+            // Add empty stars
+            for (let i = 0; i < emptyStars; i++) {
+                starsHTML += '<i class="ri-star-line"></i>';
+            }
+            
+            return starsHTML;
+        }
+
+        function displayProductDetails(product) {
+            console.log("Displaying product details:", product);
+            document.title = `${product.name} - Fashion Center`;
+            
+            // Update breadcrumb
+            document.getElementById('productCategoryBreadcrumb').textContent = product.category || 'Category';
+            document.getElementById('productNameBreadcrumb').textContent = product.name;
+            
+            // Setup direct buy card
+            setupDirectBuyCard(product);
+            
+            // Basic product info
+            document.getElementById('productCategory').textContent = product.category || 'Uncategorized';
+            document.getElementById('productTitle').textContent = product.name;
+            document.getElementById('productDescription').textContent = product.description || 'No description available';
+            document.getElementById('productBrand').textContent = product.brand || 'N/A';
+            document.getElementById('productAvailability').textContent = product.stock > 0 ? 'In Stock' : 'Out of Stock';
+            
+            // Price information
+            document.getElementById('productPrice').textContent = `Rs. ${product.price.discounted.toFixed(2)}`;
+            document.getElementById('productOriginalPrice').textContent = `Rs. ${product.price.original.toFixed(2)}`;
+            
+            // Calculate discount percentage if not provided
+            const discountPercentage = product.discount || Math.round(((product.price.original - product.price.discounted) / product.price.original) * 100);
+            document.getElementById('productDiscount').textContent = `${discountPercentage}% OFF`;
+            
+            // Initialize rating stars and counter
+            const productRating = document.getElementById('productRating');
+            const ratingCount = document.getElementById('ratingCount');
+            
+            // Set rating - only show if there's an actual rating
+            if (product.rating && product.rating > 0) {
+                productRating.innerHTML = generateRatingStars(product.rating);
+                ratingCount.textContent = `(${product.ratingCount || 0} reviews)`;
+            } else {
+                productRating.innerHTML = ''; // No dummy stars
+                ratingCount.textContent = ''; // No "No reviews yet" text
+            }
+            
+            // Load user ratings into the reviews tab
+            loadUserRatings(product.id);
+            
+            // Add badges
+            const badgesContainer = document.getElementById('imageBadges');
+            badgesContainer.innerHTML = ''; // Clear existing badges
+            
+            if (product.isNew) {
+                const newBadge = document.createElement('div');
+                newBadge.className = 'badge new-badge';
+                newBadge.textContent = 'New';
+                badgesContainer.appendChild(newBadge);
+            }
+            
+            if (discountPercentage > 0) {
+                const discountBadge = document.createElement('div');
+                discountBadge.className = 'badge discount-badge';
+                discountBadge.textContent = `${discountPercentage}% OFF`;
+                badgesContainer.appendChild(discountBadge);
+            }
+            
+            // Set main image
+            const mainImage = document.getElementById('mainImage');
+            mainImage.src = product.image;
+            mainImage.alt = product.name;
+
+            // Add thumbnails if available
+            const thumbnailContainer = document.getElementById('thumbnailContainer');
+            thumbnailContainer.innerHTML = '';
+            if (product.images && product.images.length > 0) {
+                product.images.forEach((image, index) => {
+                    const thumbnail = document.createElement('img');
+                    thumbnail.src = image;
+                    thumbnail.alt = `${product.name} - Image ${index + 1}`;
+                    thumbnail.classList.add('thumbnail');
+                    if (index === 0) thumbnail.classList.add('active');
+                    thumbnail.onclick = () => {
+                        mainImage.src = image;
+                        document.querySelectorAll('.thumbnail').forEach(thumb => thumb.classList.remove('active'));
+                        thumbnail.classList.add('active');
+                    };
+                    thumbnailContainer.appendChild(thumbnail);
+                });
+            }
+            
+            // Setup tabs
+            document.getElementById('fullDescription').innerHTML = `<p>${product.description || 'No description available.'}</p>`;
+            
+            // Add to Cart functionality
+            document.getElementById('addToCart').onclick = function() {
+                const quantity = parseInt(document.getElementById('quantity').value);
+                let cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+                const existing = cartItems.find(item => item.id === product.id);
+                if (existing) {
+                    existing.quantity += quantity;
+                } else {
+                    cartItems.push({ ...product, quantity });
+                }
+                localStorage.setItem('cartItems', JSON.stringify(cartItems));
+                showToast('Added to cart!');
+                
+                // Update cart count if there's a function for it
+                if (typeof updateCartCount === 'function') {
+                    updateCartCount();
+                }
+            };
+
+            // Buy Now functionality
+            document.getElementById('buyNow').onclick = function() {
+                const quantity = parseInt(document.getElementById('quantity').value);
+                let cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+                const existing = cartItems.find(item => item.id === product.id);
+                if (existing) {
+                    existing.quantity += quantity;
+                } else {
+                    cartItems.push({ ...product, quantity });
+                }
+                localStorage.setItem('cartItems', JSON.stringify(cartItems));
+                window.location.href = '/'; // Change to your checkout page
+            };
+            
+            // Share functionality
+            document.getElementById('shareFacebook').onclick = () => {
+                window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank');
+            };
+            
+            document.getElementById('shareTwitter').onclick = () => {
+                window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`Check out this ${product.name}!`)}`, '_blank');
+            };
+            
+            document.getElementById('shareWhatsapp').onclick = () => {
+                window.open(`https://wa.me/?text=${encodeURIComponent(`Check out this ${product.name}! ${window.location.href}`)}`, '_blank');
+            };
+            
+            document.getElementById('copyLink').onclick = () => {
+                navigator.clipboard.writeText(window.location.href);
+                showToast('Link copied to clipboard!');
+            };
+            
+            // Zoom functionality
+            document.getElementById('zoomImage').onclick = () => {
+                // Simple implementation - in a real app, you might want a more sophisticated image zoomer
+                const mainImg = document.getElementById('mainImage');
+                if (mainImg.style.transform === 'scale(1.5)') {
+                    mainImg.style.transform = 'scale(1)';
+                    document.querySelector('.zoom-icon i').className = 'ri-zoom-in-line';
+                } else {
+                    mainImg.style.transform = 'scale(1.5)';
+                    document.querySelector('.zoom-icon i').className = 'ri-zoom-out-line';
+                }
+            };
+            
+            // Tab navigation
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.getAttribute('data-tab');
+                    
+                    // Remove active class from all buttons and contents
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // Add active class to the clicked button and corresponding content
+                    button.classList.add('active');
+                    document.getElementById(`${tabId}Tab`).classList.add('active');
+                });
+            });
+            
+            // Quantity buttons
+            document.getElementById('decreaseQuantity').onclick = function() {
+                const input = document.getElementById('quantity');
+                const currentValue = parseInt(input.value);
+                if (currentValue > 1) {
+                    input.value = currentValue - 1;
+                }
+            };
+            
+            document.getElementById('increaseQuantity').onclick = function() {
+                const input = document.getElementById('quantity');
+                input.value = parseInt(input.value) + 1;
+            };
+            
+            // Set up rate product button
+            document.getElementById('rateProductBtn').onclick = function() {
+                console.log("Rating functionality has been removed");
+                showToast("Rating functionality is not available in this version");
+                return false;
+            };
+        }
+        
+        async function fetchRelatedProducts(category) {
+            let relatedProducts = [];
+            
+            try {
+                if (window.db) {
+                    const q = query(collection(window.db, 'products'), where('category', '==', category), where('id', '!=', productId), limit(4));
+                    const querySnapshot = await getDocs(q);
+                    relatedProducts = querySnapshot.docs.map(doc => doc.data());
+                }
+            } catch (error) {
+                // Ignore and fallback
+            }
+            
+            if (relatedProducts.length === 0) {
+                // Fallback to products.json
+                try {
+                    const res = await fetch('products.json');
+                    const products = await res.json();
+                    relatedProducts = products
+                        .filter(p => p.category === category && String(p.id) !== String(productId))
+                        .slice(0, 4);
+                } catch (e) {
+                    // ignore
+                }
+            }
+            
+            if (relatedProducts.length > 0) {
+                displayRelatedProducts(relatedProducts);
+            } else {
+                document.querySelector('.related-products').style.display = 'none';
+            }
+        }
+        
+        function displayRelatedProducts(products) {
+            const container = document.getElementById('relatedProducts');
+            container.innerHTML = '';
+            
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                productCard.innerHTML = `
+                    <div class="product-image">
+                        <img src="${product.image}" alt="${product.name}">
+                        <div class="product-badges">
+                            ${product.isNew ? '<span class="badge new-badge">New</span>' : ''}
+                            ${product.discount > 0 ? `<span class="badge discount-badge">-${product.discount}%</span>` : ''}
+                        </div>
+                        <div class="product-overlay">
+                            <button class="quick-view-btn">Quick View</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">${product.category || 'Uncategorized'}</div>
+                        <h3 class="product-name">${product.name}</h3>
+                        <div class="product-price">
+                            <span class="original-price">Rs. ${product.price.original.toFixed(2)}</span>
+                            <span class="discounted-price">Rs. ${product.price.discounted.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+                
+                productCard.addEventListener('click', () => {
+                    window.location.href = `/product-detail.html?id=${product.id}`;
+                });
+                
+                container.appendChild(productCard);
+            });
+        }
+        
+        function showToast(message) {
+            const toast = document.getElementById('toastMessage');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Direct Buy Now card functionality
+        const directBuyCard = document.getElementById('directBuyCard');
+        const directBuyBtn = document.getElementById('directBuyBtn');
+
+        // Show/hide direct buy card based on scroll position
+        window.addEventListener('scroll', () => {
+            // Show card when user scrolls down past a certain point
+            if (window.scrollY > 300) {
+                directBuyCard.classList.add('visible');
+            } else {
+                directBuyCard.classList.remove('visible');
+            }
+        });
+
+        // Set up direct buy card with product details
+        function setupDirectBuyCard(product) {
+            document.getElementById('directBuyImage').src = product.image;
+            document.getElementById('directBuyImage').alt = product.name;
+            document.getElementById('directBuyName').textContent = product.name;
+            document.getElementById('directBuyPrice').textContent = `Rs. ${product.price.discounted.toFixed(2)}`;
+            
+            directBuyBtn.onclick = function() {
+                const quantity = 1; // Default to 1 for direct buy
+                let cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+                const existing = cartItems.find(item => item.id === product.id);
+                if (existing) {
+                    existing.quantity += quantity;
+                } else {
+                    cartItems.push({ ...product, quantity });
+                }
+                localStorage.setItem('cartItems', JSON.stringify(cartItems));
+                window.location.href = '/'; // Change to your checkout page
+            };
+        }
+
+        // Function to load all user ratings for a product
+        function loadUserRatings(productId) {
+            // Get the ratings container
+            const userRatingsContainer = document.getElementById('allUserRatings');
+            const noRatingsMessage = document.getElementById('noRatingsMessage');
+            
+            // Show a message that ratings are not available
+            noRatingsMessage.textContent = "Rating functionality is not available in this version.";
+            noRatingsMessage.style.display = 'block';
+            userRatingsContainer.innerHTML = '';
+        }
+
+        // Fetch product details when page loads
+        loadProductDetails();
+    </script>
+
+    <script>
+        // Inline implementation of rating modal for direct access
+        function showRatingModal(product) {
+            console.log("Showing rating modal for:", product);
+            
+            // Check if a modal already exists and remove it
+            const existingModal = document.querySelector('.rating-modal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Create modal element
+            const modal = document.createElement('div');
+            modal.classList.add('rating-modal');
+            
+            // Generate rating stars
+            const starsHtml = `
+                <div class="rating-stars">
+                    <i class="ri-star-line" data-rating="1"></i>
+                    <i class="ri-star-line" data-rating="2"></i>
+                    <i class="ri-star-line" data-rating="3"></i>
+                    <i class="ri-star-line" data-rating="4"></i>
+                    <i class="ri-star-line" data-rating="5"></i>
+                </div>
+            `;
+            
+            // Modal content
+            modal.innerHTML = `
+                <div class="rating-modal-content">
+                    <span class="close-rating-modal">&times;</span>
+                    <h3>Rate "${product.name}"</h3>
+                    ${starsHtml}
+                    <div class="rating-value">0/5</div>
+                    <button class="submit-rating" disabled>Submit Rating</button>
+                </div>
+            `;
+            
+            // Append to body
+            document.body.appendChild(modal);
+            
+            // Event handlers
+            const closeBtn = modal.querySelector('.close-rating-modal');
+            closeBtn.addEventListener('click', () => {
+                modal.remove();
+            });
+            
+            // Handle star rating
+            let selectedRating = 0;
+            const stars = modal.querySelectorAll('.rating-stars i');
+            const ratingValue = modal.querySelector('.rating-value');
+            const submitButton = modal.querySelector('.submit-rating');
+            
+            stars.forEach(star => {
+                star.addEventListener('mouseover', () => {
+                    const rating = parseInt(star.getAttribute('data-rating'));
+                    updateStars(rating);
+                });
+                
+                star.addEventListener('mouseout', () => {
+                    updateStars(selectedRating);
+                });
+                
+                star.addEventListener('click', () => {
+                    selectedRating = parseInt(star.getAttribute('data-rating'));
+                    updateStars(selectedRating);
+                    submitButton.disabled = false;
+                });
+            });
+            
+            function updateStars(rating) {
+                stars.forEach(star => {
+                    const starRating = parseInt(star.getAttribute('data-rating'));
+                    if (starRating <= rating) {
+                        star.className = 'ri-star-fill';
+                    } else {
+                        star.className = 'ri-star-line';
+                    }
+                });
+                ratingValue.textContent = `${rating}/5`;
+            }
+            
+            submitButton.addEventListener('click', () => {
+                if (selectedRating > 0) {
+                    // Import recommendation system to record rating
+                    import('./recommendation.js')
+                        .then(module => {
+                            const userId = localStorage.getItem('userId') || 'guest_' + Math.random().toString(36).substring(2, 15);
+                            // Store the user ID for future use
+                            if (!localStorage.getItem('userId')) {
+                                localStorage.setItem('userId', userId);
+                            }
+                            
+                            // Record the rating
+                            const result = module.recommendationSystem.recordRating(userId, product.id, selectedRating);
+                            
+                            // Get updated average rating
+                            const updatedRating = result.average;
+                            const ratingCount = result.count;
+                            
+                            // Update the product page rating display if it exists
+                            const productRatingElement = document.getElementById('productRating');
+                            const ratingCountElement = document.getElementById('ratingCount');
+                            
+                            if (productRatingElement && ratingCountElement) {
+                                // Generate rating stars HTML
+                                function createRatingStars(rating) {
+                                    const fullStars = Math.floor(rating);
+                                    const halfStar = rating % 1 >= 0.5;
+                                    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+                                    
+                                    let html = '';
+                                    // Full stars
+                                    for (let i = 0; i < fullStars; i++) {
+                                        html += '<i class="ri-star-fill"></i>';
+                                    }
+                                    // Half star
+                                    if (halfStar) {
+                                        html += '<i class="ri-star-half-line"></i>';
+                                    }
+                                    // Empty stars
+                                    for (let i = 0; i < emptyStars; i++) {
+                                        html += '<i class="ri-star-line"></i>';
+                                    }
+                                    return html;
+                                }
+                                
+                                // Only show rating if there's an actual rating
+                                if (updatedRating > 0) {
+                                    // Update the rating display with the new average
+                                    productRatingElement.innerHTML = createRatingStars(updatedRating);
+                                    ratingCountElement.textContent = `(${ratingCount} reviews)`;
+                                } else {
+                                    productRatingElement.innerHTML = '';
+                                    ratingCountElement.textContent = '';
+                                }
+                            }
+                            
+                            // Refresh the user ratings in the reviews tab
+                            loadUserRatings(product.id);
+                            
+                            // Show confirmation
+                            modal.innerHTML = `
+                                <div class="rating-modal-content">
+                                    <span class="close-rating-modal">&times;</span>
+                                    <h3>Thank You!</h3>
+                                    <p>Your rating has been recorded.</p>
+                                    <button class="close-rating-confirmation">Close</button>
+                                </div>
+                            `;
+                            
+                            // Close button event
+                            modal.querySelector('.close-rating-confirmation').addEventListener('click', () => {
+                                modal.remove();
+                                
+                                // Switch to the reviews tab to show all ratings
+                                const reviewsTabButton = document.querySelector('.tab-button[data-tab="reviews"]');
+                                if (reviewsTabButton) {
+                                    reviewsTabButton.click();
+                                }
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Error recording rating:', error);
+                            modal.innerHTML = `
+                                <div class="rating-modal-content">
+                                    <span class="close-rating-modal">&times;</span>
+                                    <h3>Error</h3>
+                                    <p>There was a problem submitting your rating. Please try again later.</p>
+                                    <button class="close-rating-confirmation">Close</button>
+                                </div>
+                            `;
+                            
+                            // Close button event
+                            modal.querySelector('.close-rating-confirmation').addEventListener('click', () => {
+                                modal.remove();
+                            });
+                        });
+                }
+            });
+        }
+        
+        // Make the function globally available
+        window.showRatingModal = showRatingModal;
+    </script>
+</body>
+</html> 

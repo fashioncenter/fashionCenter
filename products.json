@@ -14,7 +14,11 @@
             "Assets/bag_1.jpg",
             "Assets/bag_2.jpg"
         ],
-        "badge": "Discount"
+        "badge": "Discount",
+        "rating": 4.8,
+        "ratingCount": 45,
+        "isNew": false,
+        "discount": 53
     },
     {
         "id": 2,
@@ -30,7 +34,11 @@
             "Assets/facial_cleanser.jpeg",
             "Assets/facial_cleanser_1.jpeg"
         ],
-        "badge": "Discount"
+        "badge": "Discount",
+        "rating": 4.5,
+        "ratingCount": 28,
+        "isNew": true,
+        "discount": 62
     },
     {
         "id": 3,
@@ -46,7 +54,11 @@
             "Assets/Bags.jpeg",
             "Assets/Bags.jpg"
         ],
-        "badge": "Discount"
+        "badge": "Discount",
+        "rating": 4.2,
+        "ratingCount": 32,
+        "isNew": true,
+        "discount": 7
     },
     {
         "id": 4,
@@ -62,6 +74,10 @@
             "Assets/facewash.jpeg",
             "Assets/facewash_1.jpeg"
         ],
-        "badge": "Discount"
+        "badge": "Discount",
+        "rating": 4.7,
+        "ratingCount": 89,
+        "isNew": false,
+        "discount": 37
     }
 ]

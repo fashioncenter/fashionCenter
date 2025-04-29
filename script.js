@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
       msgDiv.style.textAlign = 'center';
       msgDiv.style.background = '#f0f0f0';
       msgDiv.style.margin = '10px 0';
-      slider.insertBefore(msgDiv, slider.firstChild);
+      slider.insertBefore(msgDiv, slider.querySelector('.cart__total'));
     }
     msgDiv.textContent = message;
     msgDiv.style.display = 'block';
@@ -274,456 +274,310 @@ document.addEventListener('DOMContentLoaded', () => {
   // Function to display products
   function displayProducts(products) {
     const productsContainer = document.querySelector('.products-container');
-    if (!productsContainer) {
-      console.error('Products container not found');
-      return;
-    }
+    if (!productsContainer) return;
 
     productsContainer.innerHTML = '';
-
-    products.forEach(product => {
-      const card = document.createElement('div');
-      card.classList.add('product-card');
-      
-      // Check if product has multiple images
-      const hasMultipleImages = product.images && product.images.length > 1;
-      
-      // Debug log for image paths
-      console.log('Product images:', hasMultipleImages ? product.images : product.image);
-      
-      let imageHtml = '';
-      if (hasMultipleImages) {
-        imageHtml = `
-          <div class="product-tumb image-carousel">
-            <div class="carousel-images">
-              ${product.images.map((img, index) => 
-                `<img src="${img}" alt="${product.name}" class="carousel-image ${index === 0 ? 'active' : ''}" data-index="${index}" onerror="this.onerror=null; console.error('Failed to load image: ${img}'); this.src='Assets/logo.png';">`
-              ).join('')}
-            </div>
-            <div class="carousel-controls">
-              <button class="carousel-prev" type="button"><i class="ri-arrow-left-s-line"></i></button>
-              <div class="carousel-indicators">
-                ${product.images.map((_, index) => 
-                  `<span class="carousel-dot ${index === 0 ? 'active' : ''}" data-index="${index}"></span>`
-                ).join('')}
-              </div>
-              <button class="carousel-next" type="button"><i class="ri-arrow-right-s-line"></i></button>
-            </div>
-            <div class="magnifier-lens"></div>
-          </div>
-        `;
-      } else {
-        imageHtml = `
-          <div class="product-tumb">
-            <img src="${product.image}" alt="${product.name}" onerror="this.onerror=null; console.error('Failed to load image: ${product.image}'); this.src='Assets/logo.png';">
-            <div class="magnifier-lens"></div>
-          </div>
-        `;
-      }
-      
-      // Get product ratings from recommendation system
-      let starsHtml = '';
-      
-      // Import recommendation system to get current ratings
-      import('./recommendation.js')
+    
+    // Import the recommendation system to get real-time ratings
+    import('./recommendation.js')
         .then(module => {
-          const averageRating = module.recommendationSystem.getAverageRating(product.id);
-          const ratingCount = module.recommendationSystem.productRatings[product.id]?.ratingCount || 0;
-          
-          if (ratingCount > 0) {
-            // If product has ratings, show them
-            const fullStars = Math.floor(averageRating);
-            const hasHalfStar = averageRating % 1 >= 0.5;
-            const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+            const recommendationSystem = module.recommendationSystem;
             
-            starsHtml = `
-              <div class="product-rating">
-                ${Array(fullStars).fill('<i class="ri-star-fill"></i>').join('')}
-                ${hasHalfStar ? '<i class="ri-star-half-line"></i>' : ''}
-                ${Array(emptyStars).fill('<i class="ri-star-line"></i>').join('')}
-                <span class="rating-count">(${ratingCount})</span>
-              </div>
-            `;
-          } else {
-            // If no ratings yet, show empty stars with a message
-            starsHtml = `
-              <div class="product-rating">
-                ${Array(5).fill('<i class="ri-star-line"></i>').join('')}
-                <span class="rating-count">(0)</span>
-                <span class="be-first-rating">Be the first to rate!</span>
-              </div>
-            `;
-          }
-          
-          // Update the DOM with rating stars
-          const ratingContainer = card.querySelector('.rating-container');
-          if (ratingContainer) {
-            ratingContainer.innerHTML = starsHtml;
-          }
-        })
-        .catch(error => {
-          console.error('Error getting product ratings:', error);
-          // Fallback to empty stars
-          starsHtml = `
-            <div class="product-rating">
-              ${Array(5).fill('<i class="ri-star-line"></i>').join('')}
-              <span class="rating-count">(0)</span>
+    products.forEach(product => {
+                // Get real-time rating from recommendation system
+                const realRating = recommendationSystem.getAverageRating(product.id);
+                const ratingCount = recommendationSystem.productRatings[product.id]?.ratingCount || 0;
+                
+        const productCard = document.createElement('div');
+        productCard.classList.add('product-card');
+        productCard.innerHTML = `
+            <div class="product-image">
+                <img src="${escapeHTML(product.image)}" alt="${escapeHTML(product.name)}">
+                <div class="product-badges">
+                    ${product.isNew ? '<span class="badge new-badge">New</span>' : ''}
+                    ${product.discount > 0 ? `<span class="badge discount-badge">-${product.discount}%</span>` : ''}
+                </div>
+                <div class="product-overlay">
+                    <button class="quick-view-btn" data-product-id="${product.id}">Quick View</button>
+                </div>
             </div>
-          `;
-          
-          // Update the DOM with rating stars
-          const ratingContainer = card.querySelector('.rating-container');
-          if (ratingContainer) {
-            ratingContainer.innerHTML = starsHtml;
-          }
+            <div class="product-info">
+                <div class="product-category">${escapeHTML(product.category || 'Uncategorized')}</div>
+                <h3 class="product-name">${escapeHTML(product.name)}</h3>
+                <p class="product-description">${escapeHTML(product.description || 'No description available').substring(0, 60)}${product.description && product.description.length > 60 ? '...' : ''}</p>
+                <div class="product-price">
+                    <span class="original-price">Rs. ${product.price.original.toFixed(2)}</span>
+                    <span class="discounted-price">Rs. ${product.price.discounted.toFixed(2)}</span>
+                </div>
+                <div class="product-rating">
+                            ${realRating > 0 ? generateRatingStars(realRating) : ''}
+                            <span class="rating-count">${ratingCount > 0 ? `(${ratingCount})` : ''}</span>
+                </div>
+                <div class="product-actions">
+                    <button class="add-to-cart-btn" data-product-id="${product.id}">
+                        <i class="ri-shopping-cart-line"></i>
+                        Add to Cart
+                    </button>
+                    <button class="buy-now-direct-btn" data-product-id="${product.id}">
+                        <i class="ri-shopping-bag-line"></i>
+                        Buy Now
+                    </button>
+                    <button class="favorite-btn" data-product-id="${product.id}">
+                        <i class="ri-heart-line"></i>
+                    </button>
+                    <button class="share-btn" data-product-id="${product.id}">
+                        <i class="ri-share-line"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // Add click event to navigate to product detail page
+        productCard.addEventListener('click', (e) => {
+            // Don't navigate if clicking on action buttons
+            if (e.target.closest('.product-actions') || e.target.closest('.quick-view-btn')) return;
+            window.location.href = `/product-detail.html?id=${product.id}`;
+        });
+
+        // Add to cart button click handler
+        const addToCartBtn = productCard.querySelector('.add-to-cart-btn');
+        addToCartBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            addToCart(product);
+        });
+
+        // Buy Now button click handler
+        const buyNowBtn = productCard.querySelector('.buy-now-direct-btn');
+        buyNowBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            buyNowDirect(product);
+        });
+
+        // Favorite button click handler
+        const favoriteBtn = productCard.querySelector('.favorite-btn');
+        favoriteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleFavorite(product);
+        });
+
+        // Share button click handler
+        const shareBtn = productCard.querySelector('.share-btn');
+        shareBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            shareProduct(product);
+        });
+
+        // Quick view button click handler
+        const quickViewBtn = productCard.querySelector('.quick-view-btn');
+        quickViewBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.location.href = `/product-detail.html?id=${product.id}`;
         });
       
-      card.innerHTML = `
-          ${imageHtml}
-          <div class="product-details">
-              <span class="product-catagory">${product.category}</span>
-              <h4><a href="#">${product.name}</a></h4>
-              <p>${product.description}</p>
-              <div class="rating-container">
-                <div class="product-rating">
-                  ${Array(5).fill('<i class="ri-star-line"></i>').join('')}
-                  <span class="rating-count">(0)</span>
-                  <span class="be-first-rating">Be the first to rate!</span>
-                </div>
-              </div>
-              <div class="product-bottom-details">
-                  <div class="product-price">
-                      <small>PKR ${product.price.original.toFixed(2)}</small>
-                      PKR ${product.price.discounted.toFixed(2)}
+        productsContainer.appendChild(productCard);
+    });
+
+    // Initialize favorite buttons
+    initializeFavoriteButtons();
+        })
+        .catch(error => {
+            console.error('Error loading recommendation system for ratings:', error);
+            
+            // Fall back to displaying products with the data they have
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.classList.add('product-card');
+                productCard.innerHTML = `
+                    <div class="product-image">
+                        <img src="${escapeHTML(product.image)}" alt="${escapeHTML(product.name)}">
+                        <div class="product-badges">
+                            ${product.isNew ? '<span class="badge new-badge">New</span>' : ''}
+                            ${product.discount > 0 ? `<span class="badge discount-badge">-${product.discount}%</span>` : ''}
+                        </div>
+                        <div class="product-overlay">
+                            <button class="quick-view-btn" data-product-id="${product.id}">Quick View</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">${escapeHTML(product.category || 'Uncategorized')}</div>
+                        <h3 class="product-name">${escapeHTML(product.name)}</h3>
+                        <p class="product-description">${escapeHTML(product.description || 'No description available').substring(0, 60)}${product.description && product.description.length > 60 ? '...' : ''}</p>
+                        <div class="product-price">
+                            <span class="original-price">Rs. ${product.price.original.toFixed(2)}</span>
+                            <span class="discounted-price">Rs. ${product.price.discounted.toFixed(2)}</span>
+                        </div>
+                        <div class="product-rating">
+                            <!-- No ratings shown in fallback mode -->
+                        </div>
+                        <div class="product-actions">
+                            <button class="add-to-cart-btn" data-product-id="${product.id}">
+                                <i class="ri-shopping-cart-line"></i>
+                                Add to Cart
+                            </button>
+                            <button class="buy-now-direct-btn" data-product-id="${product.id}">
+                                <i class="ri-shopping-bag-line"></i>
+                                Buy Now
+                            </button>
+                            <button class="favorite-btn" data-product-id="${product.id}">
+                                <i class="ri-heart-line"></i>
+                            </button>
+                            <button class="share-btn" data-product-id="${product.id}">
+                                <i class="ri-share-line"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                // Add event handlers 
+                productCard.addEventListener('click', (e) => {
+                    if (e.target.closest('.product-actions') || e.target.closest('.quick-view-btn')) return;
+                    window.location.href = `/product-detail.html?id=${product.id}`;
+                });
+
+                const addToCartBtn = productCard.querySelector('.add-to-cart-btn');
+                addToCartBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    addToCart(product);
+                });
+
+                const buyNowBtn = productCard.querySelector('.buy-now-direct-btn');
+                buyNowBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    buyNowDirect(product);
+                });
+
+                const favoriteBtn = productCard.querySelector('.favorite-btn');
+                favoriteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleFavorite(product);
+                });
+
+                const shareBtn = productCard.querySelector('.share-btn');
+                shareBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    shareProduct(product);
+                });
+
+                const quickViewBtn = productCard.querySelector('.quick-view-btn');
+                quickViewBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    window.location.href = `/product-detail.html?id=${product.id}`;
+                });
+                
+                productsContainer.appendChild(productCard);
+            });
+
+            // Initialize favorite buttons
+            initializeFavoriteButtons();
+        });
+  }
+
+  // Helper function to generate rating stars
+  function generateRatingStars(rating) {
+    const fullStars = Math.floor(rating);
+    const halfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+    
+    let starsHTML = '';
+    
+    // Add full stars
+    for (let i = 0; i < fullStars; i++) {
+      starsHTML += '<i class="ri-star-fill"></i>';
+    }
+    
+    // Add half star if needed
+    if (halfStar) {
+      starsHTML += '<i class="ri-star-half-line"></i>';
+    }
+    
+    // Add empty stars
+    for (let i = 0; i < emptyStars; i++) {
+      starsHTML += '<i class="ri-star-line"></i>';
+    }
+    
+    return starsHTML;
+  }
+
+  // Function to share product
+  function shareProduct(product) {
+    if (navigator.share) {
+      navigator.share({
+        title: product.name,
+        text: product.description || `Check out this ${product.name} at Fashion Center`,
+        url: `${window.location.origin}/product-detail.html?id=${product.id}`
+      })
+      .then(() => showMessage('Product shared successfully'))
+      .catch((error) => console.error('Error sharing product:', error));
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      const shareURL = `${window.location.origin}/product-detail.html?id=${product.id}`;
+      
+      // Create a modal for sharing options
+      const modal = document.createElement('div');
+      modal.className = 'share-modal';
+      modal.innerHTML = `
+          <div class="share-modal-content">
+              <button class="share-close-btn">&times;</button>
+              <h3>Share this product</h3>
+              <div class="share-product-info">
+                  <img src="${product.image}" alt="${product.name}">
+                  <div>
+                      <h4>${product.name}</h4>
+                      <p class="share-price">Rs. ${product.price.discounted.toFixed(2)}</p>
                   </div>
-                  <div class="product-links">
-                      <a href="#" class="share-btn" data-product-id="${product.id}">
-                          <i class="ri-share-line"></i>
-                      </a>
-                      <a href="#" class="favorite-btn" data-product-id="${product.id}">
-                          <i class="ri-heart-line"></i>
-                      </a>
-                      <a href="#" class="add-to-cart" data-product-id="${product.id}">
-                          <i class="ri-shopping-cart-line"></i>
-                      </a>
-                  </div>
               </div>
-              <div class="product-action-buttons">
-                  <button class="buy-now-direct" data-product-id="${product.id}">Buy Now</button>
-                  <button class="rate-product" data-product-id="${product.id}">Rate Product</button>
-                  <button class="comment-product" data-product-id="${product.id}"><i class="ri-chat-3-line"></i> Comments</button>
+              <div class="share-options">
+                  <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareURL)}" target="_blank" class="share-option facebook">
+                      <i class="ri-facebook-fill"></i>
+                      <span>Facebook</span>
+                  </a>
+                  <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(product.name)}&url=${encodeURIComponent(shareURL)}" target="_blank" class="share-option twitter">
+                      <i class="ri-twitter-x-fill"></i>
+                      <span>Twitter</span>
+                  </a>
+                  <a href="https://wa.me/?text=${encodeURIComponent(product.name + ': ' + shareURL)}" target="_blank" class="share-option whatsapp">
+                      <i class="ri-whatsapp-fill"></i>
+                      <span>WhatsApp</span>
+                  </a>
+                  <button class="share-option copy" id="copyShareLink">
+                      <i class="ri-link"></i>
+                      <span>Copy Link</span>
+                  </button>
               </div>
           </div>
       `;
-
-      const addToCartBtn = card.querySelector('.add-to-cart');
-      addToCartBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          addToCart(product);
-      });
-
-      const favoriteBtn = card.querySelector('.favorite-btn');
-      favoriteBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          toggleFavorite(product);
-      });
-
-      const shareBtn = card.querySelector('.share-btn');
-      shareBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          shareProduct(product);
-      });
-
-      const buyNowDirectBtn = card.querySelector('.buy-now-direct');
-      buyNowDirectBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          buyNowDirect(product);
+      
+      document.body.appendChild(modal);
+      
+      // Close button functionality
+      modal.querySelector('.share-close-btn').addEventListener('click', () => {
+          modal.remove();
       });
       
-      const rateProductBtn = card.querySelector('.rate-product');
-      rateProductBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          openRatingModal(product);
-      });
-      
-      const commentProductBtn = card.querySelector('.comment-product');
-      commentProductBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          openCommentModal(product);
-      });
-      
-      // Add carousel functionality if multiple images
-      if (hasMultipleImages) {
-        const carousel = card.querySelector('.image-carousel');
-        const prevBtn = carousel.querySelector('.carousel-prev');
-        const nextBtn = carousel.querySelector('.carousel-next');
-        const images = carousel.querySelectorAll('.carousel-image');
-        const dots = carousel.querySelectorAll('.carousel-dot');
-        
-        // Set current image index
-        let currentIndex = 0;
-        
-        // Function to update displayed image
-        const updateCarousel = (index) => {
-          // Hide all images and remove active class from dots
-          images.forEach(img => img.classList.remove('active'));
-          dots.forEach(dot => dot.classList.remove('active'));
+      // Copy link functionality
+      modal.querySelector('#copyShareLink').addEventListener('click', () => {
+          const textArea = document.createElement('textarea');
+          textArea.value = shareURL;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
           
-          // Show selected image and activate corresponding dot
-          images[index].classList.add('active');
-          dots[index].classList.add('active');
-          
-          // Update current index
-          currentIndex = index;
-        };
-        
-        // Add event listeners to previous and next buttons
-        prevBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const newIndex = (currentIndex - 1 + images.length) % images.length;
-          updateCarousel(newIndex);
-        });
-        
-        nextBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const newIndex = (currentIndex + 1) % images.length;
-          updateCarousel(newIndex);
-        });
-        
-        // Add event listeners to indicator dots
-        dots.forEach(dot => {
-          dot.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const dotIndex = parseInt(dot.getAttribute('data-index'));
-            updateCarousel(dotIndex);
-          });
-        });
-        
-        // Add magnifier functionality
-        setupImageMagnifier(carousel, product.images);
-        
-        // Add click event for full preview
-        carousel.addEventListener('click', (e) => {
-          // Ignore clicks on controls
-          if (!e.target.closest('.carousel-controls')) {
-            showImagePreview(product.images, currentIndex);
+          const copyBtn = modal.querySelector('#copyShareLink span');
+          const originalText = copyBtn.textContent;
+          copyBtn.textContent = 'Copied!';
+          setTimeout(() => {
+              copyBtn.textContent = originalText;
+          }, 2000);
+      });
+      
+      // Close when clicking outside the modal content
+      modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+              modal.remove();
           }
-        });
-      } else {
-        // Add magnifier for single image
-        const productTumb = card.querySelector('.product-tumb');
-        setupImageMagnifier(productTumb, [product.image]);
-        
-        // Add click event for full preview
-        productTumb.addEventListener('click', () => {
-          showImagePreview([product.image], 0);
-        });
-      }
-
-      productsContainer.appendChild(card);
-    });
-
-    initializeFavoriteButtons();
-  }
-
-  // Function to setup image magnifier effect
-  function setupImageMagnifier(container, images) {
-    const lens = container.querySelector('.magnifier-lens');
-    const productTumb = container.classList.contains('product-tumb') ? container : container.querySelector('.product-tumb');
-    
-    if (!lens || !productTumb) return;
-    
-    productTumb.addEventListener('mousemove', (e) => {
-      // Get current active image
-      let activeImage;
-      if (container.classList.contains('image-carousel')) {
-        activeImage = container.querySelector('.carousel-image.active');
-      } else {
-        activeImage = container.querySelector('img');
-      }
-      
-      if (!activeImage) return;
-      
-      // Only show magnifier on desktop
-      if (window.innerWidth <= 768) return;
-      
-      const rect = productTumb.getBoundingClientRect();
-      
-      // Calculate mouse position relative to the container
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      // Move lens to mouse position
-      lens.style.left = x + 'px';
-      lens.style.top = y + 'px';
-      
-      // Calculate magnification offset
-      const lensSize = 150; // Should match CSS width/height
-      const zoomFactor = 2;
-      
-      // Set background image and position for magnification effect
-      lens.style.backgroundImage = `url('${activeImage.src}')`;
-      lens.style.backgroundSize = (rect.width * zoomFactor) + 'px ' + (rect.height * zoomFactor) + 'px';
-      
-      // Calculate background position based on mouse position
-      const bgX = (x / rect.width) * 100;
-      const bgY = (y / rect.height) * 100;
-      
-      lens.style.backgroundPosition = `${bgX}% ${bgY}%`;
-    });
-    
-    // Hide lens when mouse leaves the container
-    productTumb.addEventListener('mouseleave', () => {
-      lens.style.display = 'none';
-    });
-    
-    // Show lens when mouse enters the container
-    productTumb.addEventListener('mouseenter', () => {
-      // Only on desktop
-      if (window.innerWidth > 768) {
-        lens.style.display = 'block';
-      }
-    });
-  }
-
-  // Function to show full image preview
-  function showImagePreview(images, initialIndex = 0) {
-    // Create overlay element
-    const overlay = document.createElement('div');
-    overlay.className = 'image-preview-overlay';
-    
-    // Create container for the image and controls
-    const container = document.createElement('div');
-    container.className = 'image-preview-container';
-    
-    // Create image element
-    const img = document.createElement('img');
-    img.className = 'image-preview';
-    img.src = images[initialIndex];
-    img.alt = 'Product preview';
-    
-    // Create close button
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'image-preview-close';
-    closeBtn.innerHTML = '<i class="ri-close-line"></i>';
-    
-    // Add elements to container
-    container.appendChild(img);
-    container.appendChild(closeBtn);
-    
-    // Only add controls if there are multiple images
-    if (images.length > 1) {
-      // Create controls
-      const controls = document.createElement('div');
-      controls.className = 'image-preview-controls';
-      
-      // Create navigation buttons
-      const prevBtn = document.createElement('button');
-      prevBtn.className = 'image-preview-nav prev';
-      prevBtn.innerHTML = '<i class="ri-arrow-left-s-line"></i>';
-      
-      const nextBtn = document.createElement('button');
-      nextBtn.className = 'image-preview-nav next';
-      nextBtn.innerHTML = '<i class="ri-arrow-right-s-line"></i>';
-      
-      controls.appendChild(prevBtn);
-      controls.appendChild(nextBtn);
-      
-      // Create dots container
-      const dots = document.createElement('div');
-      dots.className = 'image-preview-dots';
-      
-      // Add dots for each image
-      images.forEach((_, index) => {
-        const dot = document.createElement('span');
-        dot.className = `image-preview-dot ${index === initialIndex ? 'active' : ''}`;
-        dot.setAttribute('data-index', index);
-        dots.appendChild(dot);
       });
-      
-      // Add controls and dots to container
-      container.appendChild(controls);
-      container.appendChild(dots);
-      
-      // Current image index
-      let currentIndex = initialIndex;
-      
-      // Function to update displayed image
-      const updateImage = (index) => {
-        img.src = images[index];
-        
-        // Update dots
-        const allDots = dots.querySelectorAll('.image-preview-dot');
-        allDots.forEach(dot => dot.classList.remove('active'));
-        allDots[index].classList.add('active');
-        
-        // Update current index
-        currentIndex = index;
-      };
-      
-      // Add event listener for previous button
-      prevBtn.addEventListener('click', () => {
-        const newIndex = (currentIndex - 1 + images.length) % images.length;
-        updateImage(newIndex);
-      });
-      
-      // Add event listener for next button
-      nextBtn.addEventListener('click', () => {
-        const newIndex = (currentIndex + 1) % images.length;
-        updateImage(newIndex);
-      });
-      
-      // Add event listeners for dots
-      dots.querySelectorAll('.image-preview-dot').forEach(dot => {
-        dot.addEventListener('click', () => {
-          const index = parseInt(dot.getAttribute('data-index'));
-          updateImage(index);
-        });
-      });
-      
-      // Add keyboard navigation
-      document.addEventListener('keydown', function keyHandler(e) {
-        if (e.key === 'ArrowLeft') {
-          prevBtn.click();
-        } else if (e.key === 'ArrowRight') {
-          nextBtn.click();
-        } else if (e.key === 'Escape') {
-          closePreview();
-        }
-      });
-      
-      // Cleanup function
-      function cleanupKeyHandler() {
-        document.removeEventListener('keydown', keyHandler);
-      }
     }
-    
-    // Add overlay to body
-    overlay.appendChild(container);
-    document.body.appendChild(overlay);
-    
-    // Show overlay with animation
-    setTimeout(() => {
-      overlay.classList.add('active');
-    }, 10);
-    
-    // Function to close preview
-    function closePreview() {
-      overlay.classList.remove('active');
-      setTimeout(() => {
-        overlay.remove();
-      }, 300);
-    }
-    
-    // Close on button click
-    closeBtn.addEventListener('click', closePreview);
-    
-    // Close on overlay click (outside image)
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) {
-        closePreview();
-      }
-    });
   }
 
   // Modified fetchAndDisplayProducts function
@@ -1326,163 +1180,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Function to handle product sharing
-  function shareProduct(product) {
-    // Create a URL with the product ID in the hash
-    const shareUrl = `${window.location.origin}${window.location.pathname}#products/${product.id}`;
-    const shareText = `Check out this amazing ${product.name} at M. Fashion! Only $${product.price.discounted.toFixed(2)}`;
-    
-    // Determine if product has multiple images
-    const hasMultipleImages = product.images && product.images.length > 1;
-    
-    // Create image carousel for share modal
-    let imageContent = '';
-    if (hasMultipleImages) {
-      imageContent = `
-        <div class="share-image-carousel">
-          <div class="share-carousel-images">
-            ${product.images.map((img, index) => 
-              `<img src="${img}" alt="${product.name}" class="share-carousel-image ${index === 0 ? 'active' : ''}" data-index="${index}">`
-            ).join('')}
-          </div>
-          <div class="share-carousel-controls">
-            <button class="share-carousel-prev" type="button"><i class="ri-arrow-left-s-line"></i></button>
-            <div class="share-carousel-indicators">
-              ${product.images.map((_, index) => 
-                `<span class="share-carousel-dot ${index === 0 ? 'active' : ''}" data-index="${index}"></span>`
-              ).join('')}
-            </div>
-            <button class="share-carousel-next" type="button"><i class="ri-arrow-right-s-line"></i></button>
-          </div>
-        </div>
-      `;
-    } else {
-      imageContent = `<img src="${product.image}" alt="${product.name}">`;
-    }
-    
-    // Create share modal
-    const modal = document.createElement('div');
-    modal.className = 'share-modal';
-    modal.innerHTML = `
-      <div class="share-modal-content">
-        <h3>Share this product</h3>
-        <div class="share-preview">
-          ${imageContent}
-          <div class="share-preview-info">
-            <h4>${product.name}</h4>
-            <p>${product.description}</p>
-            <div class="share-product-details">
-              <div class="share-price">
-                <small>PKR ${product.price.original.toFixed(2)}</small>
-                PKR ${product.price.discounted.toFixed(2)}
-              </div>
-              <div class="share-category">Category: ${product.category}</div>
-              <div class="share-availability">In Stock</div>
-            </div>
-          </div>
-        </div>
-        <div class="share-buttons">
-          <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}" target="_blank" class="share-button facebook">
-            <i class="ri-facebook-fill"></i> Facebook
-          </a>
-          <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}" target="_blank" class="share-button twitter">
-            <i class="ri-twitter-fill"></i> Twitter
-          </a>
-          <a href="https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}" target="_blank" class="share-button whatsapp">
-            <i class="ri-whatsapp-fill"></i> WhatsApp
-          </a>
-          <button class="share-button copy-link" onclick="navigator.clipboard.writeText('${shareUrl}')">
-            <i class="ri-link"></i> Copy Link
-          </button>
-        </div>
-        <button class="close-share-modal">Close</button>
-      </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Show modal with animation
-    setTimeout(() => {
-      modal.classList.add('active');
-    }, 10);
-    
-    // Add carousel functionality if multiple images
-    if (hasMultipleImages) {
-      const carousel = modal.querySelector('.share-image-carousel');
-      const prevBtn = carousel.querySelector('.share-carousel-prev');
-      const nextBtn = carousel.querySelector('.share-carousel-next');
-      const images = carousel.querySelectorAll('.share-carousel-image');
-      const dots = carousel.querySelectorAll('.share-carousel-dot');
-      
-      // Set current image index
-      let currentIndex = 0;
-      
-      // Function to update displayed image
-      const updateCarousel = (index) => {
-        // Hide all images and remove active class from dots
-        images.forEach(img => img.classList.remove('active'));
-        dots.forEach(dot => dot.classList.remove('active'));
-        
-        // Show selected image and activate corresponding dot
-        images[index].classList.add('active');
-        dots[index].classList.add('active');
-        
-        // Update current index
-        currentIndex = index;
-      };
-      
-      // Add event listeners to previous and next buttons
-      prevBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const newIndex = (currentIndex - 1 + images.length) % images.length;
-        updateCarousel(newIndex);
-      });
-      
-      nextBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const newIndex = (currentIndex + 1) % images.length;
-        updateCarousel(newIndex);
-      });
-      
-      // Add event listeners to indicator dots
-      dots.forEach(dot => {
-        dot.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const dotIndex = parseInt(dot.getAttribute('data-index'));
-          updateCarousel(dotIndex);
-        });
-      });
-    }
-    
-    // Add event listener to close button
-    modal.querySelector('.close-share-modal').addEventListener('click', () => {
-      modal.classList.remove('active');
-      setTimeout(() => {
-        modal.remove();
-      }, 300);
-    });
-    
-    // Close modal when clicking outside
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.classList.remove('active');
-        setTimeout(() => {
-          modal.remove();
-        }, 300);
-      }
-    });
-
-    // Show success message when link is copied
-    const copyButton = modal.querySelector('.copy-link');
-    copyButton.addEventListener('click', () => {
-      const originalText = copyButton.innerHTML;
-      copyButton.innerHTML = '<i class="ri-check-line"></i> Copied!';
-      setTimeout(() => {
-        copyButton.innerHTML = originalText;
-      }, 2000);
-    });
-  }
-
   // Function to handle product URL navigation
   function handleProductNavigation() {
     const hash = window.location.hash;
@@ -1851,444 +1548,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Function to open the rating modal
   function openRatingModal(product) {
-    // Check if a modal already exists and remove it
-    const existingModal = document.querySelector('.rating-modal');
-    if (existingModal) {
-      existingModal.remove();
-    }
-    
-    // Create modal element
-    const modal = document.createElement('div');
-    modal.classList.add('rating-modal');
-    
-    // Generate rating stars
-    const starsHtml = `
-      <div class="rating-stars">
-        <i class="ri-star-line" data-rating="1"></i>
-        <i class="ri-star-line" data-rating="2"></i>
-        <i class="ri-star-line" data-rating="3"></i>
-        <i class="ri-star-line" data-rating="4"></i>
-        <i class="ri-star-line" data-rating="5"></i>
-      </div>
-    `;
-    
-    // Modal content
-    modal.innerHTML = `
-      <div class="rating-modal-content">
-        <span class="close-rating-modal">&times;</span>
-        <h3>Rate "${product.name}"</h3>
-        ${starsHtml}
-        <div class="rating-value">0/5</div>
-        <button class="submit-rating" disabled>Submit Rating</button>
-      </div>
-    `;
-    
-    // Append to body
-    document.body.appendChild(modal);
-    
-    // Event handlers
-    const closeBtn = modal.querySelector('.close-rating-modal');
-    closeBtn.addEventListener('click', () => {
-      modal.remove();
-    });
-    
-    // Handle star rating
-    let selectedRating = 0;
-    const stars = modal.querySelectorAll('.rating-stars i');
-    const ratingValue = modal.querySelector('.rating-value');
-    const submitButton = modal.querySelector('.submit-rating');
-    
-    stars.forEach(star => {
-      // Hover effects
-      star.addEventListener('mouseover', () => {
-        const rating = parseInt(star.getAttribute('data-rating'));
-        
-        // Highlight stars up to the hovered one
-        stars.forEach(s => {
-          const starRating = parseInt(s.getAttribute('data-rating'));
-          if (starRating <= rating) {
-            s.className = 'ri-star-fill';
-          } else {
-            s.className = 'ri-star-line';
-          }
-        });
-        
-        ratingValue.textContent = `${rating}/5`;
-      });
-      
-      // Click to select rating
-      star.addEventListener('click', () => {
-        selectedRating = parseInt(star.getAttribute('data-rating'));
-        
-        // Enable submit button
-        submitButton.disabled = false;
-        
-        // Fix the filled stars
-        stars.forEach(s => {
-          const starRating = parseInt(s.getAttribute('data-rating'));
-          if (starRating <= selectedRating) {
-            s.className = 'ri-star-fill';
-          } else {
-            s.className = 'ri-star-line';
-          }
-        });
-      });
-    });
-    
-    // Reset stars when mouse leaves the container
-    const starsContainer = modal.querySelector('.rating-stars');
-    starsContainer.addEventListener('mouseleave', () => {
-      stars.forEach(s => {
-        const starRating = parseInt(s.getAttribute('data-rating'));
-        if (starRating <= selectedRating) {
-          s.className = 'ri-star-fill';
-        } else {
-          s.className = 'ri-star-line';
-        }
-      });
-      
-      ratingValue.textContent = selectedRating > 0 ? `${selectedRating}/5` : '0/5';
-    });
-    
-    // Submit rating
-    submitButton.addEventListener('click', () => {
-      if (selectedRating > 0) {
-        // Get userId (or generate one if not logged in)
-        let userId = localStorage.getItem('userId');
-        if (!userId) {
-          userId = 'guest_' + Math.random().toString(36).substring(2, 15);
-          localStorage.setItem('userId', userId);
-        }
-        
-        // Import recommendation system and record rating
-        import('./recommendation.js')
-          .then(module => {
-            module.recommendationSystem.recordRating(userId, product.id, selectedRating);
-            
-            // Check if this was the first rating for this product
-            const isFirstRating = module.recommendationSystem.productRatings[product.id].ratingCount === 1;
-            const message = isFirstRating ? 
-              `Thank you for being the first to rate "${product.name}"!` : 
-              `Your rating of ${selectedRating}/5 for "${product.name}" has been recorded.`;
-            
-            // Show confirmation
-            modal.innerHTML = `
-              <div class="rating-modal-content">
-                <span class="close-rating-modal">&times;</span>
-                <h3>Thank You!</h3>
-                <p>${message}</p>
-                <button class="close-rating-confirmation">Close</button>
-              </div>
-            `;
-            
-            // New close button event
-            modal.querySelector('.close-rating-modal').addEventListener('click', () => {
-              modal.remove();
-            });
-            
-            modal.querySelector('.close-rating-confirmation').addEventListener('click', () => {
-              modal.remove();
-              // Refresh products list to show updated ratings
-              fetchAndDisplayProducts();
-            });
-          })
-          .catch(error => {
-            console.error('Error recording rating:', error);
-            modal.innerHTML = `
-              <div class="rating-modal-content">
-                <span class="close-rating-modal">&times;</span>
-                <h3>Error</h3>
-                <p>There was a problem submitting your rating. Please try again later.</p>
-                <button class="close-rating-confirmation">Close</button>
-              </div>
-            `;
-            
-            // Close button event
-            modal.querySelector('.close-rating-confirmation').addEventListener('click', () => {
-              modal.remove();
-            });
-          });
-      }
-    });
+    console.log("Rating functionality has been removed from this version");
+    showGlobalMessage('Rating functionality is not available in this version.', 'info');
+    return;
   }
 
-  // Function to open the comment modal
-  function openCommentModal(product) {
-    // Check if a modal already exists and remove it
-    const existingModal = document.querySelector('.comment-modal');
-    if (existingModal) {
-      existingModal.remove();
-    }
-    
-    // Get current comments from localStorage
-    const commentsData = localStorage.getItem('productComments');
-    let allComments = commentsData ? JSON.parse(commentsData) : {};
-    let productComments = allComments[product.id] || [];
-    
-    // Create modal element
-    const modal = document.createElement('div');
-    modal.classList.add('comment-modal');
-    
-    // Generate comments HTML
-    let commentsHtml = '';
-    if (productComments.length > 0) {
-      commentsHtml = productComments.map(comment => {
-        // Format date
-        const commentDate = new Date(comment.date);
-        const formattedDate = commentDate.toLocaleDateString() + ' ' + commentDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-        
-        // Set profile image - use provided image if available, otherwise default icon
-        const profileImg = comment.profileImgUrl 
-          ? `<img src="${comment.profileImgUrl}" alt="${comment.username}" class="comment-user-img">`
-          : `<i class="ri-user-3-fill"></i>`;
-        
-        return `
-          <div class="comment-item" data-comment-id="${comment.id}">
-            <div class="comment-header">
-              <div class="comment-user">
-                ${profileImg}
-                <span class="comment-username">${comment.username}</span>
-              </div>
-              <span class="comment-date">${formattedDate}</span>
-            </div>
-            <div class="comment-text">${escapeHTML(comment.text)}</div>
-            <div class="comment-actions">
-              <button class="comment-like" data-comment-id="${comment.id}">
-                <i class="ri-thumb-up-line"></i> <span>${comment.likes || 0}</span>
-              </button>
-              <button class="comment-dislike" data-comment-id="${comment.id}">
-                <i class="ri-thumb-down-line"></i> <span>${comment.dislikes || 0}</span>
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    } else {
-      commentsHtml = '<p class="no-comments">No comments yet. Be the first to comment!</p>';
-    }
-    
-    // Modal content
-    modal.innerHTML = `
-      <div class="comment-modal-content">
-        <span class="close-comment-modal">&times;</span>
-        <h3>Comments for "${product.name}"</h3>
-        
-        <div class="comment-form">
-          <textarea placeholder="Write your comment here..." id="new-comment-text" maxlength="500"></textarea>
-          <div class="comment-form-footer">
-            <span class="comment-chars-left">500 characters left</span>
-            <button class="submit-comment" data-product-id="${product.id}">Post Comment</button>
-          </div>
-        </div>
-        
-        <div class="comments-container">
-          ${commentsHtml}
-        </div>
-      </div>
-    `;
-    
-    // Append to body
-    document.body.appendChild(modal);
-    
-    // Set up event listeners
-    
-    // Close button event
-    const closeBtn = modal.querySelector('.close-comment-modal');
-    closeBtn.addEventListener('click', () => {
-      modal.remove();
-    });
-    
-    // Character counter for textarea
-    const textarea = modal.querySelector('#new-comment-text');
-    const charsLeftSpan = modal.querySelector('.comment-chars-left');
-    
-    textarea.addEventListener('input', () => {
-      const remaining = 500 - textarea.value.length;
-      charsLeftSpan.textContent = `${remaining} characters left`;
-      
-      // Change color when getting low
-      if (remaining < 50) {
-        charsLeftSpan.style.color = '#ff6b6b';
-      } else {
-        charsLeftSpan.style.color = '';
-      }
-    });
-    
-    // Submit comment button
-    const submitBtn = modal.querySelector('.submit-comment');
-    submitBtn.addEventListener('click', async () => {
-      const commentText = textarea.value.trim();
-      
-      if (commentText) {
-        // Check if Clerk is available
-        if (!window.Clerk) {
-          console.warn("Clerk not available, using guest user");
-        }
-        
-        try {
-          // Get user info from Clerk if available
-          let userId, username, profileImgUrl;
-          
-          if (window.Clerk && window.Clerk.user) {
-            // User is logged in with Clerk
-            const user = window.Clerk.user;
-            userId = user.id;
-            username = user.firstName && user.lastName 
-              ? `${user.firstName} ${user.lastName}` 
-              : (user.firstName || user.username || 'User');
-            
-            // Get profile image URL
-            profileImgUrl = user.imageUrl;
-          } else {
-            // Generate guest ID if not already stored
-            userId = localStorage.getItem('userId');
-            if (!userId) {
-              userId = 'guest_' + Math.random().toString(36).substring(2, 15);
-              localStorage.setItem('userId', userId);
-            }
-            username = 'Guest User';
-            profileImgUrl = null;
-          }
-          
-          // Create comment object
-          const newComment = {
-            id: Date.now(), // Use timestamp as ID
-            userId: userId,
-            username: username,
-            profileImgUrl: profileImgUrl,
-            text: commentText,
-            date: new Date().toISOString(),
-            likes: 0,
-            dislikes: 0
-          };
-          
-          // Add to product comments
-          if (!allComments[product.id]) {
-            allComments[product.id] = [];
-          }
-          
-          allComments[product.id].unshift(newComment); // Add to beginning of array
-          
-          // Save back to localStorage
-          localStorage.setItem('productComments', JSON.stringify(allComments));
-          
-          // Update the UI
-          const commentsContainer = modal.querySelector('.comments-container');
-          const noCommentsMsg = commentsContainer.querySelector('.no-comments');
-          
-          if (noCommentsMsg) {
-            // Remove "no comments" message if it exists
-            commentsContainer.innerHTML = '';
-          }
-          
-          // Create new comment element
-          const commentDiv = document.createElement('div');
-          commentDiv.classList.add('comment-item', 'comment-new');
-          commentDiv.setAttribute('data-comment-id', newComment.id);
-          
-          // Format date
-          const commentDate = new Date(newComment.date);
-          const formattedDate = commentDate.toLocaleDateString() + ' ' + commentDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-          
-          // Set profile image - use provided image if available, otherwise default icon
-          const profileImg = newComment.profileImgUrl 
-            ? `<img src="${newComment.profileImgUrl}" alt="${newComment.username}" class="comment-user-img">`
-            : `<i class="ri-user-3-fill"></i>`;
-          
-          commentDiv.innerHTML = `
-            <div class="comment-header">
-              <div class="comment-user">
-                ${profileImg}
-                <span class="comment-username">${newComment.username}</span>
-              </div>
-              <span class="comment-date">${formattedDate}</span>
-            </div>
-            <div class="comment-text">${escapeHTML(newComment.text)}</div>
-            <div class="comment-actions">
-              <button class="comment-like" data-comment-id="${newComment.id}">
-                <i class="ri-thumb-up-line"></i> <span>0</span>
-              </button>
-              <button class="comment-dislike" data-comment-id="${newComment.id}">
-                <i class="ri-thumb-down-line"></i> <span>0</span>
-              </button>
-            </div>
-          `;
-          
-          // Add to the beginning of the container
-          commentsContainer.insertBefore(commentDiv, commentsContainer.firstChild);
-          
-          // Clear the textarea
-          textarea.value = '';
-          charsLeftSpan.textContent = '500 characters left';
-          
-          // Remove highlight after 2 seconds
-          setTimeout(() => {
-            commentDiv.classList.remove('comment-new');
-          }, 2000);
-        } catch (error) {
-          console.error('Error posting comment:', error);
-          alert('There was an error posting your comment. Please try again.');
-        }
-      }
-    });
-    
-    // Setup like/dislike buttons for existing comments
-    const commentLikeBtns = modal.querySelectorAll('.comment-like');
-    const commentDislikeBtns = modal.querySelectorAll('.comment-dislike');
-    
-    commentLikeBtns.forEach(likeBtn => {
-      likeBtn.addEventListener('click', function() {
-        const commentId = this.getAttribute('data-comment-id');
-        const commentIndex = allComments[product.id].findIndex(c => c.id.toString() === commentId);
-        
-        if (commentIndex !== -1) {
-          // Increment likes
-          allComments[product.id][commentIndex].likes = (allComments[product.id][commentIndex].likes || 0) + 1;
-          
-          // Update UI
-          const countSpan = this.querySelector('span');
-          countSpan.textContent = parseInt(countSpan.textContent) + 1;
-          
-          // Change icon to filled
-          this.querySelector('i').className = 'ri-thumb-up-fill';
-          
-          // Disable both buttons
-          this.disabled = true;
-          const dislikeBtn = this.parentNode.querySelector('.comment-dislike');
-          dislikeBtn.disabled = true;
-          
-          // Save to localStorage
-          localStorage.setItem('productComments', JSON.stringify(allComments));
-        }
-      });
-    });
-    
-    commentDislikeBtns.forEach(dislikeBtn => {
-      dislikeBtn.addEventListener('click', function() {
-        const commentId = this.getAttribute('data-comment-id');
-        const commentIndex = allComments[product.id].findIndex(c => c.id.toString() === commentId);
-        
-        if (commentIndex !== -1) {
-          // Increment dislikes
-          allComments[product.id][commentIndex].dislikes = (allComments[product.id][commentIndex].dislikes || 0) + 1;
-          
-          // Update UI
-          const countSpan = this.querySelector('span');
-          countSpan.textContent = parseInt(countSpan.textContent) + 1;
-          
-          // Change icon to filled
-          this.querySelector('i').className = 'ri-thumb-down-fill';
-          
-          // Disable both buttons
-          this.disabled = true;
-          const likeBtn = this.parentNode.querySelector('.comment-like');
-          likeBtn.disabled = true;
-          
-          // Save to localStorage
-          localStorage.setItem('productComments', JSON.stringify(allComments));
-        }
-      });
-    });
+  // Export the placeholder function
+  window.openRatingModal = openRatingModal;
+  if (typeof globalThis !== 'undefined') {
+    globalThis.openRatingModal = openRatingModal;
   }
 
 });
