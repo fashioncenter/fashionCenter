@@ -38,6 +38,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script type="module" src="security.js"></script>
   <script type="module" src="firebase.js"></script>
   <script
     async
@@ -335,7 +336,7 @@
         <p>Discover the latest trends in fashion and style</p>
         <div class="hero__buttons">
           <a href="#products" class="hero__btn primary">Shop Now</a>
-          <a href="https://wa.me/+923173646088" class="hero__btn secondary" target="_blank">Whatsapp</a>
+          <a href="https://wa.me/+923147401607" class="hero__btn secondary" target="_blank">Whatsapp</a>
         </div>
       </div>
       <div class="hero__image">
@@ -480,7 +481,7 @@
           <div class="social-links">
             <a href="https://www.facebook.com/profile.php?id=100089252036130" class="social-link" target="_blank"><i class="ri-facebook-circle-fill"></i></a>
             <a href="https://www.instagram.com/nawab_muzamil_1100/" class="social-link" target="_blank"><i class="ri-instagram-line"></i></a>
-            <a href="https://wa.me/+923173646088" class="social-link" target="_blank"><i class="ri-whatsapp-line"></i></a>
+            <a href="https://wa.me/+923147401607" class="social-link" target="_blank"><i class="ri-whatsapp-line"></i></a>
           </div>
         </div>
 
@@ -528,6 +529,27 @@
     </footer>
   </div>
 
+  <script type="module">
+    import { securityGuard } from './security.js';
+    
+    // Security guard will initialize automatically
+    // Additional security measures
+    window.addEventListener('error', (event) => {
+      // Catch and handle any Firebase-related errors
+      if (event.message.toLowerCase().includes('firebase')) {
+        event.preventDefault();
+        console.warn('Blocked Firebase error:', event.message);
+        window.location.replace('/');
+      }
+    });
+
+    // Block direct script access
+    window.addEventListener('securityerror', (event) => {
+      event.preventDefault();
+      window.location.replace('/');
+    });
+  </script>
+  
   <script type="module" src="script.js"></script>
 
   <!-- Clerk Auth script -->
@@ -575,7 +597,7 @@
   </script>
 
   <!-- WhatsApp Floating Button -->
-  <a href="https://wa.me/+923173646088" class="whatsapp-float" target="_blank">
+  <a href="https://wa.me/+923147401607?text=Hi%20M.Fashion!%20I’d%20like%20to%20place%20an%20order%20or%20ask%20a%20question." class="whatsapp-float" target="_blank">
     <i class="ri-whatsapp-line"></i>
   </a>
 </body>

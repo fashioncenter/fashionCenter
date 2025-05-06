@@ -17,7 +17,6 @@ User-agent: Yandex
 Crawl-delay: 10
 
 # Disallow admin and private areas
-Disallow: /admin/
 Disallow: /private/
 Disallow: /temp/
 Disallow: /backup/

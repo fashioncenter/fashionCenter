@@ -55,29 +55,29 @@
             "Assets/Bags.jpg"
         ],
         "badge": "Discount",
-        "rating": 4.2,
-        "ratingCount": 32,
-        "isNew": true,
+        "rating": 1.2,
+        "ratingCount": 10,
+        "isNew": false,
         "discount": 7
     },
     {
         "id": 4,
-        "name": "Facial Cleanser",
+        "name": "The Ordinary Face Wash 150ml -",
         "category": "FashWash",
-        "description": "All English men's facial cleanser 100g SADOER cool men's facial cleanser cross-border foreign trade wholesale.",
+        "description": "Experience a fresh, clean feel every day with our Transparent Liquid Face Wash. Specially formulated for all skin types, this gentle yet effective cleanser removes dirt, excess oil, and makeup without stripping your skin of its natural moisture. Its smooth, lightweight texture glides effortlessly across your face, rinsing away impurities to reveal a balanced, radiant complexion.",
         "price": {
-            "original": 2699,
-            "discounted": 1000
+            "original": 1699,
+            "discounted": 1399
         },
-        "image": "Assets/facewash.jpeg",
+        "image": "Assets/facewash_1.png",
         "images": [
-            "Assets/facewash.jpeg",
-            "Assets/facewash_1.jpeg"
+            "Assets/facewash_1.png",
+            "Assets/facewash__2.png"
         ],
         "badge": "Discount",
-        "rating": 4.7,
-        "ratingCount": 89,
-        "isNew": false,
-        "discount": 37
+        "rating": 5.3,
+        "ratingCount": 53,
+        "isNew": true,
+        "discount": 17.66
     }
 ]

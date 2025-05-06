@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const buyNowBtn = document.querySelector('.buy-now-btn');
     if (buyNowBtn) {
-      buyNowBtn.textContent = isAuthenticated ? 'Buy Now' : 'Login to Order';
+      buyNowBtn.textContent = 'Buy Now';
       buyNowBtn.disabled = !isAuthenticated;
     }
 
@@ -716,7 +716,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (userProfileDiv) userProfileDiv.style.display = 'block';
       if (dashboardLink) dashboardLink.style.display = 'block';
     } else {
-      if (buyNowBtn) buyNowBtn.textContent = 'Login to Order';
+      if (buyNowBtn) buyNowBtn.textContent = 'Buy Now';
       if (authLinks) authLinks.style.display = 'flex';
       if (userProfileDiv) userProfileDiv.style.display = 'none';
       if (dashboardLink) dashboardLink.style.display = 'none';
