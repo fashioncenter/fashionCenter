@@ -6100,6 +6100,176 @@ header.announcement-active {
     /* ... existing code ... */
 }
 
+/* Product Image Carousel Styling */
+.product-image,
+.product-image-carousel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px 8px 0 0;
+    height: 250px; /* Consistent height for all product images */
+}
+
+.product-image-carousel .carousel-container {
+    display: flex;
+    scroll-snap-type: x mandatory;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none; /* Hide scrollbar for Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar for IE and Edge */
+    width: 100%;
+    height: 100%;
+    scroll-behavior: smooth;
+    position: relative;
+    cursor: grab;
+}
+
+.product-image-carousel .carousel-container:active {
+    cursor: grabbing;
+}
+
+/* Hide scrollbar for Chrome, Safari, and Opera */
+.product-image-carousel .carousel-container::-webkit-scrollbar {
+    display: none;
+}
+
+.product-image-carousel .carousel-container img {
+    scroll-snap-align: start;
+    min-width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Navigation arrows styling */
+.carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    border: 2px solid #e4cd00;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 10;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    opacity: 0.9;
+}
+
+.carousel-arrow.prev {
+    left: 10px;
+}
+
+.carousel-arrow.next {
+    right: 10px;
+}
+
+.carousel-arrow:hover {
+    background-color: #e4cd00;
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.3);
+    opacity: 1;
+}
+
+.carousel-arrow i {
+    font-size: 22px;
+    color: #333;
+    transition: color 0.3s ease;
+}
+
+.carousel-arrow:hover i {
+    color: #fff;
+}
+
+/* Show arrows on hover */
+.product-card:not(:hover) .carousel-arrow {
+    opacity: 0.5;
+    transform: translateY(-50%) scale(0.9);
+}
+
+.product-card:hover .carousel-arrow {
+    opacity: 0.9;
+    transform: translateY(-50%) scale(1);
+}
+
+/* Image dots indicator */
+.carousel-dots {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    z-index: 5;
+}
+
+.carousel-dots .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.carousel-dots .dot.active {
+    background-color: #e4cd00;
+    transform: scale(1.3);
+}
+
+/* Swipe hint indicator */
+.swipe-hint {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    opacity: 0.8;
+    pointer-events: none;
+    z-index: 5;
+    animation: fadeOutAfterDelay 3s forwards;
+}
+
+.swipe-hint i {
+    font-size: 14px;
+    animation: swipeAnimation 2s infinite;
+}
+
+@keyframes fadeOutAfterDelay {
+    0%, 70% { opacity: 0.8; }
+    100% { opacity: 0; }
+}
+
+@keyframes swipeAnimation {
+    0% { transform: translateX(-3px); }
+    50% { transform: translateX(3px); }
+    100% { transform: translateX(-3px); }
+}
+
+/* Hover effect for images */
+.product-image img:hover,
+.product-image-carousel .carousel-container img:hover {
+    transform: scale(1.1);
+}
+
 @media (max-width: 400px) {
     .product-actions {
         flex-direction: column;
@@ -6112,5 +6282,10 @@ header.announcement-active {
     .favorite-btn, .share-btn {
         width: 40px;
         height: 40px;
+    }
+    
+    .magnifier-glass {
+        width: 60px;
+        height: 60px;
     }
 }

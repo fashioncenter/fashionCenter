@@ -365,10 +365,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="${showCarousel ? 'product-image-carousel' : 'product-image'}">
                 ${showCarousel ? `
                     <button class="carousel-arrow prev" aria-label="Previous image">
-                        <i class="ri-arrow-left-line"></i>
+                        <i class="ri-arrow-left-s-line"></i>
                     </button>
                     <button class="carousel-arrow next" aria-label="Next image">
-                        <i class="ri-arrow-right-line"></i>
+                        <i class="ri-arrow-right-s-line"></i>
                     </button>
                     <div class="swipe-hint">
                         <i class="ri-drag-move-line"></i>
@@ -431,164 +431,200 @@ document.addEventListener('DOMContentLoaded', () => {
             const prevButton = productCard.querySelector('.carousel-arrow.prev');
             const nextButton = productCard.querySelector('.carousel-arrow.next');
             const swipeHint = productCard.querySelector('.swipe-hint');
-            
-            if (!carousel) return;
-            
+            let startX;
+            let scrollLeft;
+            let isDragging = false;
             let currentIndex = 0;
             const totalImages = product.images.length;
-            
+            let hasInteracted = false;
+
+            // Hide swipe hint after user interaction
+            const hideSwipeHint = () => {
+                if (!hasInteracted && swipeHint) {
+                    hasInteracted = true;
+                    swipeHint.style.display = 'none';
+                }
+            };
+
+            // Update dots based on scroll position
+            const updateDots = () => {
+                const scrollPosition = carousel.scrollLeft;
+                const imageWidth = carousel.offsetWidth;
+                currentIndex = Math.round(scrollPosition / imageWidth);
+                dots.forEach((dot, index) => {
+                    dot.classList.toggle('active', index === currentIndex);
+                });
+            };
+
             // Function to scroll to a specific image
             const scrollToImage = (index) => {
+                hideSwipeHint();
                 if (index < 0) index = 0;
                 if (index > totalImages - 1) index = totalImages - 1;
                 
                 currentIndex = index;
                 const imageWidth = carousel.offsetWidth;
-                
                 carousel.scrollTo({
                     left: index * imageWidth,
                     behavior: 'smooth'
                 });
-                
-                // Update active dot
-                dots.forEach((dot, i) => {
-                    dot.classList.toggle('active', i === index);
-                });
-                
-                // Show/hide navigation arrows
-                if (prevButton && nextButton) {
-                    prevButton.style.opacity = index === 0 ? '0.3' : '1';
-                    prevButton.style.pointerEvents = index === 0 ? 'none' : 'auto';
-                    
-                    nextButton.style.opacity = index === totalImages - 1 ? '0.3' : '1';
-                    nextButton.style.pointerEvents = index === totalImages - 1 ? 'none' : 'auto';
-                }
-                
-                // Hide swipe hint after first interaction
-                if (swipeHint) {
-                    swipeHint.style.display = 'none';
-                }
+                updateDots();
             };
-            
-            // Add click listeners to arrow buttons
-            if (prevButton) {
-                prevButton.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    scrollToImage(currentIndex - 1);
-                });
-            }
-            
-            if (nextButton) {
-                nextButton.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    scrollToImage(currentIndex + 1);
-                });
-            }
-            
+
+            // Show/hide arrows based on scroll position
+            const updateArrows = () => {
+                const isAtStart = carousel.scrollLeft <= 1;
+                const isAtEnd = carousel.scrollLeft >= carousel.scrollWidth - carousel.offsetWidth - 1;
+                
+                prevButton.style.opacity = isAtStart ? '0.3' : '1';
+                prevButton.style.pointerEvents = isAtStart ? 'none' : 'auto';
+                
+                nextButton.style.opacity = isAtEnd ? '0.3' : '1';
+                nextButton.style.pointerEvents = isAtEnd ? 'none' : 'auto';
+            };
+
+            // Add click event listeners for arrow buttons
+            prevButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                hideSwipeHint();
+                scrollToImage(currentIndex - 1);
+            });
+
+            nextButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                hideSwipeHint();
+                scrollToImage(currentIndex + 1);
+            });
+
             // Add click listeners to dots
             dots.forEach((dot, index) => {
-                dot.addEventListener('click', () => {
+                dot.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    hideSwipeHint();
                     scrollToImage(index);
                 });
             });
-            
-            // Add scroll event listener to update UI based on scroll position
-            carousel.addEventListener('scroll', () => {
-                const imageWidth = carousel.offsetWidth;
-                const scrollPosition = carousel.scrollLeft;
-                const index = Math.round(scrollPosition / imageWidth);
-                
-                if (index !== currentIndex) {
-                    currentIndex = index;
-                    
-                    // Update active dot
-                    dots.forEach((dot, i) => {
-                        dot.classList.toggle('active', i === index);
-                    });
-                    
-                    // Update navigation buttons
-                    if (prevButton && nextButton) {
-                        prevButton.style.opacity = index === 0 ? '0.3' : '1';
-                        prevButton.style.pointerEvents = index === 0 ? 'none' : 'auto';
-                        
-                        nextButton.style.opacity = index === totalImages - 1 ? '0.3' : '1';
-                        nextButton.style.pointerEvents = index === totalImages - 1 ? 'none' : 'auto';
-                    }
-                    
-                    // Hide swipe hint
-                    if (swipeHint) {
-                        swipeHint.style.display = 'none';
-                    }
-                }
-            });
-            
-            // Enable touch and mouse dragging for the carousel
-            let isDragging = false;
-            let startX;
-            let startScrollLeft;
-            
+
+            // Add touch and mouse events for smooth scrolling
             carousel.addEventListener('mousedown', (e) => {
                 isDragging = true;
-                startX = e.pageX;
-                startScrollLeft = carousel.scrollLeft;
+                hideSwipeHint();
+                startX = e.pageX - carousel.offsetLeft;
+                scrollLeft = carousel.scrollLeft;
+                carousel.style.scrollBehavior = 'auto';
                 carousel.style.cursor = 'grabbing';
             });
-            
+
             carousel.addEventListener('mousemove', (e) => {
                 if (!isDragging) return;
                 e.preventDefault();
-                const x = e.pageX;
-                const delta = startX - x;
-                carousel.scrollLeft = startScrollLeft + delta;
+                const x = e.pageX - carousel.offsetLeft;
+                const walk = (x - startX);
+                carousel.scrollLeft = scrollLeft - walk;
             });
-            
-            const endDrag = () => {
-                if (!isDragging) return;
+
+            carousel.addEventListener('mouseup', () => {
                 isDragging = false;
+                carousel.style.scrollBehavior = 'smooth';
+                carousel.style.cursor = '';
+                snapToNearestImage();
+            });
+
+            carousel.addEventListener('mouseleave', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    carousel.style.scrollBehavior = 'smooth';
+                    carousel.style.cursor = '';
+                    snapToNearestImage();
+                }
+            });
+
+            // Set cursor style for carousel
+            carousel.addEventListener('mouseenter', () => {
                 carousel.style.cursor = 'grab';
-                
-                // Snap to nearest image
-                const imageWidth = carousel.offsetWidth;
-                const index = Math.round(carousel.scrollLeft / imageWidth);
-                scrollToImage(index);
-            };
-            
-            carousel.addEventListener('mouseup', endDrag);
-            carousel.addEventListener('mouseleave', endDrag);
-            
-            // Touch events for mobile
+            });
+
+            // Touch events with improved handling
             carousel.addEventListener('touchstart', (e) => {
                 isDragging = true;
-                startX = e.touches[0].pageX;
-                startScrollLeft = carousel.scrollLeft;
-                
-                // Hide swipe hint
-                if (swipeHint) {
-                    swipeHint.style.display = 'none';
-                }
-            }, { passive: true });
-            
+                hideSwipeHint();
+                startX = e.touches[0].pageX - carousel.offsetLeft;
+                scrollLeft = carousel.scrollLeft;
+                carousel.style.scrollBehavior = 'auto';
+            }, { passive: true }); // Using passive for better touch performance
+
             carousel.addEventListener('touchmove', (e) => {
                 if (!isDragging) return;
-                const x = e.touches[0].pageX;
-                const delta = startX - x;
-                carousel.scrollLeft = startScrollLeft + delta;
+                const x = e.touches[0].pageX - carousel.offsetLeft;
+                const walk = (x - startX) * 1.2; // Adding a multiplier for more responsive drag
+                carousel.scrollLeft = scrollLeft - walk;
             }, { passive: true });
-            
+
             carousel.addEventListener('touchend', () => {
-                if (!isDragging) return;
                 isDragging = false;
-                
-                // Snap to nearest image
-                const imageWidth = carousel.offsetWidth;
-                const index = Math.round(carousel.scrollLeft / imageWidth);
-                scrollToImage(index);
+                carousel.style.scrollBehavior = 'smooth';
+                snapToNearestImage();
             });
+
+            // Event listener for scroll to update dots and arrows
+            carousel.addEventListener('scroll', () => {
+                requestAnimationFrame(() => {
+                    updateDots();
+                    updateArrows();
+                });
+            });
+
+            // Add keyboard navigation for accessibility
+            productCard.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft') {
+                    scrollToImage(currentIndex - 1);
+                    hideSwipeHint();
+                } else if (e.key === 'ArrowRight') {
+                    scrollToImage(currentIndex + 1);
+                    hideSwipeHint();
+                }
+            });
+
+            // Snap to nearest image after scrolling
+            const snapToNearestImage = () => {
+                const imageWidth = carousel.offsetWidth;
+                const nearestImage = Math.round(carousel.scrollLeft / imageWidth);
+                carousel.scrollTo({
+                    left: nearestImage * imageWidth,
+                    behavior: 'smooth'
+                });
+                updateDots();
+            };
+
+            // Add mousewheel/trackpad horizontal scrolling support
+            carousel.addEventListener('wheel', (e) => {
+                // Prevent vertical scrolling when over the carousel
+                e.preventDefault();
+                hideSwipeHint();
+                
+                // Check if it's a trackpad horizontal scroll or Shift+mousewheel
+                const isHorizontalScroll = Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey;
+                
+                // Determine the scroll amount
+                const scrollAmount = isHorizontalScroll ? e.deltaX : e.deltaY;
+                
+                // Smooth scroll in the desired direction
+                carousel.scrollBy({
+                    left: scrollAmount,
+                    behavior: 'smooth'
+                });
+                
+                // After scrolling, snap to the nearest image
+                clearTimeout(carousel.wheelTimeout);
+                carousel.wheelTimeout = setTimeout(snapToNearestImage, 150);
+            }, { passive: false });
             
-            // Initialize carousel
-            scrollToImage(0);
+            // Initial setup
+            updateDots();
+            updateArrows();
         }
 
         // Add a class to enable zoom effect on product cards
