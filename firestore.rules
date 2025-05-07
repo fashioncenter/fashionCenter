@@ -1,47 +1,47 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow admin registration initially
-    match /admins/{adminId} {
-      allow read, write: if true;  // Temporarily allow all access for initial setup
+    // User profiles
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Settings collection
-    match /settings/{settingId} {
-      allow read, write: if true;  // Allow access to settings
-    }
-    
-    // Test collection for debugging
-    match /debug_test/{docId} {
-      allow read, write: if true;
-    }
-    
-    // Coupons collection
-    match /coupons/{couponId} {
-      allow read, write: if true;  // Temporarily allow all access for coupons
-    }
-    
-    // Orders collection
+    // Orders
     match /orders/{orderId} {
-      allow read: if true;  // Allow read for now, restrict later
-      allow write: if true; // Allow write for now, restrict later
-    }
-
-    // Products collection
-    match /products/{productId} {
-      allow read: if true;  // Allow public read access to products
-      allow write: if true; // Temporarily allow write access, should be restricted to admins later
-    }
-
-    // Product images collection
-    match /product_images/{imageId} {
-      allow read: if true;  // Allow public read access to product images
-      allow write: if true; // Temporarily allow write access, should be restricted to admins later
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid || 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
+      );
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (
+        resource.data.userId == request.auth.uid ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
+      );
     }
     
-    // Default deny all
-    match /{document=**} {
-      allow read, write: if false;
+    // Products
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Reviews
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (
+        resource.data.userId == request.auth.uid ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
+      );
+    }
+    
+    // Coupons
+    match /coupons/{couponId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
   }
-} 
+}

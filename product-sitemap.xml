@@ -1,48 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  <url>
-    <loc>https://codetoweb.tech/products/womens-plain-saddle-crossbody-bag</loc>
-    <lastmod>2025-04-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://codetoweb.tech/Assets/bag.jpeg</image:loc>
-      <image:title>Women's Plain Saddle Crossbody Bag</image:title>
-      <image:caption>A crossbody bag is a type of bag that is worn over the shoulder and is typically used for carrying personal items such as a wallet, phone, and keys.</image:caption>
-    </image:image>
-  </url>
-  <url>
-    <loc>https://codetoweb.tech/products/facial-cleanser</loc>
-    <lastmod>2025-04-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://codetoweb.tech/Assets/facial_cleanser.jpeg</image:loc>
-      <image:title>Facial Cleanser</image:title>
-      <image:caption>Charis orignal face wash with 100% natural ingredients and no harmful chemicals.</image:caption>
-    </image:image>
-  </url>
-  <url>
-    <loc>https://codetoweb.tech/products/stylish-hand-bag</loc>
-    <lastmod>2025-04-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://codetoweb.tech/Assets/Bags.jpeg</image:loc>
-      <image:title>Stylish Hand Bag</image:title>
-      <image:caption>Stylish Women's PUR leather Hand Bag Set - 5 Pcs</image:caption>
-    </image:image>
-  </url>
-  <url>
-    <loc>https://codetoweb.tech/products/facial-cleanser</loc>
-    <lastmod>2025-04-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://codetoweb.tech/Assets/facewash.jpeg</image:loc>
-      <image:title>Facial Cleanser</image:title>
-      <image:caption>All English men's facial cleanser 100g SADOER cool men's facial cleanser cross-border foreign trade wholesale.</image:caption>
-    </image:image>
-  </url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://fashioncenter.vercel.app/</loc>
+        <lastmod>2025-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
 </urlset>

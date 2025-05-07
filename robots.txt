@@ -3,6 +3,12 @@
 
 User-agent: *
 Allow: /
+Allow: /about.html
+Allow: /contact.html
+Allow: /faq.html
+Allow: /help-center.html
+Allow: /return-policy.html
+Allow: /shipping-policy.html
 Allow: /sitemap.xml
 Allow: /products.json
 
@@ -41,6 +47,9 @@ Allow: /Assets/
 Allow: /css/
 Allow: /js/
 Allow: /images/
+
+# Disallow product detail pages
+Disallow: /products/*
 
 # Sitemaps
 Sitemap: https://codetoweb.tech/sitemap.xml

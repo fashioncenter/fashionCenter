@@ -1,6 +1,26 @@
 [
     {
         "id": 1,
+        "name": "The Ordinary Face Wash 150ml -",
+        "category": "FashWash",
+        "description": "Experience a fresh, clean feel every day with our Transparent Liquid Face Wash. Specially formulated for all skin types, this gentle yet effective cleanser removes dirt, excess oil, and makeup without stripping your skin of its natural moisture. Its smooth, lightweight texture glides effortlessly across your face, rinsing away impurities to reveal a balanced, radiant complexion.",
+        "price": {
+            "original": 1799,
+            "discounted": 1499
+        },
+        "image": "Assets/facewash__1.jpeg",
+        "images": [
+            "Assets/facewash__1.jpeg",
+            "Assets/facewash__2.jpeg"
+        ],
+        "badge": "Discount",
+        "rating": 5.3,
+        "ratingCount": 53,
+        "isNew": true,
+        "discount": 16.7
+    },
+    {
+        "id": 2,
         "name": "Women's Plain Saddle Crossbody Bag",
         "category": "Bag",
         "description": "A crossbody bag is a type of bag that is worn over the shoulder and is typically used for carrying personal items such as a wallet, phone, and keys.",
@@ -21,7 +41,7 @@
         "discount": 53
     },
     {
-        "id": 2,
+        "id": 3,
         "name": "Facial Cleanser",
         "category": "FashWash",
         "description": "Charis orignal face wash with 100% natural ingredients and no harmful chemicals.",
@@ -41,7 +61,7 @@
         "discount": 62
     },
     {
-        "id": 3,
+        "id": 4,
         "name": "Stylish Hand Bag",
         "category": "Bag",
         "description": "Stylish Women's PUR leather Hand Bag Set - 5 Pcs",
@@ -59,25 +79,5 @@
         "ratingCount": 10,
         "isNew": false,
         "discount": 7
-    },
-    {
-        "id": 4,
-        "name": "The Ordinary Face Wash 150ml -",
-        "category": "FashWash",
-        "description": "Experience a fresh, clean feel every day with our Transparent Liquid Face Wash. Specially formulated for all skin types, this gentle yet effective cleanser removes dirt, excess oil, and makeup without stripping your skin of its natural moisture. Its smooth, lightweight texture glides effortlessly across your face, rinsing away impurities to reveal a balanced, radiant complexion.",
-        "price": {
-            "original": 1699,
-            "discounted": 1399
-        },
-        "image": "Assets/facewash_1.png",
-        "images": [
-            "Assets/facewash_1.png",
-            "Assets/facewash__2.png"
-        ],
-        "badge": "Discount",
-        "rating": 5.3,
-        "ratingCount": 53,
-        "isNew": true,
-        "discount": 17.66
     }
 ]

@@ -290,28 +290,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 
         const productCard = document.createElement('div');
         productCard.classList.add('product-card');
-        productCard.innerHTML = `
+        
+        // Create image carousel HTML
+        const imagesHTML = product.images ? `
+            <div class="product-image-carousel">
+                <div class="carousel-container">
+                    ${product.images.map(img => `
+                        <img src="${escapeHTML(img)}" alt="${escapeHTML(product.name)}">
+                    `).join('')}
+                </div>
+                <div class="carousel-dots">
+                    ${product.images.map((_, index) => `
+                        <span class="dot ${index === 0 ? 'active' : ''}" data-index="${index}"></span>
+                    `).join('')}
+                </div>
+            </div>` : `
             <div class="product-image">
                 <img src="${escapeHTML(product.image)}" alt="${escapeHTML(product.name)}">
-                <div class="product-badges">
-                    ${product.isNew ? '<span class="badge new-badge">New</span>' : ''}
-                    ${product.discount > 0 ? `<span class="badge discount-badge">-${product.discount}%</span>` : ''}
-                </div>
-                <div class="product-overlay">
-                    <button class="quick-view-btn" data-product-id="${product.id}">Quick View</button>
-                </div>
+            </div>`;
+
+        productCard.innerHTML = `
+            ${imagesHTML}
+            <div class="product-badges">
+                ${product.isNew ? '<span class="badge new-badge">New</span>' : ''}
+                ${product.discount > 0 ? `<span class="badge discount-badge">-${product.discount}%</span>` : ''}
             </div>
             <div class="product-info">
                 <div class="product-category">${escapeHTML(product.category || 'Uncategorized')}</div>
                 <h3 class="product-name">${escapeHTML(product.name)}</h3>
-                <p class="product-description">${escapeHTML(product.description || 'No description available').substring(0, 60)}${product.description && product.description.length > 60 ? '...' : ''}</p>
+                <p class="product-description">${escapeHTML(product.description || 'No description available')}</p>
                 <div class="product-price">
                     <span class="original-price">Rs. ${product.price.original.toFixed(2)}</span>
                     <span class="discounted-price">Rs. ${product.price.discounted.toFixed(2)}</span>
                 </div>
                 <div class="product-rating">
-                            ${realRating > 0 ? generateRatingStars(realRating) : ''}
-                            <span class="rating-count">${ratingCount > 0 ? `(${ratingCount})` : ''}</span>
+                    ${realRating > 0 ? generateRatingStars(realRating) : ''}
+                    <span class="rating-count">${ratingCount > 0 ? `(${ratingCount})` : ''}</span>
                 </div>
                 <div class="product-actions">
                     <button class="add-to-cart-btn" data-product-id="${product.id}">
@@ -332,48 +346,131 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        // Add click event to navigate to product detail page
-        productCard.addEventListener('click', (e) => {
-            // Don't navigate if clicking on action buttons
-            if (e.target.closest('.product-actions') || e.target.closest('.quick-view-btn')) return;
-            window.location.href = `/product-detail.html?id=${product.id}`;
-        });
+        // Initialize carousel functionality if product has multiple images
+        if (product.images && product.images.length > 1) {
+            const carousel = productCard.querySelector('.carousel-container');
+            const dots = productCard.querySelectorAll('.dot');
+            let startX;
+            let scrollLeft;
+            let isDragging = false;
+            let currentIndex = 0;
 
-        // Add to cart button click handler
+            // Update dots based on scroll position
+            const updateDots = () => {
+                const scrollPosition = carousel.scrollLeft;
+                const imageWidth = carousel.offsetWidth;
+                currentIndex = Math.round(scrollPosition / imageWidth);
+                dots.forEach((dot, index) => {
+                    dot.classList.toggle('active', index === currentIndex);
+                });
+            };
+
+            // Add touch and mouse events for smooth scrolling
+            carousel.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.pageX - carousel.offsetLeft;
+                scrollLeft = carousel.scrollLeft;
+                carousel.style.scrollBehavior = 'auto';
+            });
+
+            carousel.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const x = e.pageX - carousel.offsetLeft;
+                const walk = (x - startX);
+                carousel.scrollLeft = scrollLeft - walk;
+            });
+
+            carousel.addEventListener('mouseup', () => {
+                isDragging = false;
+                carousel.style.scrollBehavior = 'smooth';
+                snapToNearestImage();
+            });
+
+            carousel.addEventListener('mouseleave', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    carousel.style.scrollBehavior = 'smooth';
+                    snapToNearestImage();
+                }
+            });
+
+            // Touch events
+            carousel.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                startX = e.touches[0].pageX - carousel.offsetLeft;
+                scrollLeft = carousel.scrollLeft;
+                carousel.style.scrollBehavior = 'auto';
+            });
+
+            carousel.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const x = e.touches[0].pageX - carousel.offsetLeft;
+                const walk = (x - startX);
+                carousel.scrollLeft = scrollLeft - walk;
+            });
+
+            carousel.addEventListener('touchend', () => {
+                isDragging = false;
+                carousel.style.scrollBehavior = 'smooth';
+                snapToNearestImage();
+            });
+
+            // Snap to nearest image after scrolling
+            const snapToNearestImage = () => {
+                const imageWidth = carousel.offsetWidth;
+                const nearestImage = Math.round(carousel.scrollLeft / imageWidth);
+                carousel.scrollTo({
+                    left: nearestImage * imageWidth,
+                    behavior: 'smooth'
+                });
+                updateDots();
+            };
+
+            // Add click events to dots
+            dots.forEach((dot, index) => {
+                dot.addEventListener('click', () => {
+                    const imageWidth = carousel.offsetWidth;
+                    carousel.scrollTo({
+                        left: index * imageWidth,
+                        behavior: 'smooth'
+                    });
+                    currentIndex = index;
+                    updateDots();
+                });
+            });
+
+            // Add scroll event listener to update dots
+            carousel.addEventListener('scroll', () => {
+                updateDots();
+            });
+        }
+
+        // Add event handlers for action buttons
         const addToCartBtn = productCard.querySelector('.add-to-cart-btn');
         addToCartBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             addToCart(product);
         });
 
-        // Buy Now button click handler
         const buyNowBtn = productCard.querySelector('.buy-now-direct-btn');
         buyNowBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             buyNowDirect(product);
         });
 
-        // Favorite button click handler
         const favoriteBtn = productCard.querySelector('.favorite-btn');
         favoriteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             toggleFavorite(product);
         });
 
-        // Share button click handler
         const shareBtn = productCard.querySelector('.share-btn');
         shareBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             shareProduct(product);
         });
-
-        // Quick view button click handler
-        const quickViewBtn = productCard.querySelector('.quick-view-btn');
-        quickViewBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            window.location.href = `/product-detail.html?id=${product.id}`;
-        });
-      
+        
         productsContainer.appendChild(productCard);
     });
 
@@ -393,9 +490,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="product-badges">
                             ${product.isNew ? '<span class="badge new-badge">New</span>' : ''}
                             ${product.discount > 0 ? `<span class="badge discount-badge">-${product.discount}%</span>` : ''}
-                        </div>
-                        <div class="product-overlay">
-                            <button class="quick-view-btn" data-product-id="${product.id}">Quick View</button>
                         </div>
                     </div>
                     <div class="product-info">
@@ -428,12 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
 
-                // Add event handlers 
-                productCard.addEventListener('click', (e) => {
-                    if (e.target.closest('.product-actions') || e.target.closest('.quick-view-btn')) return;
-                    window.location.href = `/product-detail.html?id=${product.id}`;
-                });
-
+                // Add event handlers for action buttons
                 const addToCartBtn = productCard.querySelector('.add-to-cart-btn');
                 addToCartBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -456,12 +545,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 shareBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     shareProduct(product);
-                });
-
-                const quickViewBtn = productCard.querySelector('.quick-view-btn');
-                quickViewBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    window.location.href = `/product-detail.html?id=${product.id}`;
                 });
                 
                 productsContainer.appendChild(productCard);
