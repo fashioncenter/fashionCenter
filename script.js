@@ -343,18 +343,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     productsContainer.innerHTML = '';
     
+    try {
+      // Display products with recommendation system if available
+      displayProductsWithRecommendations(products, productsContainer);
+    } catch(error) {
+      console.error('Error displaying products with recommendations:', error);
+      // Fall back to basic product display
+      displayBasicProducts(products, productsContainer);
+    }
+    
+    // Apply filters based on URL parameters
+    handleProductFilters();
+
+    // Initialize product event handlers
+    setTimeout(initializeFavoriteButtons, 100);
+  }
+  
+  // Function to display products with recommendation system integration
+  function displayProductsWithRecommendations(products, productsContainer) {
     // Import the recommendation system to get real-time ratings
     import('./recommendation.js')
-        .then(module => {
-            const recommendationSystem = module.recommendationSystem;
-            
-    products.forEach(product => {
-                // Get real-time rating from recommendation system
-                const realRating = recommendationSystem.getAverageRating(product.id);
-                const ratingCount = recommendationSystem.productRatings[product.id]?.ratingCount || 0;
+      .then(module => {
+        const recommendationSystem = module.recommendationSystem;
+        
+        // Clear any existing products
+        productsContainer.innerHTML = '';
+        
+        // Render each product with recommendations
+        products.forEach(product => {
+          // Get real-time rating from recommendation system
+          const realRating = recommendationSystem.getAverageRating(product.id);
+          const ratingCount = recommendationSystem.productRatings[product.id]?.ratingCount || 0;
                 
-        const productCard = document.createElement('div');
-        productCard.classList.add('product-card');
+          const productCard = document.createElement('div');
+          productCard.classList.add('product-card');
         
         // Create image carousel HTML
         // Determine whether to show carousel or single image
@@ -376,8 +398,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 ` : ''}
                 <div class="carousel-container">
-                    ${productImages.map(img => `
-                        <img src="${escapeHTML(img)}" alt="${escapeHTML(product.name)}">
+                    ${productImages.map((img, imgIndex) => `
+                        <img src="${escapeHTML(img)}" alt="${escapeHTML(product.name)}" class="clickable-product-image" data-index="${imgIndex}">
                     `).join('')}
                 </div>
                 ${showCarousel ? `
@@ -435,6 +457,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!carousel) return;
             
             let currentIndex = 0;
+            let isDragging = false;
+            let startX, startScrollLeft, lastX;
+            let scrollSpeed = 0;
+            let animationId;
             const totalImages = product.images.length;
             
             // Function to scroll to a specific image
@@ -470,6 +496,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
             
+            // Momentum scrolling function
+            const momentumScroll = () => {
+                if (Math.abs(scrollSpeed) > 0.5) {
+                    carousel.scrollLeft += scrollSpeed;
+                    scrollSpeed *= 0.95; // Gradually reduce speed
+                    animationId = requestAnimationFrame(momentumScroll);
+                } else {
+                    cancelAnimationFrame(animationId);
+                }
+            };
+            
             // Add click listeners to arrow buttons
             if (prevButton) {
                 prevButton.addEventListener('click', (e) => {
@@ -489,65 +526,24 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Add click listeners to dots
             dots.forEach((dot, index) => {
-                dot.addEventListener('click', () => {
+                dot.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     scrollToImage(index);
                 });
             });
             
-            // Add scroll event listener to update UI based on scroll position
-            carousel.addEventListener('scroll', () => {
-                const imageWidth = carousel.offsetWidth;
-                const scrollPosition = carousel.scrollLeft;
-                const index = Math.round(scrollPosition / imageWidth);
-                
-                if (index !== currentIndex) {
-                    currentIndex = index;
-                    
-                    // Update active dot
-                    dots.forEach((dot, i) => {
-                        dot.classList.toggle('active', i === index);
-                    });
-                    
-                    // Update navigation buttons
-                    if (prevButton && nextButton) {
-                        prevButton.style.opacity = index === 0 ? '0.3' : '1';
-                        prevButton.style.pointerEvents = index === 0 ? 'none' : 'auto';
-                        
-                        nextButton.style.opacity = index === totalImages - 1 ? '0.3' : '1';
-                        nextButton.style.pointerEvents = index === totalImages - 1 ? 'none' : 'auto';
-                    }
-                    
-                    // Hide swipe hint
-                    if (swipeHint) {
-                        swipeHint.style.display = 'none';
-                    }
-                }
-            });
-            
-            // Enable touch and mouse dragging for the carousel
-            let isDragging = false;
-            let startX;
-            let startScrollLeft;
-            
-            carousel.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                startX = e.pageX;
-                startScrollLeft = carousel.scrollLeft;
-                carousel.style.cursor = 'grabbing';
-            });
-            
-            carousel.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                e.preventDefault();
-                const x = e.pageX;
-                const delta = startX - x;
-                carousel.scrollLeft = startScrollLeft + delta;
-            });
-            
+            // Function to end dragging
             const endDrag = () => {
                 if (!isDragging) return;
+                
                 isDragging = false;
                 carousel.style.cursor = 'grab';
+                
+                // Apply momentum scrolling
+                if (Math.abs(scrollSpeed) > 1) {
+                    animationId = requestAnimationFrame(momentumScroll);
+                }
                 
                 // Snap to nearest image
                 const imageWidth = carousel.offsetWidth;
@@ -555,41 +551,85 @@ document.addEventListener('DOMContentLoaded', () => {
                 scrollToImage(index);
             };
             
+            // Mouse events for desktop
+            carousel.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = lastX = e.pageX;
+                startScrollLeft = carousel.scrollLeft;
+                carousel.style.cursor = 'grabbing';
+                cancelAnimationFrame(animationId);
+                
+                if (swipeHint) swipeHint.style.display = 'none';
+                e.preventDefault();
+            });
+            
+            carousel.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                e.preventDefault();
+                const x = e.pageX;
+                const delta = startX - x;
+                scrollSpeed = lastX - x;
+                lastX = x;
+                carousel.scrollLeft = startScrollLeft + delta;
+            });
+            
             carousel.addEventListener('mouseup', endDrag);
             carousel.addEventListener('mouseleave', endDrag);
             
             // Touch events for mobile
             carousel.addEventListener('touchstart', (e) => {
                 isDragging = true;
-                startX = e.touches[0].pageX;
+                startX = lastX = e.touches[0].pageX;
                 startScrollLeft = carousel.scrollLeft;
+                cancelAnimationFrame(animationId);
                 
-                // Hide swipe hint
-                if (swipeHint) {
-                    swipeHint.style.display = 'none';
-                }
+                if (swipeHint) swipeHint.style.display = 'none';
             }, { passive: true });
             
             carousel.addEventListener('touchmove', (e) => {
                 if (!isDragging) return;
+                
                 const x = e.touches[0].pageX;
                 const delta = startX - x;
+                scrollSpeed = lastX - x;
+                lastX = x;
                 carousel.scrollLeft = startScrollLeft + delta;
             }, { passive: true });
             
-            carousel.addEventListener('touchend', () => {
-                if (!isDragging) return;
-                isDragging = false;
+            carousel.addEventListener('touchend', endDrag);
+            
+            // Sync UI when scrolling manually
+            carousel.addEventListener('scroll', () => {
+                if (isDragging) return; // Skip during active drag
                 
-                // Snap to nearest image
                 const imageWidth = carousel.offsetWidth;
                 const index = Math.round(carousel.scrollLeft / imageWidth);
-                scrollToImage(index);
+                
+                if (index !== currentIndex) {
+                    currentIndex = index;
+                    
+                    // Update navigation state
+                    dots.forEach((dot, i) => {
+                        dot.classList.toggle('active', i === index);
+                    });
+                    
+                    if (prevButton && nextButton) {
+                        prevButton.style.opacity = index === 0 ? '0.3' : '1';
+                        prevButton.style.pointerEvents = index === 0 ? 'none' : 'auto';
+                        
+                        nextButton.style.opacity = index === totalImages - 1 ? '0.3' : '1';
+                        nextButton.style.pointerEvents = index === totalImages - 1 ? 'none' : 'auto';
+                    }
+                }
             });
             
-            // Initialize carousel
-            scrollToImage(0);
+            // Add a class to enable zoom effect on product cards
+            productCard.classList.add('has-zoom-effect');
         }
+
+        // No need for the additional initialization here since
+        // it's already handled in the initial carousel setup
 
         // Add a class to enable zoom effect on product cards
         productCard.classList.add('has-zoom-effect');
@@ -619,88 +659,158 @@ document.addEventListener('DOMContentLoaded', () => {
             shareProduct(product);
         });
         
+        // Add click events to product images for preview
+        productCard.querySelectorAll('.clickable-product-image').forEach(img => {
+            img.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Get all images from this product card's carousel
+                const cardElement = img.closest('.product-card');
+                if (!cardElement) return;
+                
+                const allImages = Array.from(cardElement.querySelectorAll('.carousel-container img'));
+                const imageUrls = allImages.map(imgEl => imgEl.src);
+                const clickedIndex = parseInt(img.dataset.index, 10) || 0;
+                
+                // Open image preview modal with the clicked image and all product images
+                openImagePreview(img.src, imageUrls, clickedIndex);
+            });
+            
+            // Add visual cue that image is clickable
+            img.style.cursor = 'zoom-in';
+        });
+        
         productsContainer.appendChild(productCard);
     });
 
+    // Apply filters based on URL parameters
+    handleProductFilters();
+
+    // Initialize product event handlers
+    setTimeout(initializeFavoriteButtons, 100);
+        // Setup event listeners for the clickable product images after rendering all products
+        document.querySelectorAll('.clickable-product-image').forEach(img => {
+          img.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Get all images from this product card's carousel
+            const productCard = img.closest('.product-card');
+            if (!productCard) return;
+            
+            const allImages = Array.from(productCard.querySelectorAll('.carousel-container img'));
+            const imageUrls = allImages.map(img => img.src);
+            const clickedIndex = parseInt(img.dataset.index, 10) || 0;
+            
+            // Open image preview modal with the clicked image and all product images
+            openImagePreview(img.src, imageUrls, clickedIndex);
+          });
+          
+          // Add visual cue that image is clickable
+          img.style.cursor = 'zoom-in';
+        });
+      })
+      .catch(error => {
+        console.error('Error loading recommendation system for ratings:', error);
+        // Fall back to basic product display
+        displayBasicProducts(products, productsContainer);
+      });
+  }
+  
+  // Function to display products without recommendation system
+  function displayBasicProducts(products, productsContainer) {
+    // Clear existing products
+    productsContainer.innerHTML = '';
+    
+    // Render each product with basic info
+    products.forEach(product => {
+      const productCard = document.createElement('div');
+      productCard.classList.add('product-card');
+      
+      // Determine product images
+      const productImages = product.images && product.images.length > 1 ? product.images : [product.image];
+      
+      productCard.innerHTML = `
+        <div class="product-image">
+          <img src="${escapeHTML(product.image)}" alt="${escapeHTML(product.name)}" class="clickable-product-image" data-index="0">
+          <div class="product-badges">
+            ${product.isNew ? '<span class="badge new-badge">New</span>' : ''}
+            ${product.discount > 0 ? `<span class="badge discount-badge">-${product.discount}%</span>` : ''}
+          </div>
+        </div>
+        <div class="product-info">
+          <div class="product-category">${escapeHTML(product.category || 'Uncategorized')}</div>
+          <h3 class="product-name">${escapeHTML(product.name)}</h3>
+          <p class="product-description">${escapeHTML(product.description || 'No description available').substring(0, 60)}${product.description && product.description.length > 60 ? '...' : ''}</p>
+          <div class="product-price">
+            <span class="original-price">Rs. ${product.price.original.toFixed(2)}</span>
+            <span class="discounted-price">Rs. ${product.price.discounted.toFixed(2)}</span>
+          </div>
+          <div class="product-rating">
+            <!-- No ratings shown in fallback mode -->
+          </div>
+          <div class="product-actions">
+            <button class="add-to-cart-btn" data-product-id="${product.id}">
+              <i class="ri-shopping-cart-line"></i>
+              Add to Cart
+            </button>
+            <button class="buy-now-direct-btn" data-product-id="${product.id}">
+              <i class="ri-shopping-bag-line"></i>
+              Buy Now
+            </button>
+            <button class="favorite-btn" data-product-id="${product.id}">
+              <i class="ri-heart-line"></i>
+            </button>
+            <button class="share-btn" data-product-id="${product.id}">
+              <i class="ri-share-line"></i>
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Add event handlers for action buttons
+      const addToCartBtn = productCard.querySelector('.add-to-cart-btn');
+      addToCartBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        addToCart(product);
+      });
+
+      const buyNowBtn = productCard.querySelector('.buy-now-direct-btn');
+      buyNowBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        buyNowDirect(product);
+      });
+
+      const favoriteBtn = productCard.querySelector('.favorite-btn');
+      favoriteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleFavorite(product);
+      });
+
+      const shareBtn = productCard.querySelector('.share-btn');
+      shareBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        shareProduct(product);
+      });
+      
+      productsContainer.appendChild(productCard);
+    });
+    
+    // Setup image click events
+    document.querySelectorAll('.clickable-product-image').forEach(img => {
+      img.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openImagePreview(img.src, [img.src], 0);
+      });
+      
+      // Add visual cue that image is clickable
+      img.style.cursor = 'zoom-in';
+    });
+    
     // Initialize favorite buttons
     initializeFavoriteButtons();
-        })
-        .catch(error => {
-            console.error('Error loading recommendation system for ratings:', error);
-            
-            // Fall back to displaying products with the data they have
-            products.forEach(product => {
-                const productCard = document.createElement('div');
-                productCard.classList.add('product-card');
-                productCard.innerHTML = `
-                    <div class="product-image">
-                        <img src="${escapeHTML(product.image)}" alt="${escapeHTML(product.name)}">
-                        <div class="product-badges">
-                            ${product.isNew ? '<span class="badge new-badge">New</span>' : ''}
-                            ${product.discount > 0 ? `<span class="badge discount-badge">-${product.discount}%</span>` : ''}
-                        </div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-category">${escapeHTML(product.category || 'Uncategorized')}</div>
-                        <h3 class="product-name">${escapeHTML(product.name)}</h3>
-                        <p class="product-description">${escapeHTML(product.description || 'No description available').substring(0, 60)}${product.description && product.description.length > 60 ? '...' : ''}</p>
-                        <div class="product-price">
-                            <span class="original-price">Rs. ${product.price.original.toFixed(2)}</span>
-                            <span class="discounted-price">Rs. ${product.price.discounted.toFixed(2)}</span>
-                        </div>
-                        <div class="product-rating">
-                            <!-- No ratings shown in fallback mode -->
-                        </div>
-                        <div class="product-actions">
-                            <button class="add-to-cart-btn" data-product-id="${product.id}">
-                                <i class="ri-shopping-cart-line"></i>
-                                Add to Cart
-                            </button>
-                            <button class="buy-now-direct-btn" data-product-id="${product.id}">
-                                <i class="ri-shopping-bag-line"></i>
-                                Buy Now
-                            </button>
-                            <button class="favorite-btn" data-product-id="${product.id}">
-                                <i class="ri-heart-line"></i>
-                            </button>
-                            <button class="share-btn" data-product-id="${product.id}">
-                                <i class="ri-share-line"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-
-                // Add event handlers for action buttons
-                const addToCartBtn = productCard.querySelector('.add-to-cart-btn');
-                addToCartBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    addToCart(product);
-                });
-
-                const buyNowBtn = productCard.querySelector('.buy-now-direct-btn');
-                buyNowBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    buyNowDirect(product);
-                });
-
-                const favoriteBtn = productCard.querySelector('.favorite-btn');
-                favoriteBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    toggleFavorite(product);
-                });
-
-                const shareBtn = productCard.querySelector('.share-btn');
-                shareBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    shareProduct(product);
-                });
-                
-                productsContainer.appendChild(productCard);
-            });
-
-            // Initialize favorite buttons
-            initializeFavoriteButtons();
-        });
   }
 
   // Helper function to generate rating stars
@@ -845,6 +955,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Call function to load products
   fetchAndDisplayProducts();
+  
+  // Initialize the image preview modal
+  initImagePreviewModal();
 
   // Initialize placeholder animation
   if (searchInput) {
@@ -1038,7 +1151,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function showPaymentFields(method) {
     const fields = {
-      easypaisa: document.getElementById('easypaisa-fields'),
+      'bank-transfer': document.getElementById('bank-transfer-fields'),
       cod: document.getElementById('cod-fields')
     };
 
@@ -1050,8 +1163,136 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show selected method's fields
     if (fields[method]) {
       fields[method].style.display = 'block';
+      
+      // If bank transfer is selected, update the transfer amount
+      if (method === 'bank-transfer') {
+        updateTransferAmount();
+      }
     }
   }
+  
+  // Function to update the transfer amount displayed in the bank transfer form
+  function updateTransferAmount() {
+    const transferAmountElement = document.getElementById('transfer-amount');
+    if (!transferAmountElement) return;
+    
+    let totalPrice = cartItems.reduce((acc, item) => acc + item.price.discounted * item.quantity, 0);
+
+    if (appliedCoupon) {
+      const discount = (totalPrice * appliedCoupon.discount) / 100;
+      totalPrice -= discount;
+    }
+    
+    transferAmountElement.textContent = `Rs. ${totalPrice.toFixed(2)}`;
+  }
+  
+  // Function to copy text to clipboard
+  function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    const text = element.textContent;
+    const button = element.parentNode.querySelector('.copy-btn');
+    
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        // Show a temporary success message
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="ri-check-line"></i>';
+        button.classList.add('copied');
+        
+        // Show a global success message
+        showGlobalMessage('Copied to clipboard!', 'success');
+        
+        setTimeout(() => {
+          button.innerHTML = originalHTML;
+          button.classList.remove('copied');
+        }, 2000);
+      })
+      .catch(err => {
+        console.error('Could not copy text: ', err);
+        showGlobalMessage('Failed to copy to clipboard', 'error');
+      });
+  }
+  
+  // Make the copyToClipboard function globally available
+  window.copyToClipboard = copyToClipboard;
+  
+  // Image Preview Modal Functionality
+  let currentImageIndex = 0;
+  let currentProductImages = [];
+  
+  function openImagePreview(imageUrl, productImages, index = 0) {
+    const modal = document.getElementById('imagePreviewModal');
+    const previewImage = document.getElementById('previewImage');
+    const prevBtn = document.getElementById('prevImageBtn');
+    const nextBtn = document.getElementById('nextImageBtn');
+    
+    // Set the initial image
+    previewImage.src = imageUrl;
+    currentImageIndex = index;
+    currentProductImages = productImages || [imageUrl];
+    
+    // Show/hide navigation buttons based on number of images
+    if (currentProductImages.length <= 1) {
+      prevBtn.style.display = 'none';
+      nextBtn.style.display = 'none';
+    } else {
+      prevBtn.style.display = 'flex';
+      nextBtn.style.display = 'flex';
+    }
+    
+    // Display the modal
+    modal.style.display = 'block';
+  }
+  
+  function closeImagePreview() {
+    const modal = document.getElementById('imagePreviewModal');
+    modal.style.display = 'none';
+  }
+  
+  function showNextImage() {
+    if (currentProductImages.length <= 1) return;
+    
+    currentImageIndex = (currentImageIndex + 1) % currentProductImages.length;
+    document.getElementById('previewImage').src = currentProductImages[currentImageIndex];
+  }
+  
+  function showPrevImage() {
+    if (currentProductImages.length <= 1) return;
+    
+    currentImageIndex = (currentImageIndex - 1 + currentProductImages.length) % currentProductImages.length;
+    document.getElementById('previewImage').src = currentProductImages[currentImageIndex];
+  }
+  
+  // Initialize image preview modal when DOM is loaded
+  function initImagePreviewModal() {
+    // Add click event listeners for modal navigation
+    document.getElementById('prevImageBtn')?.addEventListener('click', showPrevImage);
+    document.getElementById('nextImageBtn')?.addEventListener('click', showNextImage);
+    document.querySelector('#imagePreviewModal .close')?.addEventListener('click', closeImagePreview);
+    
+    // Close on escape key press
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeImagePreview();
+      } else if (e.key === 'ArrowRight') {
+        showNextImage();
+      } else if (e.key === 'ArrowLeft') {
+        showPrevImage();
+      }
+    });
+    
+    // Close modal when clicking outside the image
+    document.getElementById('imagePreviewModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'imagePreviewModal') {
+        closeImagePreview();
+      }
+    });
+  }
+  
+  // Make the openImagePreview function globally available
+  window.openImagePreview = openImagePreview;
 
   // Update the payment form submission
   document.querySelector('.payment-form')?.addEventListener('submit', async (e) => {
@@ -1094,11 +1335,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const paymentMethod = activeMethod.getAttribute('data-method');
       
-      // Extra validation for specific payment methods
-      if (paymentMethod === 'easypaisa') {
-        const easypaisaNumber = document.getElementById('easypaisa-number')?.value;
-        if (!easypaisaNumber || easypaisaNumber.length < 11) {
-          showCartMessage('Please enter a valid Easypaisa number');
+      // For bank transfer, we now show the store's IBAN instead of collecting user IBAN
+      // No need for validation as we're displaying info to the user, not collecting it
+      if (paymentMethod === 'bank-transfer') {
+        // Just verify the elements exist to avoid errors
+        const storeIban = document.getElementById('store-iban');
+        const transferAmount = document.getElementById('transfer-amount');
+        
+        if (!storeIban || !transferAmount) {
+          showCartMessage('Error loading payment information. Please try again.');
+          return;
+        }
+        
+        // Add a confirmation message
+        const confirmProceed = confirm('Have you completed the bank transfer using the IBAN and amount shown? Your order will be processed after payment verification.');
+        if (!confirmProceed) {
           return;
         }
       }

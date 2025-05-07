@@ -63,7 +63,7 @@
     "email": "support@codetoweb.tech",
     "priceRange": "$$",
     "currenciesAccepted": "PKR",
-    "paymentAccepted": "Cash, Easypaisa",
+    "paymentAccepted": "Cash, Bank Transfer",
     "openingHours": "Mo-Su 00:00-23:59",
     "potentialAction": {
       "@type": "SearchAction",
@@ -416,9 +416,9 @@
       <h2>Select Payment Method</h2>
       
       <div class="payment-methods">
-        <div class="payment-method-option" data-method="easypaisa">
-          <i class="ri-smartphone-line"></i>
-          <span>Easypaisa</span>
+        <div class="payment-method-option" data-method="bank-transfer">
+          <i class="ri-bank-line"></i>
+          <span>Bank Transfer</span>
         </div>
         <div class="payment-method-option" data-method="cod">
           <i class="ri-wallet-3-line"></i>
@@ -427,10 +427,28 @@
       </div>
 
       <form class="payment-form">
-        <div id="easypaisa-fields" style="display: none;">
-          <div class="form-group">
-            <label for="easypaisa-number">Easypaisa Number</label>
-            <input type="text" id="easypaisa-number" placeholder="03XX XXXXXXX" maxlength="11" />
+        <div id="bank-transfer-fields" style="display: none;">
+          <div class="payment-info-box">
+            <h3>Bank Transfer Information</h3>
+            <p>Please transfer the exact amount to our bank account using the details below:</p>
+            <div class="info-item">
+              <span class="info-label">IBAN Number:</span>
+              <span class="info-value" id="store-iban">PK36HABB0000123456789012</span>
+              <button type="button" class="copy-btn" onclick="copyToClipboard('store-iban')"><i class="ri-file-copy-line"></i></button>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Account Name:</span>
+              <span class="info-value">M. Fashion</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Amount to Transfer:</span>
+              <span class="info-value" id="transfer-amount">Calculating...</span>
+              <button type="button" class="copy-btn" onclick="copyToClipboard('transfer-amount')"><i class="ri-file-copy-line"></i></button>
+            </div>
+            <div class="info-note">
+              <p><strong>Important:</strong> After completing the transfer, please click the "Complete Payment" button below.</p>
+              <p>Your order will be processed after we verify the payment.</p>
+            </div>
           </div>
         </div>
 
@@ -443,17 +461,33 @@
     </div>
   </div>
 
-  <!-- Easypaisa Payment Modal -->
-  <div id="easypaisaPaymentModal" class="modal" style="display:none;">
-    <button data-modal="easypaisaPaymentModal" class="close" type="button">×</button>
+  <!-- Image Preview Modal -->
+  <div id="imagePreviewModal" class="modal">
+    <div class="image-preview-container">
+      <button data-modal="imagePreviewModal" class="close" type="button"><i class="ri-close-fill"></i></button>
+      <img id="previewImage" src="" alt="Product preview">
+      <div class="image-navigation">
+        <button id="prevImageBtn" class="image-nav-btn"><i class="ri-arrow-left-line"></i></button>
+        <button id="nextImageBtn" class="image-nav-btn"><i class="ri-arrow-right-line"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bank Transfer Payment Modal -->
+  <div id="bankTransferPaymentModal" class="modal" style="display:none;">
+    <button data-modal="bankTransferPaymentModal" class="close" type="button">×</button>
     <div class="modal-content">
-      <form id="easypaisaPaymentForm">
-        <h2>Easypaisa Payment</h2>
+      <form id="bankTransferPaymentForm">
+        <h2>Bank Transfer Payment</h2>
         <div class="form-group">
-          <label>Phone Number</label>
-          <input name="phone" type="tel" required placeholder="Enter your Easypaisa number" pattern="[0-9]{11}" />
+          <label>IBAN Number</label>
+          <input name="iban" type="text" required placeholder="Enter IBAN number" pattern="[A-Z0-9]{24}" />
         </div>
-        <button type="submit">Pay Now</button>
+        <div class="form-group">
+          <label>Amount Transferred</label>
+          <input name="amount" type="number" required placeholder="Enter amount transferred" min="1" />
+        </div>
+        <button type="submit">Confirm Payment</button>
       </form>
     </div>
   </div>
