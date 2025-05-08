@@ -731,13 +731,38 @@ document.addEventListener('DOMContentLoaded', () => {
       // Determine product images
       const productImages = product.images && product.images.length > 1 ? product.images : [product.image];
       
-      productCard.innerHTML = `
+      // If we have multiple images, create a carousel, otherwise use a single image
+      const useCarousel = productImages.length > 1;
+      const imagesHTML = useCarousel ? `
+        <div class="product-image-carousel">
+          <button class="carousel-arrow prev" aria-label="Previous image">
+            <i class="ri-arrow-left-line"></i>
+          </button>
+          <button class="carousel-arrow next" aria-label="Next image">
+            <i class="ri-arrow-right-line"></i>
+          </button>
+          <div class="carousel-container">
+            ${productImages.map((img, idx) => `
+              <img src="${escapeHTML(img)}" alt="${escapeHTML(product.name)}" class="clickable-product-image" data-index="${idx}">
+            `).join('')}
+          </div>
+          <div class="carousel-dots">
+            ${productImages.map((_, idx) => `
+              <span class="dot ${idx === 0 ? 'active' : ''}" data-index="${idx}"></span>
+            `).join('')}
+          </div>
+        </div>
+      ` : `
         <div class="product-image">
           <img src="${escapeHTML(product.image)}" alt="${escapeHTML(product.name)}" class="clickable-product-image" data-index="0">
-          <div class="product-badges">
-            ${product.isNew ? '<span class="badge new-badge">New</span>' : ''}
-            ${product.discount > 0 ? `<span class="badge discount-badge">-${product.discount}%</span>` : ''}
-          </div>
+        </div>
+      `;
+
+      productCard.innerHTML = `
+        ${imagesHTML}
+        <div class="product-badges">
+          ${product.isNew ? '<span class="badge new-badge">New</span>' : ''}
+          ${product.discount > 0 ? `<span class="badge discount-badge">-${product.discount}%</span>` : ''}
         </div>
         <div class="product-info">
           <div class="product-category">${escapeHTML(product.category || 'Uncategorized')}</div>
@@ -797,22 +822,134 @@ document.addEventListener('DOMContentLoaded', () => {
       productsContainer.appendChild(productCard);
     });
     
-    // Setup image click events
-    document.querySelectorAll('.clickable-product-image').forEach(img => {
-      img.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        openImagePreview(img.src, [img.src], 0);
-      });
+    // Initialize carousel functionality for product images
+    initializeProductCarousels();
+    
+    // Set up click events for product images
+    const productCards = document.querySelectorAll('.product-card');
+    productCards.forEach(card => {
+      const productImages = Array.from(card.querySelectorAll('.clickable-product-image')).map(img => img.src);
       
-      // Add visual cue that image is clickable
-      img.style.cursor = 'zoom-in';
+      card.querySelectorAll('.clickable-product-image').forEach(img => {
+        img.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // Get the index of this image within its product's images
+          const clickedIndex = parseInt(img.dataset.index) || 0;
+          // Open the preview with all images from this product
+          openImagePreview(img.src, productImages, clickedIndex);
+        });
+        
+        // Add visual cue that image is clickable
+        img.style.cursor = 'zoom-in';
+      });
     });
     
     // Initialize favorite buttons
     initializeFavoriteButtons();
   }
 
+  // Initialize carousels for product images
+  function initializeProductCarousels() {
+    // Find all product carousels on the page
+    document.querySelectorAll('.product-image-carousel').forEach(carousel => {
+      const container = carousel.querySelector('.carousel-container');
+      const dots = carousel.querySelectorAll('.dot');
+      const prevBtn = carousel.querySelector('.carousel-arrow.prev');
+      const nextBtn = carousel.querySelector('.carousel-arrow.next');
+      
+      if (!container || !dots.length) return;
+      
+      // Current image index for this carousel
+      let currentIndex = 0;
+      const totalImages = dots.length;
+      
+      // Function to show a specific image
+      const showImage = (index) => {
+        // Validate index
+        if (index < 0) index = totalImages - 1;
+        if (index >= totalImages) index = 0;
+        
+        // Update current index
+        currentIndex = index;
+        
+        // Scroll to the image
+        const images = container.querySelectorAll('img');
+        if (images[index]) {
+          container.scrollTo({
+            left: images[index].offsetLeft,
+            behavior: 'smooth'
+          });
+        }
+        
+        // Update dots
+        dots.forEach((dot, i) => {
+          dot.classList.toggle('active', i === index);
+        });
+      };
+      
+      // Navigate to next/previous image
+      if (prevBtn) {
+        prevBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          showImage(currentIndex - 1);
+        });
+      }
+      
+      if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          showImage(currentIndex + 1);
+        });
+      }
+      
+      // Add click handlers to dots
+      dots.forEach((dot, i) => {
+        dot.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          showImage(i);
+        });
+      });
+      
+      // Add touch swipe functionality for mobile
+      let touchStartX = 0;
+      let touchEndX = 0;
+      
+      container.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+      }, { passive: true });
+      
+      container.addEventListener('touchmove', (e) => {
+        touchEndX = e.touches[0].clientX;
+      }, { passive: true });
+      
+      container.addEventListener('touchend', () => {
+        if (!touchStartX || !touchEndX) return;
+        
+        const swipeDistance = touchEndX - touchStartX;
+        if (Math.abs(swipeDistance) > 50) {
+          if (swipeDistance > 0) {
+            // Swiped right, show previous
+            showImage(currentIndex - 1);
+          } else {
+            // Swiped left, show next
+            showImage(currentIndex + 1);
+          }
+        }
+        
+        // Reset values
+        touchStartX = 0;
+        touchEndX = 0;
+      });
+      
+      // Initialize with first image
+      showImage(0);
+    });
+  }
+  
   // Helper function to generate rating stars
   function generateRatingStars(rating) {
     const fullStars = Math.floor(rating);
@@ -1136,6 +1273,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Payment method selection and form handling
+  const paymentForm = document.querySelector('.payment-form');
+  const bankDetailsPreview = document.getElementById('bank-details-preview');
+  
   document.querySelectorAll('.payment-method-option').forEach(method => {
     method.addEventListener('click', () => {
       // Remove active class from all methods
@@ -1144,11 +1284,182 @@ document.addEventListener('DOMContentLoaded', () => {
       );
       // Add active class to selected method
       method.classList.add('active');
-      // Show relevant fields
-      showPaymentFields(method);
+      
+      // Show bank details immediately if bank transfer is selected
+      const selectedMethod = method.getAttribute('data-method');
+      if (selectedMethod === 'bank-transfer') {
+        // Hide any COD fields
+        if (document.getElementById('cod-fields')) {
+          document.getElementById('cod-fields').style.display = 'none';
+        }
+        
+        // Hide the COD button container
+        const codButtonContainer = document.getElementById('cod-button-container');
+        if (codButtonContainer) {
+          codButtonContainer.style.display = 'none';
+        }
+        
+        // Remove COD button if it exists
+        const codBtn = document.getElementById('complete-cod-payment');
+        if (codBtn) {
+          codBtn.remove();
+        }
+        
+        // Update the bank transfer amount
+        const previewAmount = document.getElementById('preview-amount');
+        const transferAmount = document.getElementById('transfer-amount');
+        if (previewAmount) {
+          let totalPrice = cartItems.reduce((acc, item) => acc + item.price.discounted * item.quantity, 0);
+          if (appliedCoupon) {
+            const discount = (totalPrice * appliedCoupon.discount) / 100;
+            totalPrice -= discount;
+          }
+          previewAmount.textContent = `Rs. ${totalPrice.toFixed(2)}`;
+        }
+        if (transferAmount) {
+          let totalPrice = cartItems.reduce((acc, item) => acc + item.price.discounted * item.quantity, 0);
+          if (appliedCoupon) {
+            const discount = (totalPrice * appliedCoupon.discount) / 100;
+            totalPrice -= discount;
+          }
+          transferAmount.textContent = `Rs. ${totalPrice.toFixed(2)}`;
+        }
+        
+        // Show the bank details preview
+        if (bankDetailsPreview) {
+          bankDetailsPreview.style.display = 'block';
+        }
+        
+        // Add a complete payment button if it doesn't exist
+        if (!document.getElementById('complete-bank-payment')) {
+          const completeBtn = document.createElement('button');
+          completeBtn.id = 'complete-bank-payment';
+          completeBtn.className = 'payment-btn';
+          completeBtn.textContent = 'Complete Payment';
+          completeBtn.addEventListener('click', proceedWithBankPayment);
+          
+          // Add the button after the bank details
+          if (bankDetailsPreview.nextElementSibling) {
+            bankDetailsPreview.parentNode.insertBefore(completeBtn, bankDetailsPreview.nextElementSibling);
+          } else {
+            bankDetailsPreview.parentNode.appendChild(completeBtn);
+          }
+        }
+      } else if (selectedMethod === 'cod') {
+        // Hide bank details if COD is selected
+        if (bankDetailsPreview) {
+          bankDetailsPreview.style.display = 'none';
+        }
+        
+        // Update the COD amount
+        updateCodAmount();
+        
+        // Remove complete bank payment button if it exists
+        const bankBtn = document.getElementById('complete-bank-payment');
+        if (bankBtn) {
+          bankBtn.remove();
+        }
+        
+        // Add a COD button if it doesn't exist
+        if (!document.getElementById('complete-cod-payment')) {
+          const codBtn = document.createElement('button');
+          codBtn.id = 'complete-cod-payment';
+          codBtn.className = 'payment-btn';
+          codBtn.textContent = 'Continue with Cash on Delivery';
+          codBtn.addEventListener('click', proceedWithCodPayment);
+          
+          // Add the button to the dedicated COD button container
+          const codButtonContainer = document.getElementById('cod-button-container');
+          if (codButtonContainer) {
+            // Clear any existing content
+            codButtonContainer.innerHTML = '';
+            codButtonContainer.appendChild(codBtn);
+            codButtonContainer.style.display = 'block';
+          }
+        } else {
+          // Make sure the button is visible
+          document.getElementById('complete-cod-payment').style.display = 'block';
+          document.getElementById('cod-button-container').style.display = 'block';
+        }
+      }
     });
   });
+  
+  // Function to handle bank payment submission
+  function proceedWithBankPayment() {
+    // Validate and update customer IBAN if needed
+    showOrderForm('bank-transfer');
+  }
+  
+  // Function to handle COD payment submission
+  function proceedWithCodPayment() {
+    try {
+      console.log('COD payment selected');
+      
+      // Make sure the active method is set to COD
+      document.querySelectorAll('.payment-method-option').forEach(el => {
+        if (el.getAttribute('data-method') === 'cod') {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      });
+      
+      // Show the COD order form
+      showOrderForm('cod');
+      
+      // Hide any existing payment buttons
+      const bankBtn = document.getElementById('complete-bank-payment');
+      const codBtn = document.getElementById('complete-cod-payment');
+      if (bankBtn) bankBtn.style.display = 'none';
+      if (codBtn) codBtn.style.display = 'none';
+      
+      // Update the COD amount
+      updateCodAmount();
+      
+      // Make the form visible and scroll to it
+      const paymentForm = document.querySelector('.payment-form');
+      if (paymentForm) {
+        paymentForm.style.display = 'block';
+        
+        // Add direct event listener to the Complete Payment button
+        const completeBtn = document.getElementById('complete-payment-btn');
+        if (completeBtn) {
+          completeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Complete Payment button clicked');
+            completeCheckout('cod');
+          });
+        }
+        
+        // Scroll to the form
+        paymentForm.scrollIntoView({ behavior: 'smooth' });
+      }
+    } catch (error) {
+      console.error('Error in COD payment processing:', error);
+      showCartMessage('An error occurred. Please try again.');
+    }
+  }
+  
+  // Function to show the full order form
+  function showOrderForm(paymentMethod) {
+    // Show the payment form with the right fields
+    if (paymentForm) {
+      paymentForm.style.display = 'block';
+      showPaymentFields(paymentMethod);
+      
+      // Hide the preview buttons
+      const bankBtn = document.getElementById('complete-bank-payment');
+      const codBtn = document.getElementById('complete-cod-payment');
+      if (bankBtn) bankBtn.style.display = 'none';
+      if (codBtn) codBtn.style.display = 'none';
+      
+      // Hide the preview section
+      if (bankDetailsPreview) bankDetailsPreview.style.display = 'none';
+    }
+  }
 
+  // Function to show payment fields
   function showPaymentFields(method) {
     const fields = {
       'bank-transfer': document.getElementById('bank-transfer-fields'),
@@ -1164,9 +1475,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fields[method]) {
       fields[method].style.display = 'block';
       
-      // If bank transfer is selected, update the transfer amount
+      // Update appropriate amount displays
       if (method === 'bank-transfer') {
         updateTransferAmount();
+      } else if (method === 'cod') {
+        updateCodAmount();
       }
     }
   }
@@ -1186,13 +1499,51 @@ document.addEventListener('DOMContentLoaded', () => {
     transferAmountElement.textContent = `Rs. ${totalPrice.toFixed(2)}`;
   }
   
+  // Function to update the COD amount displayed in the COD form
+  function updateCodAmount() {
+    const codAmountElement = document.getElementById('cod-amount');
+    if (!codAmountElement) return;
+    
+    let totalPrice = cartItems.reduce((acc, item) => acc + item.price.discounted * item.quantity, 0);
+
+    if (appliedCoupon) {
+      const discount = (totalPrice * appliedCoupon.discount) / 100;
+      totalPrice -= discount;
+    }
+    
+    codAmountElement.textContent = `Rs. ${totalPrice.toFixed(2)}`;
+  }
+  
   // Function to copy text to clipboard
   function copyToClipboard(elementId) {
-    const element = document.getElementById(elementId);
-    if (!element) return;
+    let text;
+    let button;
+
+    if (elementId === 'account-no') {
+      // Get the account number from the specific element
+      const accountItems = document.querySelectorAll('.info-item');
+      let accountElement = null;
+      
+      // Find the element containing "Account No" label
+      for (const item of accountItems) {
+        const label = item.querySelector('.info-label');
+        if (label && label.textContent.includes('Account No')) {
+          accountElement = item.querySelector('.info-value');
+          button = item.querySelector('.copy-btn');
+          break;
+        }
+      }
+      
+      if (!accountElement) return;
+      text = accountElement.textContent;
+    } else {
+      const element = document.getElementById(elementId);
+      if (!element) return;
+      text = element.textContent;
+      button = element.parentNode.querySelector('.copy-btn');
+    }
     
-    const text = element.textContent;
-    const button = element.parentNode.querySelector('.copy-btn');
+    if (!button) return;
     
     navigator.clipboard.writeText(text)
       .then(() => {
@@ -1227,20 +1578,62 @@ document.addEventListener('DOMContentLoaded', () => {
     const previewImage = document.getElementById('previewImage');
     const prevBtn = document.getElementById('prevImageBtn');
     const nextBtn = document.getElementById('nextImageBtn');
+    const imageCounter = document.getElementById('imageCounter');
+    const thumbnailsWrapper = document.getElementById('imageThumbnailsWrapper');
+    
+    // Clear any existing thumbnails
+    if (thumbnailsWrapper) {
+      thumbnailsWrapper.innerHTML = '';
+    }
     
     // Set the initial image
     previewImage.src = imageUrl;
     currentImageIndex = index;
     currentProductImages = productImages || [imageUrl];
     
+    // Update image counter
+    if (imageCounter) {
+      imageCounter.textContent = `${currentImageIndex + 1}/${currentProductImages.length}`;
+    }
+    
+    // Generate thumbnails for all images
+    if (thumbnailsWrapper && currentProductImages.length > 0) {
+      currentProductImages.forEach((imgSrc, idx) => {
+        const thumbnail = document.createElement('img');
+        thumbnail.className = 'image-thumbnail';
+        thumbnail.src = imgSrc;
+        thumbnail.alt = 'Product thumbnail';
+        thumbnail.dataset.index = idx;
+        
+        // Mark the current image as active
+        if (idx === currentImageIndex) {
+          thumbnail.classList.add('active');
+        }
+        
+        // Add click event to select this image
+        thumbnail.addEventListener('click', () => {
+          selectImage(idx);
+        });
+        
+        thumbnailsWrapper.appendChild(thumbnail);
+      });
+    }
+    
     // Show/hide navigation buttons based on number of images
     if (currentProductImages.length <= 1) {
       prevBtn.style.display = 'none';
       nextBtn.style.display = 'none';
+      if (imageCounter) imageCounter.style.display = 'none';
+      if (thumbnailsWrapper) thumbnailsWrapper.parentElement.style.display = 'none';
     } else {
       prevBtn.style.display = 'flex';
       nextBtn.style.display = 'flex';
+      if (imageCounter) imageCounter.style.display = 'block';
+      if (thumbnailsWrapper) thumbnailsWrapper.parentElement.style.display = 'block';
     }
+    
+    // Enable touch swipe for mobile devices
+    enableImageSwipe();
     
     // Display the modal
     modal.style.display = 'block';
@@ -1249,20 +1642,130 @@ document.addEventListener('DOMContentLoaded', () => {
   function closeImagePreview() {
     const modal = document.getElementById('imagePreviewModal');
     modal.style.display = 'none';
+    
+    // Remove swipe events when closing
+    disableImageSwipe();
+  }
+  
+  // Function to select a specific image by index
+  function selectImage(index) {
+    if (index < 0 || index >= currentProductImages.length) return;
+    
+    // Update current index
+    currentImageIndex = index;
+    
+    // Update main image with smooth transition
+    const previewImage = document.getElementById('previewImage');
+    if (previewImage) {
+      // Add a subtle fade effect when changing images
+      previewImage.style.opacity = '0.5';
+      setTimeout(() => {
+        previewImage.src = currentProductImages[currentImageIndex];
+        // Once the new image is loaded, fade it back in
+        previewImage.onload = () => {
+          previewImage.style.opacity = '1';
+        };
+      }, 200);
+    }
+    
+    // Update counter
+    const imageCounter = document.getElementById('imageCounter');
+    if (imageCounter) {
+      imageCounter.textContent = `${currentImageIndex + 1}/${currentProductImages.length}`;
+    }
+    
+    // Update active thumbnail with scrolling
+    const thumbnailsWrapper = document.getElementById('imageThumbnailsWrapper');
+    const thumbnails = document.querySelectorAll('.image-thumbnail');
+    
+    if (thumbnails.length > 0) {
+      // Remove active class from all thumbnails
+      thumbnails.forEach(thumb => thumb.classList.remove('active'));
+      
+      // Find the active thumbnail
+      const activeThumb = document.querySelector(`.image-thumbnail[data-index="${currentImageIndex}"]`);
+      if (activeThumb) {
+        // Add active class
+        activeThumb.classList.add('active');
+        
+        // Scroll the thumbnail into view if it's not already visible
+        if (thumbnailsWrapper) {
+          const thumbRect = activeThumb.getBoundingClientRect();
+          const wrapperRect = thumbnailsWrapper.getBoundingClientRect();
+          
+          // Check if thumbnail is outside the visible area
+          if (thumbRect.right > wrapperRect.right || thumbRect.left < wrapperRect.left) {
+            activeThumb.scrollIntoView({
+              behavior: 'smooth',
+              block: 'nearest',
+              inline: 'center'
+            });
+          }
+        }
+      }
+    }
   }
   
   function showNextImage() {
     if (currentProductImages.length <= 1) return;
-    
-    currentImageIndex = (currentImageIndex + 1) % currentProductImages.length;
-    document.getElementById('previewImage').src = currentProductImages[currentImageIndex];
+    selectImage((currentImageIndex + 1) % currentProductImages.length);
   }
   
   function showPrevImage() {
     if (currentProductImages.length <= 1) return;
+    selectImage((currentImageIndex - 1 + currentProductImages.length) % currentProductImages.length);
+  }
+  
+  // Touch swipe functionality for image preview
+  let imageSwipeStartX = 0;
+  let imageSwipeEndX = 0;
+  
+  function enableImageSwipe() {
+    const previewImage = document.getElementById('previewImage');
+    if (!previewImage) return;
     
-    currentImageIndex = (currentImageIndex - 1 + currentProductImages.length) % currentProductImages.length;
-    document.getElementById('previewImage').src = currentProductImages[currentImageIndex];
+    previewImage.addEventListener('touchstart', handleImageTouchStart, false);
+    previewImage.addEventListener('touchmove', handleImageTouchMove, false);
+    previewImage.addEventListener('touchend', handleImageTouchEnd, false);
+  }
+  
+  function disableImageSwipe() {
+    const previewImage = document.getElementById('previewImage');
+    if (!previewImage) return;
+    
+    previewImage.removeEventListener('touchstart', handleImageTouchStart);
+    previewImage.removeEventListener('touchmove', handleImageTouchMove);
+    previewImage.removeEventListener('touchend', handleImageTouchEnd);
+  }
+  
+  function handleImageTouchStart(event) {
+    imageSwipeStartX = event.touches[0].clientX;
+  }
+  
+  function handleImageTouchMove(event) {
+    imageSwipeEndX = event.touches[0].clientX;
+  }
+  
+  function handleImageTouchEnd() {
+    if (!imageSwipeStartX || !imageSwipeEndX) return;
+    
+    // Calculate swipe distance
+    const swipeDistance = imageSwipeEndX - imageSwipeStartX;
+    const minSwipeDistance = 50; // Minimum distance to consider it a swipe
+    
+    if (Math.abs(swipeDistance) >= minSwipeDistance) {
+      if (swipeDistance > 0) {
+        // Swiped right - show previous image
+        showPrevImage();
+      } else {
+        // Swiped left - show next image
+        showNextImage();
+      }
+    }
+    
+    // Reset values
+    imageSwipeStartX = 0;
+    imageSwipeEndX = 0;
   }
   
   // Initialize image preview modal when DOM is loaded
@@ -1272,14 +1775,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('nextImageBtn')?.addEventListener('click', showNextImage);
     document.querySelector('#imagePreviewModal .close')?.addEventListener('click', closeImagePreview);
     
-    // Close on escape key press
+    // Add keyboard navigation for the image preview modal
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        closeImagePreview();
-      } else if (e.key === 'ArrowRight') {
-        showNextImage();
-      } else if (e.key === 'ArrowLeft') {
-        showPrevImage();
+      const modal = document.getElementById('imagePreviewModal');
+      if (modal && modal.style.display === 'block') {
+        if (e.key === 'ArrowLeft') {
+          showPrevImage();
+          e.preventDefault(); // Prevent page scrolling
+        } else if (e.key === 'ArrowRight') {
+          showNextImage();
+          e.preventDefault(); // Prevent page scrolling
+        } else if (e.key === 'Escape') {
+          closeImagePreview();
+          e.preventDefault();
+        }
       }
     });
     
@@ -1297,6 +1806,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Update the payment form submission
   document.querySelector('.payment-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    console.log('Payment form submitted');
     
     try {
       // Check login status
@@ -1327,6 +1837,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      // Find active payment method
       const activeMethod = document.querySelector('.payment-method-option.active');
       if (!activeMethod) {
         showCartMessage('Please select a payment method');
@@ -1334,16 +1845,31 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const paymentMethod = activeMethod.getAttribute('data-method');
+      console.log('Selected payment method:', paymentMethod);
       
-      // For bank transfer, we now show the store's IBAN instead of collecting user IBAN
-      // No need for validation as we're displaying info to the user, not collecting it
+      // For bank transfer, we need to collect and validate the customer's IBAN
       if (paymentMethod === 'bank-transfer') {
-        // Just verify the elements exist to avoid errors
+        // Verify the elements exist to avoid errors
         const storeIban = document.getElementById('store-iban');
         const transferAmount = document.getElementById('transfer-amount');
+        const customerIban = document.getElementById('customer-iban');
         
         if (!storeIban || !transferAmount) {
           showCartMessage('Error loading payment information. Please try again.');
+          return;
+        }
+        
+        // Validate customer IBAN
+        if (!customerIban || !customerIban.value.trim()) {
+          showCartMessage('Please enter your IBAN number to continue');
+          customerIban.focus();
+          return;
+        }
+        
+        // Basic IBAN validation
+        if (customerIban.value.trim().length < 10 || customerIban.value.trim().length > 34) {
+          showCartMessage('Please enter a valid IBAN number (10-34 characters)');
+          customerIban.focus();
           return;
         }
         
@@ -1352,13 +1878,57 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!confirmProceed) {
           return;
         }
+      } else if (paymentMethod === 'cod') {
+        // For COD, we optionally validate alternate phone if provided
+        const alternatePhone = document.getElementById('alternate-phone');
+        if (alternatePhone && alternatePhone.value.trim()) {
+          // Optional basic phone number validation (if needed)
+          const phonePattern = /^\d{10,15}$/;
+          if (alternatePhone.value.trim().length > 0 && !phonePattern.test(alternatePhone.value.trim().replace(/[\s()-]/g, ''))) {
+            showCartMessage('Please enter a valid phone number');
+            alternatePhone.focus();
+            return;
+          }
+        }
       }
 
       showCartMessage('Processing your order...');
       
       try {
+        // Await the checkout completion
         await completeCheckout(paymentMethod);
+        
+        // Success message and UI updates
+        showCartMessage('Payment successful! Your order has been placed.', 'success');
+        
+        // Close all modals
         if (paymentModal) paymentModal.style.display = 'none';
+        if (shippingModal) shippingModal.style.display = 'none';
+        
+        // Reset background scroll lock
+        document.body.style.overflow = 'auto';
+        
+        // Clear form fields
+        if (paymentMethod === 'bank-transfer') {
+          const customerIban = document.getElementById('customer-iban');
+          if (customerIban) customerIban.value = '';
+        } else if (paymentMethod === 'cod') {
+          const alternatePhone = document.getElementById('alternate-phone');
+          const deliveryInstructions = document.getElementById('delivery-instructions');
+          if (alternatePhone) alternatePhone.value = '';
+          if (deliveryInstructions) deliveryInstructions.value = '';
+        }
+        
+        // Show order success UI or redirect to confirmation page
+        setTimeout(() => {
+          // Clear cart after successful order
+          clearCart();
+          
+          // Create and show an order confirmation page
+          if (paymentMethod === 'cod') {
+            showOrderConfirmation(paymentMethod);
+          }
+        }, 1000);
       } catch (error) {
         console.error('Payment error:', error);
         showCartMessage('Payment failed: ' + (error.message || 'Please try again.'));
@@ -1415,6 +1985,28 @@ document.addEventListener('DOMContentLoaded', () => {
           discount: appliedCoupon.discount
         } : null
       };
+      
+      // Add the customer's IBAN number if bank transfer payment method is selected
+      if (paymentMethod === 'bank-transfer') {
+        const customerIban = document.getElementById('customer-iban');
+        if (customerIban && customerIban.value.trim()) {
+          order.customerIban = customerIban.value.trim();
+        }
+      }
+      
+      // Add delivery instructions and alternate phone if COD is selected
+      if (paymentMethod === 'cod') {
+        const alternatePhone = document.getElementById('alternate-phone');
+        const deliveryInstructions = document.getElementById('delivery-instructions');
+        
+        if (alternatePhone && alternatePhone.value.trim()) {
+          order.alternatePhone = alternatePhone.value.trim();
+        }
+        
+        if (deliveryInstructions && deliveryInstructions.value.trim()) {
+          order.deliveryInstructions = deliveryInstructions.value.trim();
+        }
+      }
 
       // Apply coupon discount if exists
       if (appliedCoupon) {
@@ -1662,6 +2254,213 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Function to show order confirmation after successful payment
+  function showOrderConfirmation(paymentMethod) {
+    // Create a confirmation modal
+    const confirmationModal = document.createElement('div');
+    confirmationModal.id = 'orderConfirmationModal';
+    confirmationModal.className = 'modal';
+    confirmationModal.style.display = 'block';
+    
+    // Get the current date for estimated delivery (5-7 days from now)
+    const currentDate = new Date();
+    const deliveryDate = new Date(currentDate);
+    deliveryDate.setDate(currentDate.getDate() + 5); // 5 days minimum
+    const maxDeliveryDate = new Date(currentDate);
+    maxDeliveryDate.setDate(currentDate.getDate() + 7); // 7 days maximum
+    
+    // Format dates
+    const options = { day: 'numeric', month: 'long', year: 'numeric' };
+    const formattedMinDate = deliveryDate.toLocaleDateString('en-US', options);
+    const formattedMaxDate = maxDeliveryDate.toLocaleDateString('en-US', options);
+    
+    // Generate a random order ID
+    const orderId = 'MF' + Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000);
+    
+    // Create modal content
+    const modalContent = `
+      <div class="order-confirmation-container">
+        <div class="order-confirmation-header">
+          <i class="ri-checkbox-circle-fill success-icon"></i>
+          <h2>Order Confirmed!</h2>
+          <p>Thank you for your order. We're processing it now.</p>
+        </div>
+        
+        <div class="order-confirmation-details">
+          <div class="confirmation-item">
+            <h3>Order Information</h3>
+            <p><strong>Order ID:</strong> ${orderId}</p>
+            <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-US', options)}</p>
+            <p><strong>Payment Method:</strong> ${paymentMethod === 'cod' ? 'Cash on Delivery' : 'Bank Transfer'}</p>
+            <p><strong>Amount:</strong> PKR ${cartItems.reduce((a, i) => a + i.price.discounted * i.quantity, 0).toFixed(2)}</p>
+          </div>
+          
+          <div class="confirmation-item">
+            <h3>Delivery Information</h3>
+            <p><strong>Estimated Delivery:</strong> ${formattedMinDate} - ${formattedMaxDate}</p>
+            <p><strong>Shipping Address:</strong> ${shippingData.address}, ${shippingData.city}, ${shippingData.postal}</p>
+            <p><strong>Contact:</strong> ${shippingData.phone}</p>
+          </div>
+          
+          ${paymentMethod === 'cod' ? `
+          <div class="confirmation-item cod-instructions">
+            <h3>Cash on Delivery Instructions</h3>
+            <p>Please have the exact amount ready when the delivery arrives.</p>
+            <p>Our delivery partner will contact you before delivery.</p>
+          </div>` : ''}
+          
+          <div class="confirmation-actions">
+            <button id="view-dashboard-btn" class="primary-btn">View My Orders</button>
+            <button id="continue-shopping-btn" class="secondary-btn">Continue Shopping</button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Set the modal content
+    confirmationModal.innerHTML = modalContent;
+    
+    // Add the modal to the page
+    document.body.appendChild(confirmationModal);
+    
+    // Add the CSS for the confirmation modal
+    const style = document.createElement('style');
+    style.textContent = `
+      .order-confirmation-container {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        max-width: 600px;
+        margin: 5% auto;
+        box-shadow: 0 5px 30px rgba(0, 0, 0, 0.15);
+        animation: fadeInUp 0.5s ease-out;
+      }
+      
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      .order-confirmation-header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      
+      .success-icon {
+        font-size: 60px;
+        color: #28a745;
+        margin-bottom: 15px;
+        display: block;
+      }
+      
+      .order-confirmation-header h2 {
+        font-size: 28px;
+        margin-bottom: 10px;
+        color: #333;
+      }
+      
+      .order-confirmation-header p {
+        color: #666;
+        font-size: 16px;
+      }
+      
+      .order-confirmation-details {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      
+      .confirmation-item {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid #e4cd00;
+      }
+      
+      .confirmation-item h3 {
+        font-size: 18px;
+        margin-bottom: 15px;
+        color: #333;
+      }
+      
+      .confirmation-item p {
+        margin-bottom: 8px;
+        color: #555;
+      }
+      
+      .cod-instructions {
+        border-left-color: #e4cd00;
+        background-color: #fff8e1;
+      }
+      
+      .confirmation-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 25px;
+        justify-content: center;
+      }
+      
+      .primary-btn, .secondary-btn {
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+      }
+      
+      .primary-btn {
+        background: #e4cd00;
+        color: #333;
+      }
+      
+      .secondary-btn {
+        background: #f1f1f1;
+        color: #333;
+      }
+      
+      .primary-btn:hover {
+        background: #d4be00;
+      }
+      
+      .secondary-btn:hover {
+        background: #e5e5e5;
+      }
+      
+      @media (min-width: 768px) {
+        .order-confirmation-details {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .cod-instructions {
+          grid-column: span 2;
+        }
+        
+        .confirmation-actions {
+          grid-column: span 2;
+        }
+      }
+    `;
+    
+    document.head.appendChild(style);
+    
+    // Add event listeners to buttons
+    document.getElementById('view-dashboard-btn').addEventListener('click', () => {
+      window.location.href = 'user-dashboard.html';
+    });
+    
+    document.getElementById('continue-shopping-btn').addEventListener('click', () => {
+      confirmationModal.remove();
+      style.remove();
+    });
+  }
+  
   // Function to handle product URL navigation
   function handleProductNavigation() {
     const hash = window.location.hash;
@@ -1731,8 +2530,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Store Tour Functionality
   class StoreTour {
-    constructor() {
-      this.steps = [
+    constructor(tourType = 'main') {
+      // Default main tour steps
+      this.mainTourSteps = [
         {
           target: '.search',
           title: 'Search Products',
@@ -1764,6 +2564,50 @@ document.addEventListener('DOMContentLoaded', () => {
           position: 'bottom'
         }
       ];
+      
+      // Payment tour steps
+      this.paymentTourSteps = [
+        {
+          target: '.payment-methods',
+          title: 'Payment Options',
+          content: 'Choose between Bank Transfer or Cash on Delivery for your purchase.',
+          position: 'top'
+        },
+        {
+          target: '[data-method="bank-transfer"]',
+          title: 'Bank Transfer',
+          content: 'Pay via bank transfer using our IBAN details. Convenient for online banking users.',
+          position: 'bottom'
+        },
+        {
+          target: '[data-method="cod"]',
+          title: 'Cash on Delivery',
+          content: 'Pay when your order arrives. Perfect if you prefer to pay with cash.',
+          position: 'bottom'
+        },
+        {
+          target: '#cod-button-container',
+          title: 'Proceed with COD',
+          content: 'Click here to proceed with Cash on Delivery payment and enter delivery details.',
+          position: 'bottom'
+        },
+        {
+          target: '#cod-fields',
+          title: 'COD Information',
+          content: 'Review the payment amount and provide any special delivery instructions.',
+          position: 'right'
+        },
+        {
+          target: '#complete-payment-btn',
+          title: 'Complete Your Order',
+          content: 'Finalize your purchase and receive an order confirmation.',
+          position: 'top'
+        }
+      ];
+      
+      // Set appropriate steps based on tour type
+      this.tourType = tourType;
+      this.steps = (tourType === 'payment') ? this.paymentTourSteps : this.mainTourSteps;
       
       this.currentStep = 0;
       this.isFirstVisit = !localStorage.getItem('hasVisited');
@@ -1914,18 +2758,89 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Initialize store tour for new users
-  const storeTour = new StoreTour();
+  // Initialize main store tour for first-time visitors
+  const mainStoreTour = new StoreTour('main');
+  
+  // Function to start the payment tour when user gets to payment screen
+  function startPaymentTour() {
+    // Check if the user has seen the payment tour before
+    if (!localStorage.getItem('hasSeenPaymentTour')) {
+      const paymentTour = new StoreTour('payment');
+      paymentTour.createTourElements();
+      
+      // Add a small delay to ensure payment modal is fully visible
+      setTimeout(() => {
+        paymentTour.startTour();
+        // Set flag that user has seen the payment tour
+        localStorage.setItem('hasSeenPaymentTour', 'true');
+      }, 800);
+    }
+  }
+  
+  // Manual trigger for payment tour via help button
+  function manuallyStartPaymentTour() {
+    console.log('Starting payment tour manually');
+    // Force a new payment tour regardless of whether user has seen it before
+    const paymentTour = new StoreTour('payment');
+    paymentTour.createTourElements();
+    setTimeout(() => paymentTour.startTour(), 300);
+  }
+  
+  // Global direct event handler for the payment guide button
+  window.startPaymentGuide = function() {
+    console.log('Payment guide button clicked');
+    manuallyStartPaymentTour();
+    return false; // Prevent default action
+  };
+  
+  // Add event listeners for tours
+  document.addEventListener('DOMContentLoaded', function() {
+    // Automatic tour when shipping form is submitted
+    const shipForm = document.getElementById('shippingDetailsForm');
+    if (shipForm) {
+      shipForm.addEventListener('submit', function(e) {
+        // Wait for payment modal to be shown before starting tour
+        setTimeout(startPaymentTour, 500);
+      });
+    }
+    
+    // Add direct event listener to payment guide button if it exists
+    const guideButton = document.getElementById('view-payment-guide');
+    if (guideButton) {
+      guideButton.addEventListener('click', manuallyStartPaymentTour);
+    }
+  });
+  
+  // Add a mutation observer to handle dynamically added payment guide buttons
+  const bodyObserver = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+        for (let i = 0; i < mutation.addedNodes.length; i++) {
+          const node = mutation.addedNodes[i];
+          if (node.nodeType === 1) { // Only process Element nodes
+            const guideButton = node.id === 'view-payment-guide' ? node : node.querySelector('#view-payment-guide');
+            if (guideButton) {
+              guideButton.addEventListener('click', manuallyStartPaymentTour);
+              console.log('Added event listener to payment guide button');
+            }
+          }
+        }
+      }
+    });
+  });
+  
+  // Start observing the body for changes
+  bodyObserver.observe(document.body, { childList: true, subtree: true });
 
   // Announcement System
   class AnnouncementSystem {
     constructor() {
       this.announcement = {
-        id: 'welcome',
-        type: 'info',
-        message: 'Warning! We are currently support Cash On delivery',
-        icon: 'ri-megaphone-line',
-        duration: 5000 // 5 seconds
+        id: 'payment-update',
+        type: 'success',
+        message: 'NEW! Enhanced Cash on Delivery now available with better checkout experience!',
+        icon: 'ri-money-dollar-box-line',
+        duration: 8000 // 8 seconds
       };
       
       this.announcementBar = document.querySelector('.announcement-bar');
@@ -1939,7 +2854,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     init() {
       // Add event listener to close button
-      this.closeButton.addEventListener('click', () => this.hideAnnouncement());
+      this.closeButton.addEventListener('click', () => this.hide());
       
       // Show announcement immediately
       this.showAnnouncement();

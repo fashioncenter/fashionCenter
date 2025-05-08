@@ -396,6 +396,60 @@
       font-weight: 500;
       color: #333;
     }
+    
+    /* COD Details Styling */
+    .cod-details {
+      background-color: #fff8e1;
+      border-left: 4px solid #e4cd00;
+      padding: 15px;
+      margin-top: 10px;
+    }
+    
+    .cod-details h4 {
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .cod-info-container {
+      margin-top: 10px;
+    }
+    
+    .payment-received {
+      color: #28a745;
+      font-weight: 600;
+      background-color: rgba(40, 167, 69, 0.1);
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    
+    .payment-pending {
+      color: #f0ad4e;
+      font-weight: 600;
+      background-color: rgba(240, 173, 78, 0.1);
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    
+    .delivery-instructions {
+      display: block;
+      background-color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #e0e0e0;
+      margin-top: 5px;
+      font-style: italic;
+    }
+    
+    .cod-details a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    
+    .cod-details a:hover {
+      text-decoration: underline;
+    }
 
     .view-details-btn {
       padding: 6px 12px;
@@ -1553,8 +1607,29 @@
                     </div>
                     <div class="summary-item">
                       <h4>Payment Method</h4>
-                      <p>${order.paymentMethod || 'Not specified'}</p>
+                      <p>${order.paymentMethod === 'bank-transfer' ? 'Bank Transfer' : 
+                          order.paymentMethod === 'cod' ? 'Cash on Delivery' : 
+                          order.paymentMethod || 'Not specified'}</p>
                     </div>
+                    ${order.paymentMethod === 'bank-transfer' && order.customerIban ? `
+                    <div class="summary-item">
+                      <h4>Customer IBAN</h4>
+                      <p>${order.customerIban}</p>
+                    </div>
+                    ` : ''}
+                    
+                    ${order.paymentMethod === 'cod' ? `
+                    <div class="summary-item cod-details">
+                      <h4><i class="ri-money-dollar-box-line"></i> Cash on Delivery Details</h4>
+                      <div class="cod-info-container">
+                        <p><strong>Payment Status:</strong> <span class="${status.toLowerCase() === 'delivered' ? 'payment-received' : 'payment-pending'}">${status.toLowerCase() === 'delivered' ? 'Paid' : 'Pending'}</span></p>
+                        <p><strong>Amount Due:</strong> PKR ${(order.total || 0).toFixed(2)}</p>
+                        ${order.alternatePhone ? `<p><strong>Alternate Phone:</strong> <a href="tel:${order.alternatePhone}">${order.alternatePhone}</a></p>` : ''}
+                        ${order.deliveryInstructions ? `<p><strong>Delivery Instructions:</strong> <span class="delivery-instructions">${order.deliveryInstructions}</span></p>` : ''}
+                        ${!order.alternatePhone && !order.deliveryInstructions ? '<p><em>No additional delivery information provided</em></p>' : ''}
+                      </div>
+                    </div>
+                    ` : ''}
                     <div class="summary-item">
                       <h4>Order Notes</h4>
                       <p>${order.notes || 'No notes'}</p>

@@ -416,7 +416,7 @@
       <h2>Select Payment Method</h2>
       
       <div class="payment-methods">
-        <div class="payment-method-option" data-method="bank-transfer">
+        <div class="payment-method-option active" data-method="bank-transfer">
           <i class="ri-bank-line"></i>
           <span>Bank Transfer</span>
         </div>
@@ -425,20 +425,44 @@
           <span>Cash on Delivery</span>
         </div>
       </div>
+      
+      <!-- Hidden container for COD button -->
+      <div id="cod-button-container" style="display: none;"></div>
+      
+      <!-- Bank details will appear here when bank transfer is selected -->
+      <div id="bank-details-preview" style="display: block;" class="payment-info-preview">
+        <h3>Bank Transfer Details</h3>
+        <div class="info-item">
+          <span class="info-label">IBAN Number:</span>
+          <span class="info-value" id="preview-iban">PK94 HABB 0058387000097803</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Account Name:</span>
+          <span class="info-value">MUZAMIL ALI</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Amount to Transfer:</span>
+          <span class="info-value" id="preview-amount">Calculating...</span>
+        </div>
+        <!-- Help button to view payment guide -->
+        <button type="button" id="view-payment-guide" class="help-btn" onclick="startPaymentGuide()">
+          <i class="ri-question-line"></i> View Payment Guide
+        </button>
+      </div>
 
-      <form class="payment-form">
+      <form class="payment-form" style="display: none;">
         <div id="bank-transfer-fields" style="display: none;">
           <div class="payment-info-box">
             <h3>Bank Transfer Information</h3>
             <p>Please transfer the exact amount to our bank account using the details below:</p>
             <div class="info-item">
               <span class="info-label">IBAN Number:</span>
-              <span class="info-value" id="store-iban">PK36HABB0000123456789012</span>
+              <span class="info-value" id="store-iban">PK94 HABB 0058387000097803</span>
               <button type="button" class="copy-btn" onclick="copyToClipboard('store-iban')"><i class="ri-file-copy-line"></i></button>
             </div>
             <div class="info-item">
               <span class="info-label">Account Name:</span>
-              <span class="info-value">M. Fashion</span>
+              <span class="info-value">MUZAMIL ALI</span>
             </div>
             <div class="info-item">
               <span class="info-label">Amount to Transfer:</span>
@@ -449,14 +473,60 @@
               <p><strong>Important:</strong> After completing the transfer, please click the "Complete Payment" button below.</p>
               <p>Your order will be processed after we verify the payment.</p>
             </div>
+            <div class="info-item">
+              <span class="info-label">Account No:</span>
+              <span class="info-value">0058387000097803</span>
+              <button type="button" class="copy-btn" onclick="copyToClipboard('account-no')"><i class="ri-file-copy-line"></i></button>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Bank:</span>
+              <span class="info-value">DADU</span>
+            </div>
+            
+            <h4 class="mt-4">Your Banking Information</h4>
+            <p>Please provide your bank details for verification and refund purposes:</p>
+            <div class="form-group">
+              <label for="customer-iban">Your IBAN Number:</label>
+              <input type="text" id="customer-iban" name="customerIban" required pattern="[A-Z0-9]{10,34}" placeholder="Enter your IBAN number" />
+              <small>This information will be used for payment verification and potential refunds</small>
+            </div>
           </div>
         </div>
 
         <div id="cod-fields" style="display: none;">
-          <p>You will pay when your order is delivered.</p>
+          <div class="payment-info-box">
+            <h3>Cash on Delivery Information</h3>
+            <p>You will pay the order amount when your package is delivered to your doorstep.</p>
+            
+            <div class="info-item">
+              <span class="info-label">Payment Method:</span>
+              <span class="info-value">Cash on Delivery</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Amount to Pay:</span>
+              <span class="info-value" id="cod-amount">Calculating...</span>
+            </div>
+            <div class="info-note">
+              <p><strong>Important:</strong> Please have the exact amount ready at the time of delivery.</p>
+              <p>Our delivery agent will call you before delivery for confirmation.</p>
+            </div>
+            
+            <h4 class="mt-4">Delivery Contact Information</h4>
+            <p>Please provide additional contact for delivery purposes:</p>
+            <div class="form-group">
+              <label for="alternate-phone">Alternate Phone Number (Optional):</label>
+              <input type="tel" id="alternate-phone" name="alternatePhone" placeholder="Enter alternate phone number" />
+              <small>This will be used by our delivery team if primary contact is unreachable</small>
+            </div>
+            <div class="form-group">
+              <label for="delivery-instructions">Delivery Instructions (Optional):</label>
+              <textarea id="delivery-instructions" name="deliveryInstructions" placeholder="Any special instructions for delivery" rows="2"></textarea>
+              <small>E.g., Landmark, preferred delivery time, etc.</small>
+            </div>
+          </div>
         </div>
 
-        <button type="submit">Complete Payment</button>
+        <button type="submit" id="complete-payment-btn">Complete Payment</button>
       </form>
     </div>
   </div>
@@ -465,9 +535,23 @@
   <div id="imagePreviewModal" class="modal">
     <div class="image-preview-container">
       <button data-modal="imagePreviewModal" class="close" type="button"><i class="ri-close-fill"></i></button>
-      <img id="previewImage" src="" alt="Product preview">
+      
+      <!-- Main image display -->
+      <div class="main-preview-wrapper">
+        <img id="previewImage" src="" alt="Product preview">
+      </div>
+      
+      <!-- Thumbnails gallery for horizontal swiping -->
+      <div class="image-thumbnails-container">
+        <div id="imageThumbnailsWrapper" class="image-thumbnails-wrapper">
+          <!-- Thumbnails will be dynamically added here -->
+        </div>
+      </div>
+      
+      <!-- Navigation buttons -->
       <div class="image-navigation">
         <button id="prevImageBtn" class="image-nav-btn"><i class="ri-arrow-left-line"></i></button>
+        <span id="imageCounter">1/1</span>
         <button id="nextImageBtn" class="image-nav-btn"><i class="ri-arrow-right-line"></i></button>
       </div>
     </div>
