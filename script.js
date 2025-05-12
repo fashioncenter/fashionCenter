@@ -976,31 +976,81 @@ document.addEventListener('DOMContentLoaded', () => {
     return starsHTML;
   }
 
+  // Function to generate a global sharing URL for a product
+  function generateGlobalShareURL(productId) {
+    // Create an absolute URL that will work across all platforms
+    // Use the full domain from the current page for consistency
+    return `${window.location.protocol}//${window.location.host}?id=${productId}`;
+  }
+  
   // Function to share product
   function shareProduct(product) {
-    // First, create a unique sharing URL with timestamp to prevent caching issues
-    const shareTimestamp = Date.now();
-    const shareURL = `${window.location.origin}?id=${product.id}&share=true&t=${shareTimestamp}`;
+    if (!product || !product.id) {
+      console.error('Invalid product for sharing');
+      return;
+    }
+    
+    // Generate a clean, global sharing URL without query parameters that might break sharing
+    const shareURL = generateGlobalShareURL(product.id);
+    
+    // Format product description for sharing
+    const shareDescription = product.description || 
+      `Check out this ${product.name} at M. Fashion. Price: Rs. ${product.price.discounted.toFixed(2)}`;
+    
+    // Get absolute image URL for sharing
+    const productImageUrl = getAbsoluteImageUrl(product.image);
     
     // Update meta tags to ensure rich content when shared
-    updateProductMetaTags(product);
+    updateProductMetaTags(product, shareURL);
     
-    // Create or update a hidden thumbnail image specifically for Facebook sharing
+    // Create or update a hidden thumbnail image specifically for social media sharing
     createSharingThumbnail(product);
     
+    // Add a special flag to track shares for analytics
+    try {
+      // Track sharing event if analytics is available
+      if (typeof trackUserBehavior === 'function') {
+        trackUserBehavior(product.id, 'share');
+      }
+    } catch (e) {
+      console.log('Analytics tracking not available');
+    }
+    
+    console.log('Sharing product with URL:', shareURL);
+    
+    // Check if the Web Share API is available (mobile devices)
     if (navigator.share) {
+      // Use the Web Share API for mobile devices
       navigator.share({
         title: `${product.name} - M. Fashion`,
-        text: product.description || 
-          `Check out this ${product.name} at Fashion Center. Price: Rs. ${product.price.discounted.toFixed(2)}`,
-        url: shareURL
+        text: shareDescription,
+        url: shareURL,
+        // Note: files property for images currently has limited support
+        // When supported, we could add: files: [imageBlob]
       })
-      .then(() => showMessage('Product shared successfully'))
-      .catch((error) => console.error('Error sharing product:', error));
+      .then(() => {
+        showMessage('Product shared successfully');
+        // Trigger post-share actions
+        postShareActions(product);
+      })
+      .catch((error) => {
+        console.error('Error sharing product:', error);
+        showMessage('Could not share product. Try using the manual sharing options.');
+        // Show the manual sharing options as fallback
+        showManualSharingOptions();
+      });
     } else {
       // Fallback for browsers that don't support Web Share API
-      
-      // Create a modal for sharing options
+      showManualSharingOptions();
+    }
+    
+    // Function to show manual sharing options in a modal
+    function showManualSharingOptions() {
+      // Calculate discount percentage for display
+      const discountPercentage = product.price.original > 0 ? 
+        Math.round(((product.price.original - product.price.discounted) / product.price.original) * 100) : 0;
+        
+      // Create a modal for sharing options with enhanced UI
       const modal = document.createElement('div');
       modal.className = 'share-modal';
       modal.innerHTML = `
@@ -1008,18 +1058,42 @@ document.addEventListener('DOMContentLoaded', () => {
               <button class="share-close-btn">&times;</button>
               <h3>Share this product</h3>
               <div class="share-product-info">
-                  <img src="${product.image}" alt="${product.name}">
+                  <img src="${productImageUrl}" alt="${product.name}">
                   <div>
                       <h4>${product.name}</h4>
-                      <p class="share-price">Rs. ${product.price.discounted.toFixed(2)}</p>
+                      <div class="share-price-container">
+                          <p class="share-price">Rs. ${product.price.discounted.toFixed(2)}</p>
+                          ${product.price.original > product.price.discounted ? 
+                            `<p class="share-original-price">Rs. ${product.price.original.toFixed(2)}</p>
+                             <span class="share-discount">-${discountPercentage}%</span>` : ''}
+                      </div>
+                      <p class="share-description">${shareDescription.substring(0, 80)}${shareDescription.length > 80 ? '...' : ''}</p>
                   </div>
               </div>
+              
+              <div class="share-preview-section">
+                  <h4>Preview</h4>
+                  <div class="share-preview-container">
+                      <div class="share-preview-card">
+                          <div class="preview-header">How your share will look</div>
+                          <div class="preview-content">
+                              <img src="${productImageUrl}" alt="${product.name}">
+                              <div class="preview-text">
+                                  <h5>${product.name} - M. Fashion</h5>
+                                  <p>${shareDescription.substring(0, 100)}${shareDescription.length > 100 ? '...' : ''}</p>
+                                  <span class="preview-url">${window.location.hostname}</span>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              
               <div class="share-options">
-                  <a href="https://www.facebook.com/dialog/share?app_id=1234567890&display=popup&href=${encodeURIComponent(shareURL)}&redirect_uri=${encodeURIComponent(shareURL)}&picture=${encodeURIComponent(getAbsoluteImageUrl(product.image))}&title=${encodeURIComponent(`${product.name} - M. Fashion`)}&description=${encodeURIComponent(product.description || `Check out this ${product.name} at Fashion Center. Price: Rs. ${product.price.discounted.toFixed(2)}`)}&quote=${encodeURIComponent(`I found this amazing ${product.name} at M. Fashion!`)}" target="_blank" class="share-option facebook">
+                  <a href="https://www.facebook.com/dialog/share?app_id=1234567890&display=popup&href=${encodeURIComponent(shareURL)}&redirect_uri=${encodeURIComponent(shareURL)}&picture=${encodeURIComponent(productImageUrl)}&title=${encodeURIComponent(`${product.name} - M. Fashion`)}&description=${encodeURIComponent(shareDescription)}&quote=${encodeURIComponent(`I found this amazing ${product.name} at M. Fashion!`)}" target="_blank" rel="noopener noreferrer" class="share-option facebook">
                       <i class="ri-facebook-fill"></i>
                       <span>Facebook</span>
                   </a>
-                  <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out this ${product.name} at M. Fashion! Price: Rs. ${product.price.discounted.toFixed(2)}`)}&url=${encodeURIComponent(shareURL)}" target="_blank" class="share-option twitter">
+                  <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out this ${product.name} at M. Fashion! Price: Rs. ${product.price.discounted.toFixed(2)}`)}&url=${encodeURIComponent(shareURL)}" target="_blank" rel="noopener noreferrer" class="share-option twitter">
                       <i class="ri-twitter-x-fill"></i>
                       <span>Twitter</span>
                   </a>
@@ -1028,50 +1102,146 @@ document.addEventListener('DOMContentLoaded', () => {
 ${product.name}
 Price: Rs. ${product.price.discounted.toFixed(2)}
 
-${product.description || 'Get this amazing product at a great price!'}
+${shareDescription}
 
-${shareURL}`)}" target="_blank" class="share-option whatsapp">
+${shareURL}`)}" target="_blank" rel="noopener noreferrer" class="share-option whatsapp">
                       <i class="ri-whatsapp-fill"></i>
                       <span>WhatsApp</span>
+                  </a>
+                  <a href="https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareURL)}&media=${encodeURIComponent(productImageUrl)}&description=${encodeURIComponent(`${product.name} - ${shareDescription}`)}" target="_blank" rel="noopener noreferrer" class="share-option pinterest">
+                      <i class="ri-pinterest-fill"></i>
+                      <span>Pinterest</span>
+                  </a>
+                  <a href="mailto:?subject=${encodeURIComponent(`Check out this ${product.name} at M. Fashion`)}&body=${encodeURIComponent(`Hi,
+
+I thought you might like this product:
+
+${product.name}
+Price: Rs. ${product.price.discounted.toFixed(2)}
+
+${shareDescription}
+
+Check it out here: ${shareURL}
+
+Best regards,`)}" class="share-option email">
+                      <i class="ri-mail-line"></i>
+                      <span>Email</span>
                   </a>
                   <button class="share-option copy" id="copyShareLink">
                       <i class="ri-link"></i>
                       <span>Copy Link</span>
                   </button>
               </div>
+              
+              <div class="share-tip">
+                  <i class="ri-information-line"></i>
+                  <span>Tip: When sharing on social media, the product image, title, and description will be displayed automatically.</span>
+              </div>
           </div>
       `;
       
       document.body.appendChild(modal);
       
+      // Add some animation
+      setTimeout(() => {
+        modal.classList.add('active');
+      }, 10);
+      
       // Close button functionality
       modal.querySelector('.share-close-btn').addEventListener('click', () => {
-          modal.remove();
+        modal.classList.remove('active');
+        setTimeout(() => modal.remove(), 300);
       });
       
-      // Copy link functionality
+      // Copy link functionality using the modern clipboard API when available
       modal.querySelector('#copyShareLink').addEventListener('click', () => {
+        try {
+          // Try to use the modern Clipboard API if available
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(shareURL)
+              .then(() => {
+                const copyBtn = modal.querySelector('#copyShareLink span');
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                  copyBtn.textContent = originalText;
+                }, 2000);
+                // Trigger post-share actions
+                postShareActions(product);
+              })
+              .catch(err => {
+                console.error('Failed to copy: ', err);
+                // Fall back to the old method
+                copyUsingLegacyMethod();
+              });
+          } else {
+            // Fall back to the old method for browsers without clipboard API
+            copyUsingLegacyMethod();
+          }
+        } catch (error) {
+          console.error('Error copying link:', error);
+          showMessage('Failed to copy link. Please try again.');
+        }
+        
+        // Legacy copy method as fallback
+        function copyUsingLegacyMethod() {
           const textArea = document.createElement('textarea');
           textArea.value = shareURL;
+          textArea.style.position = 'fixed';
+          textArea.style.left = '-9999px';
           document.body.appendChild(textArea);
           textArea.select();
-          document.execCommand('copy');
-          document.body.removeChild(textArea);
           
-          const copyBtn = modal.querySelector('#copyShareLink span');
-          const originalText = copyBtn.textContent;
-          copyBtn.textContent = 'Copied!';
-          setTimeout(() => {
-              copyBtn.textContent = originalText;
-          }, 2000);
+          try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+              const copyBtn = modal.querySelector('#copyShareLink span');
+              const originalText = copyBtn.textContent;
+              copyBtn.textContent = 'Copied!';
+              setTimeout(() => {
+                copyBtn.textContent = originalText;
+              }, 2000);
+              // Trigger post-share actions
+              postShareActions(product);
+            } else {
+              showMessage('Failed to copy link. Please try manually.');
+            }
+          } catch (err) {
+            console.error('Failed to copy: ', err);
+            showMessage('Failed to copy link. Please try manually.');
+          }
+          
+          document.body.removeChild(textArea);
+        }
+      });
+      
+      // Add event listeners to track social share clicks
+      document.querySelectorAll('.share-option').forEach(option => {
+        option.addEventListener('click', () => {
+          // Trigger post-share actions for all social sharing options
+          postShareActions(product);
+        });
       });
       
       // Close when clicking outside the modal content
       modal.addEventListener('click', (e) => {
-          if (e.target === modal) {
-              modal.remove();
-          }
+        if (e.target === modal) {
+          modal.classList.remove('active');
+          setTimeout(() => modal.remove(), 300);
+        }
       });
+    }
+    
+    // Function to handle post-share actions
+    function postShareActions(product) {
+      console.log('Product shared:', product.name);
+      
+      // Show a thank you message after sharing
+      setTimeout(() => {
+        showMessage('Thanks for sharing! 🎉');
+      }, 1000);
+      
+      // Here we could add code to grant rewards for sharing, update share counts, etc.
     }
   }
 
@@ -2478,7 +2648,7 @@ ${shareURL}`)}" target="_blank" class="share-option whatsapp">
     });
   }
   
-  // Function to create and add a sharing thumbnail to the page for Facebook
+  // Function to create and add a sharing thumbnail to the page for social media sharing
   function createSharingThumbnail(product) {
     try {
       if (!product || !product.image) return;
@@ -2504,30 +2674,81 @@ ${shareURL}`)}" target="_blank" class="share-option whatsapp">
       // Clear previous content
       thumbnailContainer.innerHTML = '';
       
-      // Create the thumbnail with product info
+      // Calculate discount percentage for display
+      const discountPercentage = product.price.original > 0 ? 
+        Math.round(((product.price.original - product.price.discounted) / product.price.original) * 100) : 0;
+      
+      // Create rating stars HTML
+      const ratingStars = product.rating ? generateRatingStars(product.rating) : generateRatingStars(4.5);
+      
+      // Format product description
+      const productDesc = product.description || `Premium quality ${product.name} available at M. Fashion.`;
+      const truncatedDesc = productDesc.length > 120 ? productDesc.substring(0, 120) + '...' : productDesc;
+      
+      // Create the high-quality thumbnail with product info (optimized for social sharing)
       thumbnailContainer.innerHTML = `
-        <div style="width:1200px;height:630px;background:#fff;display:flex;flex-direction:column;font-family:Arial,sans-serif;">
-          <div style="background:linear-gradient(135deg,#e4cd00 0%,#d4bd00 100%);color:#000;padding:20px;text-align:center;">
-            <h1 style="margin:0;font-size:32px;">${product.name} - M. Fashion</h1>
+        <div style="width:1200px;height:630px;background:linear-gradient(to right, #ffffff 0%, #f8f8f8 100%);display:flex;flex-direction:column;font-family:'Segoe UI',Arial,sans-serif;box-shadow:0 0 20px rgba(0,0,0,0.1);overflow:hidden;">
+          <!-- Brand Header -->
+          <div style="height:60px;background:linear-gradient(135deg,#e4cd00 0%,#d4bd00 100%);color:#000;display:flex;align-items:center;padding:0 40px;justify-content:space-between;">
+            <h3 style="margin:0;font-size:24px;font-weight:700;">M. Fashion</h3>
+            <div style="font-size:16px;font-weight:500;">Premium Fashion Store</div>
           </div>
-          <div style="display:flex;padding:30px;flex:1;">
-            <div style="flex:1;display:flex;align-items:center;justify-content:center;">
-              <img src="${imageUrl}" alt="${product.name}" style="max-width:90%;max-height:400px;object-fit:contain;box-shadow:0 4px 15px rgba(0,0,0,0.1);" />
+          
+          <!-- Main Content -->
+          <div style="display:flex;flex:1;overflow:hidden;">
+            <!-- Product Image Section -->
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:30px;background:rgba(255,255,255,0.9);position:relative;">
+              <img src="${imageUrl}" alt="${product.name}" style="max-width:90%;max-height:460px;object-fit:contain;box-shadow:0 10px 25px rgba(0,0,0,0.08);border-radius:4px;" />
+              ${discountPercentage > 0 ? `<div style="position:absolute;top:30px;left:30px;background:#ff3a3a;color:white;font-weight:bold;padding:8px 15px;border-radius:50px;font-size:20px;">-${discountPercentage}%</div>` : ''}
             </div>
-            <div style="flex:1;padding:20px;display:flex;flex-direction:column;justify-content:center;">
-              <h2 style="margin-top:0;font-size:28px;color:#333;">${product.name}</h2>
-              <p style="font-size:20px;margin:15px 0;color:#e4cd00;font-weight:bold;">Price: Rs. ${product.price.discounted.toFixed(2)}</p>
-              <p style="font-size:16px;line-height:1.5;color:#555;">${product.description || `Check out this amazing ${product.name} at M. Fashion!`}</p>
-              <div style="margin-top:20px;background:#e4cd00;color:#000;padding:10px;text-align:center;font-weight:bold;border-radius:5px;">
-                Shop Now at M. Fashion
+            
+            <!-- Product Details Section -->
+            <div style="flex:1;padding:40px;display:flex;flex-direction:column;justify-content:center;position:relative;">
+              <!-- Product Category -->
+              <div style="font-size:16px;color:#666;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">${product.category || 'Fashion'}</div>
+              
+              <!-- Product Name -->
+              <h1 style="margin:0 0 15px 0;font-size:36px;color:#222;line-height:1.2;">${product.name}</h1>
+              
+              <!-- Rating -->
+              <div style="margin-bottom:20px;font-size:20px;color:#e4cd00;">
+                ${ratingStars}
+                <span style="font-size:16px;color:#666;margin-left:8px;">(${product.reviews || 24} reviews)</span>
               </div>
+              
+              <!-- Price -->
+              <div style="margin-bottom:25px;">
+                <span style="font-size:32px;font-weight:bold;color:#000;">Rs. ${product.price.discounted.toFixed(2)}</span>
+                ${product.price.original > product.price.discounted ? `<span style="font-size:20px;color:#999;text-decoration:line-through;margin-left:10px;">Rs. ${product.price.original.toFixed(2)}</span>` : ''}
+              </div>
+              
+              <!-- Description -->
+              <p style="font-size:18px;line-height:1.5;color:#444;margin-bottom:30px;">${truncatedDesc}</p>
+              
+              <!-- Call to Action -->
+              <div style="display:flex;gap:15px;margin-top:auto;">
+                <div style="background:#e4cd00;color:#000;padding:12px 24px;text-align:center;font-weight:600;border-radius:4px;font-size:18px;box-shadow:0 4px 8px rgba(228,205,0,0.3);">
+                  Shop Now
+                </div>
+                <div style="background:#000;color:#fff;padding:12px 24px;text-align:center;font-weight:600;border-radius:4px;font-size:18px;">
+                  <i class="ri-share-fill" style="margin-right:5px;"></i> Share
+                </div>
+              </div>
+              
+              <!-- Product ID -->
+              <div style="position:absolute;bottom:15px;right:20px;font-size:12px;color:#aaa;">Product ID: ${product.id}</div>
             </div>
           </div>
-          <div style="background:#f8f8f8;padding:15px;text-align:center;color:#666;">
-            <p style="margin:0;">www.mfashion.com - Your premier fashion destination in Pakistan</p>
+          
+          <!-- Footer -->
+          <div style="background:#222;padding:15px;text-align:center;color:#eee;font-size:14px;">
+            <p style="margin:0;">www.mfashion.com | Your Premier Fashion Destination in Pakistan | Free Shipping On All Orders</p>
           </div>
         </div>
       `;
+      
+      // Create an actual image file for better social sharing
+      createSocialImage(product, imageUrl);
       
       console.log('Created sharing thumbnail for product:', product.name);
       return true;
@@ -2537,16 +2758,53 @@ ${shareURL}`)}" target="_blank" class="share-option whatsapp">
     }
   }
   
+  // Helper function to create a shareable image using HTML2Canvas (mock implementation)
+  function createSocialImage(product, imageUrl) {
+    // This would typically use a library like html2canvas to create an actual image
+    // For now, we'll just log that we would create the image
+    console.log(`Would create social image for ${product.name} using ${imageUrl}`);
+    
+    // In a real implementation with html2canvas:
+    // 1. We'd render the thumbnail container to a canvas
+    // 2. Convert the canvas to a data URL or blob
+    // 3. Either save it or use it directly for sharing
+    
+    // Example implementation (commented out as the library may not be available):
+    /*
+    if (typeof html2canvas !== 'undefined') {
+      const container = document.getElementById('sharing-thumbnail-container');
+      html2canvas(container).then(canvas => {
+        // Create a hidden link to download the image (for testing)
+        const link = document.createElement('a');
+        link.download = `${product.name.replace(/\s+/g, '-').toLowerCase()}-share.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Or store the image URL for sharing
+        window.socialShareImageUrl = link.href;
+      });
+    }
+    */
+  }
+  
   // Function to update meta tags for rich product sharing
-  function updateProductMetaTags(product) {
+  function updateProductMetaTags(product, shareURL) {
     if (!product) return;
     
     try {
       // Get absolute image URL (convert relative URLs to absolute)
       const imageUrl = getAbsoluteImageUrl(product.image);
       
-      // Create a unique product URL to avoid Facebook caching issues
-      const productUrl = `${window.location.origin}?id=${product.id}&t=${Date.now()}`;
+      // Use the provided shareURL or generate one if not provided
+      const productUrl = shareURL || generateGlobalShareURL(product.id);
+      
+      // Get formatted price and description
+      const formattedPrice = product.price.discounted.toFixed(2);
+      const productDescription = product.description || 
+        `Check out this ${product.name} at M. Fashion. Price: Rs. ${formattedPrice}`;
       
       // First, ensure we have all required meta tags by creating them if they don't exist
       ensureMetaTagExists('og:type', 'product');
@@ -2555,12 +2813,11 @@ ${shareURL}`)}" target="_blank" class="share-option whatsapp">
       
       // Update Open Graph meta tags for rich sharing
       updateMetaTag('og:title', `${product.name} - M. Fashion`);
-      updateMetaTag('og:description', product.description || 
-        `Check out this ${product.name} at Fashion Center. Price: Rs. ${product.price.discounted.toFixed(2)}`);
+      updateMetaTag('og:description', productDescription);
       updateMetaTag('og:url', productUrl);
       
       // Add specific product meta tags
-      updateMetaTag('og:price:amount', product.price.discounted.toFixed(2));
+      updateMetaTag('og:price:amount', formattedPrice);
       updateMetaTag('og:price:currency', 'PKR');
       
       // Update image last to ensure it's not cached
@@ -2574,12 +2831,21 @@ ${shareURL}`)}" target="_blank" class="share-option whatsapp">
       
       // Update Twitter card meta tags
       updateMetaTag('twitter:title', `${product.name} - M. Fashion`);
-      updateMetaTag('twitter:description', product.description || 
-        `Check out this ${product.name} at Fashion Center. Price: Rs. ${product.price.discounted.toFixed(2)}`);
+      updateMetaTag('twitter:description', productDescription);
       updateMetaTag('twitter:image', imageUrl);
       updateMetaTag('twitter:card', 'summary_large_image');
+      updateMetaTag('twitter:site', '@MFashion');
+      updateMetaTag('twitter:creator', '@MFashion');
+      
+      // Update the standard HTML meta tags too for better indexing
+      updateRegularMetaTag('title', `${product.name} - M. Fashion`);
+      updateRegularMetaTag('description', productDescription);
+      
+      // Add JSON-LD structured data for rich results in search engines
+      addOrUpdateJsonLd(product, productUrl, imageUrl);
       
       console.log('Updated meta tags for product sharing:', product.name, imageUrl);
+      console.log('Share URL:', productUrl);
     } catch (error) {
       console.error('Error updating meta tags:', error);
     }
@@ -2641,32 +2907,254 @@ ${shareURL}`)}" target="_blank" class="share-option whatsapp">
     
     return metaTag;
   }
+  
+  // Helper function to update regular HTML meta tags (not OpenGraph/Twitter)
+  function updateRegularMetaTag(name, content) {
+    let metaTag = document.querySelector(`meta[name="${name}"]`);
+    
+    if (!metaTag) {
+      // If the meta tag doesn't exist, create it
+      metaTag = document.createElement('meta');
+      metaTag.setAttribute('name', name);
+      document.head.appendChild(metaTag);
+    }
+    
+    // Update the content
+    metaTag.setAttribute('content', content);
+    
+    // Additionally, update the title tag if it's a title
+    if (name === 'title') {
+      let titleTag = document.querySelector('title');
+      if (titleTag) {
+        titleTag.textContent = content;
+      }
+    }
+  }
+  
+  // Function to add or update JSON-LD structured data for rich results
+  function addOrUpdateJsonLd(product, productUrl, imageUrl) {
+    // Look for existing JSON-LD script
+    let jsonLdScript = document.querySelector('script[type="application/ld+json"][data-product-id]');
+    
+    // If not found, create a new one
+    if (!jsonLdScript) {
+      jsonLdScript = document.createElement('script');
+      jsonLdScript.type = 'application/ld+json';
+      document.head.appendChild(jsonLdScript);
+    }
+    
+    // Set product ID attribute
+    jsonLdScript.setAttribute('data-product-id', product.id);
+    
+    // Create JSON-LD data structure for product
+    const jsonLdData = {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "name": product.name,
+      "image": [imageUrl],
+      "description": product.description || `Premium quality ${product.name} available at M. Fashion.`,
+      "sku": product.id,
+      "brand": {
+        "@type": "Brand",
+        "name": product.brand || "M. Fashion"
+      },
+      "offers": {
+        "@type": "Offer",
+        "url": productUrl,
+        "priceCurrency": "PKR",
+        "price": product.price.discounted,
+        "priceValidUntil": new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+        "itemCondition": "https://schema.org/NewCondition",
+        "availability": product.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+      }
+    };
+    
+    // Add rating if available
+    if (product.rating) {
+      jsonLdData.aggregateRating = {
+        "@type": "AggregateRating",
+        "ratingValue": product.rating,
+        "reviewCount": product.reviews || 5
+      };
+    }
+    
+    // Update the script content
+    jsonLdScript.textContent = JSON.stringify(jsonLdData);
+  }
 
   // Function to handle product URL navigation
   function handleProductNavigation() {
-    // Check for hash-based navigation
-    const hash = window.location.hash;
-    let productId = null;
-    
-    if (hash.startsWith('#products/')) {
-      productId = parseInt(hash.split('/')[1]);
-    }
-    
-    // Check for id query parameter from shared links
-    const urlParams = new URLSearchParams(window.location.search);
-    const queryProductId = urlParams.get('id');
-    if (queryProductId) {
-      productId = parseInt(queryProductId);
-    }
-    
-    // If we have a product ID, highlight that product
-    if (productId) {
-      // Find the product in the global products array
-      const product = window.products?.find(p => p.id === productId);
+    try {
+      // Check for hash-based navigation
+      const hash = window.location.hash;
+      let productId = null;
       
-      // Update meta tags for sharing if product is found
-      if (product) {
-        updateProductMetaTags(product);
+      if (hash.startsWith('#products/')) {
+        productId = parseInt(hash.split('/')[1]);
+      }
+      
+      // Check for id query parameter from shared links
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryProductId = urlParams.get('id');
+      if (queryProductId) {
+        // Try to parse as integer but handle non-numeric IDs too
+        productId = isNaN(parseInt(queryProductId)) ? queryProductId : parseInt(queryProductId);
+      }
+      
+      // If we have a product ID, highlight that product
+      if (productId) {
+        console.log('Navigating to product:', productId);
+        
+        // First, make sure products are loaded if they aren't already
+        if (!window.products || window.products.length === 0) {
+          console.log('Products not loaded yet, fetching products first...');
+          // If products aren't loaded yet, load them and then navigate
+          return fetchAndDisplayProducts().then(() => {
+            // Re-check after products have loaded
+            handleProductNavigationAfterLoad(productId);
+          });
+        }
+        
+        // Handle navigation to specific product
+        handleProductNavigationAfterLoad(productId);
+      }
+    } catch (error) {
+      console.error('Error in product navigation:', error);
+    }
+  }
+  
+  // Function to open product details for direct viewing (used for shared links)
+  function openProductDetails(product) {
+    if (!product) return;
+    
+    try {
+      console.log('Opening product details directly:', product.name);
+      
+      // Create modal for product details
+      const modal = document.createElement('div');
+      modal.className = 'product-detail-modal';
+      
+      // Get absolute image URL
+      const imageUrl = getAbsoluteImageUrl(product.image);
+      
+      // Calculate discount percentage
+      const discountPercentage = product.price.original > 0 ? 
+        Math.round(((product.price.original - product.price.discounted) / product.price.original) * 100) : 0;
+      
+      // Create rating stars
+      const ratingStars = generateRatingStars(product.rating || 4.5);
+      
+      // Add content to modal
+      modal.innerHTML = `
+        <div class="product-detail-content">
+          <button class="close-detail-btn">&times;</button>
+          
+          <div class="product-detail-gallery">
+            <img src="${imageUrl}" alt="${product.name}" class="product-detail-image">
+          </div>
+          
+          <div class="product-detail-info">
+            <h2>${product.name}</h2>
+            
+            <div class="product-detail-meta">
+              <div class="product-rating">
+                ${ratingStars}
+                <span class="rating-count">(${product.reviews || 24} reviews)</span>
+              </div>
+              <div class="product-id">Product ID: ${product.id}</div>
+            </div>
+            
+            <div class="product-detail-price">
+              <span class="current-price">Rs. ${product.price.discounted.toFixed(2)}</span>
+              ${product.price.original > product.price.discounted ? 
+                `<span class="original-price">Rs. ${product.price.original.toFixed(2)}</span>
+                <span class="discount-badge">-${discountPercentage}%</span>` : ''}
+            </div>
+            
+            <div class="product-description">
+              ${product.description || `Premium quality ${product.name} available now at M. Fashion.`}
+            </div>
+            
+            <div class="product-actions">
+              <button class="add-to-cart-btn" data-product-id="${product.id}">Add to Cart</button>
+              <button class="buy-now-btn" data-product-id="${product.id}">Buy Now</button>
+              <button class="share-product-btn" data-product-id="${product.id}">
+                <i class="ri-share-line"></i> Share
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Add modal to the page
+      document.body.appendChild(modal);
+      
+      // Prevent body scrolling
+      document.body.style.overflow = 'hidden';
+      
+      // Add event listeners
+      modal.querySelector('.close-detail-btn').addEventListener('click', () => {
+        modal.remove();
+        document.body.style.overflow = 'auto';
+      });
+      
+      // Add to cart button
+      modal.querySelector('.add-to-cart-btn').addEventListener('click', () => {
+        addToCart(product);
+        showMessage(`${product.name} added to cart`);
+      });
+      
+      // Buy now button
+      modal.querySelector('.buy-now-btn').addEventListener('click', () => {
+        addToCart(product);
+        // Open cart and proceed to checkout
+        document.querySelector('.cart_button')?.click();
+      });
+      
+      // Share button
+      modal.querySelector('.share-product-btn').addEventListener('click', () => {
+        shareProduct(product);
+      });
+      
+      // Close when clicking outside content
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.remove();
+          document.body.style.overflow = 'auto';
+        }
+      });
+      
+      // Add some animation
+      setTimeout(() => {
+        modal.classList.add('active');
+      }, 10);
+      
+    } catch (error) {
+      console.error('Error opening product details:', error);
+    }
+  }
+  
+  // Helper function to handle product navigation after products are loaded
+  function handleProductNavigationAfterLoad(productId) {
+    // Find the product in the global products array
+    const product = window.products?.find(p => p.id.toString() === productId.toString());
+    
+    if (product) {
+      console.log('Found product for navigation:', product.name);
+      
+      // Generate a clean share URL for this product
+      const shareURL = generateGlobalShareURL(product.id);
+      
+      // Update meta tags with the clean URL
+      updateProductMetaTags(product, shareURL);
+      
+      // Create the sharing thumbnail
+      createSharingThumbnail(product);
+      
+      // If we're on a mobile device, open the product directly
+      if (window.innerWidth <= 768) {
+        openProductDetails(product);
+        return;
       }
       
       // Scroll to the products section
@@ -2675,20 +3163,48 @@ ${shareURL}`)}" target="_blank" class="share-option whatsapp">
         productsSection.scrollIntoView({ behavior: 'smooth' });
       }
       
-      // Highlight the product card
-      const productCard = document.querySelector(`[data-product-id="${productId}"]`);
-      if (productCard) {
-        // Add highlight class to the product card
-        productCard.classList.add('highlight-product');
+      // Find and highlight the product card
+      setTimeout(() => {
+        // Try to find the product card by multiple approaches
+        let productCard = document.querySelector(`[data-product-id="${productId}"]`);
+        if (!productCard) {
+          // Try other selectors that might find the product
+          const possibleSelectors = [
+            `.product-card[data-id="${productId}"]`,
+            `.product-item[data-id="${productId}"]`,
+            `[data-product="${productId}"]`
+          ];
+          
+          for (const selector of possibleSelectors) {
+            const element = document.querySelector(selector);
+            if (element) {
+              productCard = element;
+              break;
+            }
+          }
+        }
         
-        // Scroll the product into view
-        productCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        
-        // Remove highlight after a delay
-        setTimeout(() => {
-          productCard.classList.remove('highlight-product');
-        }, 3000);
-      }
+        if (productCard) {
+          // Add highlight class to the product card
+          productCard.classList.add('highlight-product');
+          
+          // Scroll the product into view
+          productCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          
+          // Remove highlight after a delay
+          setTimeout(() => {
+            productCard.classList.remove('highlight-product');
+          }, 3000);
+        } else {
+          console.log('Product card not found in DOM, may need to refresh products view');
+          // Force reload products to ensure the product is displayed
+          fetchAndDisplayProducts().then(() => {
+            setTimeout(() => handleProductNavigationAfterLoad(productId), 500);
+          });
+        }
+      }, 500); // Small delay to ensure DOM is updated
+    } else {
+      console.log('Product not found for ID:', productId);
     }
   }
 
