@@ -980,7 +980,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function generateGlobalShareURL(productId) {
     // Create an absolute URL that will work across all platforms
     // Use the full domain from the current page for consistency
-    return `${window.location.protocol}//${window.location.host}?id=${productId}`;
+    // Using a proper URL structure with product parameter for better SEO and sharing
+    return `${window.location.protocol}//${window.location.host}/product/${productId}`;
   }
   
   // Function to share product
@@ -1089,7 +1090,7 @@ document.addEventListener('DOMContentLoaded', () => {
               </div>
               
               <div class="share-options">
-                  <a href="https://www.facebook.com/dialog/share?app_id=1234567890&display=popup&href=${encodeURIComponent(shareURL)}&redirect_uri=${encodeURIComponent(shareURL)}&picture=${encodeURIComponent(productImageUrl)}&title=${encodeURIComponent(`${product.name} - M. Fashion`)}&description=${encodeURIComponent(shareDescription)}&quote=${encodeURIComponent(`I found this amazing ${product.name} at M. Fashion!`)}" target="_blank" rel="noopener noreferrer" class="share-option facebook">
+                  <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareURL)}" target="_blank" rel="noopener noreferrer" class="share-option facebook">
                       <i class="ri-facebook-fill"></i>
                       <span>Facebook</span>
                   </a>
@@ -2985,42 +2986,153 @@ Best regards,`)}" class="share-option email">
   // Function to handle product URL navigation
   function handleProductNavigation() {
     try {
-      // Check for hash-based navigation
-      const hash = window.location.hash;
+      // Check if we're on a product path (/product/123)
+      const pathMatch = window.location.pathname.match(/\/product\/(\w+)/);
       let productId = null;
       
-      if (hash.startsWith('#products/')) {
-        productId = parseInt(hash.split('/')[1]);
-      }
-      
-      // Check for id query parameter from shared links
-      const urlParams = new URLSearchParams(window.location.search);
-      const queryProductId = urlParams.get('id');
-      if (queryProductId) {
-        // Try to parse as integer but handle non-numeric IDs too
-        productId = isNaN(parseInt(queryProductId)) ? queryProductId : parseInt(queryProductId);
-      }
-      
-      // If we have a product ID, highlight that product
-      if (productId) {
-        console.log('Navigating to product:', productId);
+      if (pathMatch) {
+        // Extract product ID from URL path
+        productId = pathMatch[1];
+        console.log('Product ID found in URL path:', productId);
+      } else {
+        // Check for hash-based navigation
+        const hash = window.location.hash;
         
-        // First, make sure products are loaded if they aren't already
-        if (!window.products || window.products.length === 0) {
-          console.log('Products not loaded yet, fetching products first...');
-          // If products aren't loaded yet, load them and then navigate
-          return fetchAndDisplayProducts().then(() => {
-            // Re-check after products have loaded
-            handleProductNavigationAfterLoad(productId);
-          });
+        if (hash.startsWith('#products/')) {
+          productId = hash.split('/')[1];
+          console.log('Product ID found in URL hash:', productId);
         }
         
-        // Handle navigation to specific product
-        handleProductNavigationAfterLoad(productId);
+        // Check for id query parameter from shared links
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryProductId = urlParams.get('id');
+        if (queryProductId) {
+          // Try to parse as integer but handle non-numeric IDs too
+          productId = queryProductId;
+          console.log('Product ID found in URL query:', productId);
+        }
+      }
+      
+      // If we have a product ID, load and display the product
+      if (productId) {
+        // First, make sure products are loaded
+        if (!window.products || window.products.length === 0) {
+          console.log('Products not loaded yet, fetching products first...');
+          fetchAndDisplayProducts().then(() => {
+            // After products are loaded, show the shared product
+            showSharedProduct(productId);
+          });
+        } else {
+          // Products already loaded, show the shared product
+          showSharedProduct(productId);
+        }
       }
     } catch (error) {
       console.error('Error in product navigation:', error);
     }
+  }
+  
+  // Function to display a shared product
+  function showSharedProduct(productId) {
+    // Find the product in the global products array
+    const product = window.products?.find(p => p.id.toString() === productId.toString());
+    
+    if (!product) {
+      console.error('Product not found:', productId);
+      return;
+    }
+    
+    console.log('Found shared product:', product.name);
+    
+    // Update meta tags for social sharing
+    const shareURL = generateGlobalShareURL(product.id);
+    updateProductMetaTags(product, shareURL);
+    
+    // Get the shared product container
+    const sharedProductContainer = document.getElementById('shared-product-view');
+    
+    if (!sharedProductContainer) {
+      console.error('Shared product container not found in DOM');
+      return;
+    }
+    
+    // Show the shared product container
+    sharedProductContainer.style.display = 'block';
+    
+    // Calculate discount percentage
+    const discountPercentage = product.price.original > 0 ? 
+      Math.round(((product.price.original - product.price.discounted) / product.price.original) * 100) : 0;
+    
+    // Create rating stars
+    const ratingStars = generateRatingStars(product.rating || 4.5);
+    
+    // Get absolute image URL
+    const imageUrl = getAbsoluteImageUrl(product.image);
+    
+    // Create the shared product display
+    sharedProductContainer.innerHTML = `
+      <div class="shared-product-wrapper">
+        <div class="shared-product-header">
+          <h2>Shared Product</h2>
+          <button id="close-shared-product" class="close-shared-btn">&times;</button>
+        </div>
+        <div class="shared-product-content">
+          <div class="shared-product-gallery">
+            <img src="${imageUrl}" alt="${product.name}" class="shared-product-image">
+            ${discountPercentage > 0 ? `<span class="shared-product-discount">-${discountPercentage}%</span>` : ''}
+          </div>
+          <div class="shared-product-info">
+            <h1 class="shared-product-title">${product.name}</h1>
+            <div class="shared-product-rating">
+              ${ratingStars}
+              <span class="shared-rating-count">(${product.reviews || 24} reviews)</span>
+            </div>
+            <div class="shared-product-price">
+              <span class="shared-current-price">Rs. ${product.price.discounted.toFixed(2)}</span>
+              ${product.price.original > product.price.discounted ? `
+                <span class="shared-original-price">Rs. ${product.price.original.toFixed(2)}</span>
+              ` : ''}
+            </div>
+            <div class="shared-product-description">
+              ${product.description || `Premium quality ${product.name} available at M. Fashion.`}
+            </div>
+            <div class="shared-product-actions">
+              <button class="shared-add-to-cart-btn" data-product-id="${product.id}">Add to Cart</button>
+              <button class="shared-buy-now-btn" data-product-id="${product.id}">Buy Now</button>
+              <button class="shared-share-btn" data-product-id="${product.id}">
+                <i class="ri-share-line"></i> Share
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Scroll to the shared product view
+    sharedProductContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    // Add event listeners
+    document.getElementById('close-shared-product')?.addEventListener('click', () => {
+      sharedProductContainer.style.display = 'none';
+    });
+    
+    // Add to cart button
+    sharedProductContainer.querySelector('.shared-add-to-cart-btn')?.addEventListener('click', () => {
+      addToCart(product);
+      showMessage(`${product.name} added to cart`);
+    });
+    
+    // Buy now button
+    sharedProductContainer.querySelector('.shared-buy-now-btn')?.addEventListener('click', () => {
+      addToCart(product);
+      // Open cart and proceed to checkout
+      document.querySelector('.cart_button')?.click();
+    });
+    
+    // Share button
+    sharedProductContainer.querySelector('.shared-share-btn')?.addEventListener('click', () => {
+      shareProduct(product);
+    });
   }
   
   // Function to open product details for direct viewing (used for shared links)
@@ -3134,78 +3246,48 @@ Best regards,`)}" class="share-option email">
     }
   }
   
-  // Helper function to handle product navigation after products are loaded
-  function handleProductNavigationAfterLoad(productId) {
-    // Find the product in the global products array
-    const product = window.products?.find(p => p.id.toString() === productId.toString());
-    
-    if (product) {
-      console.log('Found product for navigation:', product.name);
-      
-      // Generate a clean share URL for this product
-      const shareURL = generateGlobalShareURL(product.id);
-      
-      // Update meta tags with the clean URL
-      updateProductMetaTags(product, shareURL);
-      
-      // Create the sharing thumbnail
-      createSharingThumbnail(product);
-      
-      // If we're on a mobile device, open the product directly
-      if (window.innerWidth <= 768) {
-        openProductDetails(product);
-        return;
-      }
-      
-      // Scroll to the products section
-      const productsSection = document.getElementById('products');
-      if (productsSection) {
-        productsSection.scrollIntoView({ behavior: 'smooth' });
-      }
-      
-      // Find and highlight the product card
-      setTimeout(() => {
-        // Try to find the product card by multiple approaches
-        let productCard = document.querySelector(`[data-product-id="${productId}"]`);
-        if (!productCard) {
-          // Try other selectors that might find the product
-          const possibleSelectors = [
-            `.product-card[data-id="${productId}"]`,
-            `.product-item[data-id="${productId}"]`,
-            `[data-product="${productId}"]`
-          ];
-          
-          for (const selector of possibleSelectors) {
-            const element = document.querySelector(selector);
-            if (element) {
-              productCard = element;
-              break;
-            }
+  // Helper function to highlight a product in the regular product listing
+  function highlightProductInListing(productId) {
+    // Find the product card in the DOM
+    setTimeout(() => {
+      // Try to find the product card by multiple approaches
+      let productCard = document.querySelector(`[data-product-id="${productId}"]`);
+      if (!productCard) {
+        // Try other selectors that might find the product
+        const possibleSelectors = [
+          `.product-card[data-id="${productId}"]`,
+          `.product-item[data-id="${productId}"]`,
+          `[data-product="${productId}"]`
+        ];
+        
+        for (const selector of possibleSelectors) {
+          const element = document.querySelector(selector);
+          if (element) {
+            productCard = element;
+            break;
           }
         }
+      }
+      
+      if (productCard) {
+        // Add highlight class to the product card
+        productCard.classList.add('highlight-product');
         
-        if (productCard) {
-          // Add highlight class to the product card
-          productCard.classList.add('highlight-product');
-          
-          // Scroll the product into view
-          productCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          
-          // Remove highlight after a delay
-          setTimeout(() => {
-            productCard.classList.remove('highlight-product');
-          }, 3000);
-        } else {
-          console.log('Product card not found in DOM, may need to refresh products view');
-          // Force reload products to ensure the product is displayed
-          fetchAndDisplayProducts().then(() => {
-            setTimeout(() => handleProductNavigationAfterLoad(productId), 500);
-          });
-        }
-      }, 500); // Small delay to ensure DOM is updated
-    } else {
-      console.log('Product not found for ID:', productId);
-    }
+        // Scroll the product into view
+        productCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Remove highlight after a delay
+        setTimeout(() => {
+          productCard.classList.remove('highlight-product');
+        }, 3000);
+      } else {
+        console.log('Product card not found in DOM, may need to refresh products view');
+        // Force reload products to ensure the product is displayed
+        fetchAndDisplayProducts().then(() => {
+          setTimeout(() => showSharedProduct(productId), 500);
+        });
+      }
+    }, 500); // Small delay to ensure DOM is updated
   }
 
   // Add event listener for hash changes

@@ -12,6 +12,16 @@ app.get('/product-detail.html', (req, res) => {
   res.redirect('/');
 });
 
+// Handle product pages for sharing
+app.get('/product/:id', (req, res) => {
+  // Get the product ID from the request parameters
+  const productId = req.params.id;
+  
+  // Redirect to the main page with the product ID as a parameter
+  // This will allow the front-end to handle showing the product
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 app.post('/create-checkout-session', async (req, res) => {
   try {
     const { items } = req.body;
