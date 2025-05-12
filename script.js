@@ -978,10 +978,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Function to share product
   function shareProduct(product) {
+    // First update the meta tags to ensure rich content when shared
+    updateProductMetaTags(product);
+    
     if (navigator.share) {
       navigator.share({
-        title: product.name,
-        text: product.description || `Check out this ${product.name} at Fashion Center`,
+        title: `${product.name} - M. Fashion`,
+        text: product.description || 
+          `Check out this ${product.name} at Fashion Center. Price: Rs. ${product.price.discounted.toFixed(2)}`,
         url: `${window.location.origin}?id=${product.id}`
       })
       .then(() => showMessage('Product shared successfully'))
@@ -1009,11 +1013,18 @@ document.addEventListener('DOMContentLoaded', () => {
                       <i class="ri-facebook-fill"></i>
                       <span>Facebook</span>
                   </a>
-                  <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(product.name)}&url=${encodeURIComponent(shareURL)}" target="_blank" class="share-option twitter">
+                  <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out this ${product.name} at M. Fashion! Price: Rs. ${product.price.discounted.toFixed(2)}`)}&url=${encodeURIComponent(shareURL)}" target="_blank" class="share-option twitter">
                       <i class="ri-twitter-x-fill"></i>
                       <span>Twitter</span>
                   </a>
-                  <a href="https://wa.me/?text=${encodeURIComponent(product.name + ': ' + shareURL)}" target="_blank" class="share-option whatsapp">
+                  <a href="https://wa.me/?text=${encodeURIComponent(`Check out this amazing product from M. Fashion!
+
+${product.name}
+Price: Rs. ${product.price.discounted.toFixed(2)}
+
+${product.description || 'Get this amazing product at a great price!'}
+
+${shareURL}`)}" target="_blank" class="share-option whatsapp">
                       <i class="ri-whatsapp-fill"></i>
                       <span>WhatsApp</span>
                   </a>
@@ -2461,6 +2472,63 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
+  // Function to update meta tags for rich product sharing
+  function updateProductMetaTags(product) {
+    if (!product) return;
+    
+    try {
+      // Get absolute image URL (convert relative URLs to absolute)
+      const imageUrl = getAbsoluteImageUrl(product.image);
+      
+      // Update Open Graph meta tags
+      updateMetaTag('og:title', `${product.name} - M. Fashion`);
+      updateMetaTag('og:description', product.description || 
+        `Check out this ${product.name} at Fashion Center. Price: Rs. ${product.price.discounted.toFixed(2)}`);
+      updateMetaTag('og:image', imageUrl);
+      updateMetaTag('og:url', `${window.location.origin}?id=${product.id}`);
+      
+      // Update Twitter card meta tags
+      updateMetaTag('twitter:title', `${product.name} - M. Fashion`);
+      updateMetaTag('twitter:description', product.description || 
+        `Check out this ${product.name} at Fashion Center. Price: Rs. ${product.price.discounted.toFixed(2)}`);
+      updateMetaTag('twitter:image', imageUrl);
+      updateMetaTag('twitter:card', 'summary_large_image');
+      
+      console.log('Updated meta tags for product sharing:', product.name);
+    } catch (error) {
+      console.error('Error updating meta tags:', error);
+    }
+  }
+  
+  // Helper function to convert relative image URLs to absolute URLs
+  function getAbsoluteImageUrl(relativeUrl) {
+    // If the URL already starts with http:// or https://, it's already absolute
+    if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
+      return relativeUrl;
+    }
+    
+    // Remove any leading slash if present
+    const cleanRelativeUrl = relativeUrl.startsWith('/') ? relativeUrl.substring(1) : relativeUrl;
+    
+    // Combine with the current domain to create an absolute URL
+    return `${window.location.origin}/${cleanRelativeUrl}`;
+  }
+  
+  // Helper function to update or create meta tags
+  function updateMetaTag(property, content) {
+    let metaTag = document.querySelector(`meta[property="${property}"]`);
+    
+    if (!metaTag) {
+      // If the meta tag doesn't exist, create it
+      metaTag = document.createElement('meta');
+      metaTag.setAttribute('property', property);
+      document.head.appendChild(metaTag);
+    }
+    
+    // Update the content
+    metaTag.setAttribute('content', content);
+  }
+
   // Function to handle product URL navigation
   function handleProductNavigation() {
     // Check for hash-based navigation
@@ -2480,6 +2548,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // If we have a product ID, highlight that product
     if (productId) {
+      // Find the product in the global products array
+      const product = window.products?.find(p => p.id === productId);
+      
+      // Update meta tags for sharing if product is found
+      if (product) {
+        updateProductMetaTags(product);
+      }
+      
       // Scroll to the products section
       const productsSection = document.getElementById('products');
       if (productsSection) {
