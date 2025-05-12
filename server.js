@@ -2,8 +2,15 @@ const express = require('express');
 const app = express();
 const stripe = require('stripe')('AS2w5dUXM2rC3F5GVwKgrFe6gAuNK0oiS3wS8ayHWORoLTq95GXK26I7PsWGtwoBUoT2ZgbSJ8fHOUjO');
 const bodyParser = require('body-parser');
+const path = require('path');
 
 app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname)));
+
+// Redirect product-detail.html to home page
+app.get('/product-detail.html', (req, res) => {
+  res.redirect('/');
+});
 
 app.post('/create-checkout-session', async (req, res) => {
   try {

@@ -982,13 +982,13 @@ document.addEventListener('DOMContentLoaded', () => {
       navigator.share({
         title: product.name,
         text: product.description || `Check out this ${product.name} at Fashion Center`,
-        url: `${window.location.origin}/product-detail.html?id=${product.id}`
+        url: `${window.location.origin}?id=${product.id}`
       })
       .then(() => showMessage('Product shared successfully'))
       .catch((error) => console.error('Error sharing product:', error));
     } else {
       // Fallback for browsers that don't support Web Share API
-      const shareURL = `${window.location.origin}/product-detail.html?id=${product.id}`;
+      const shareURL = `${window.location.origin}?id=${product.id}`;
       
       // Create a modal for sharing options
       const modal = document.createElement('div');
@@ -2463,25 +2463,42 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Function to handle product URL navigation
   function handleProductNavigation() {
+    // Check for hash-based navigation
     const hash = window.location.hash;
+    let productId = null;
+    
     if (hash.startsWith('#products/')) {
-      const productId = parseInt(hash.split('/')[1]);
-      // Find the product in the products array
-      const product = products.find(p => p.id === productId);
-      if (product) {
-        // Scroll to the products section
-        const productsSection = document.getElementById('products');
-        if (productsSection) {
-          productsSection.scrollIntoView({ behavior: 'smooth' });
-        }
-        // Highlight the product card
-        const productCard = document.querySelector(`[data-product-id="${productId}"]`);
-        if (productCard) {
-          productCard.classList.add('highlight');
-          setTimeout(() => {
-            productCard.classList.remove('highlight');
-          }, 2000);
-        }
+      productId = parseInt(hash.split('/')[1]);
+    }
+    
+    // Check for id query parameter from shared links
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryProductId = urlParams.get('id');
+    if (queryProductId) {
+      productId = parseInt(queryProductId);
+    }
+    
+    // If we have a product ID, highlight that product
+    if (productId) {
+      // Scroll to the products section
+      const productsSection = document.getElementById('products');
+      if (productsSection) {
+        productsSection.scrollIntoView({ behavior: 'smooth' });
+      }
+      
+      // Highlight the product card
+      const productCard = document.querySelector(`[data-product-id="${productId}"]`);
+      if (productCard) {
+        // Add highlight class to the product card
+        productCard.classList.add('highlight-product');
+        
+        // Scroll the product into view
+        productCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Remove highlight after a delay
+        setTimeout(() => {
+          productCard.classList.remove('highlight-product');
+        }, 3000);
       }
     }
   }
@@ -2835,68 +2852,222 @@ document.addEventListener('DOMContentLoaded', () => {
   // Announcement System
   class AnnouncementSystem {
     constructor() {
+      // Default announcement
       this.announcement = {
         id: 'payment-update',
         type: 'success',
         message: 'NEW! Enhanced Cash on Delivery now available with better checkout experience!',
         icon: 'ri-money-dollar-box-line',
-        duration: 8000 // 8 seconds
+        duration: 12000, // 12 seconds
+        actionText: 'Learn More',
+        actionUrl: '#payment-methods'
       };
       
-      this.announcementBar = document.querySelector('.announcement-bar');
-      this.announcementText = document.querySelector('.announcement-text');
-      this.announcementContent = document.querySelector('.announcement-content');
-      this.closeButton = document.querySelector('.announcement-close');
-      this.timeoutId = null;
+      // Get DOM elements - we'll wait for document ready
+      document.addEventListener('DOMContentLoaded', () => {
+        this.setupDomElements();
+        this.init();
+      });
       
+      // Try to initialize immediately as well
+      this.setupDomElements();
       this.init();
     }
     
-    init() {
-      // Add event listener to close button
-      this.closeButton.addEventListener('click', () => this.hide());
-      
-      // Show announcement immediately
-      this.showAnnouncement();
+    setupDomElements() {
+      this.announcementBar = document.querySelector('.announcement-bar');
+      this.announcementContent = document.querySelector('.announcement-content');
+      this.announcementText = document.querySelector('.announcement-text');
+      this.closeButton = document.querySelector('.announcement-close');
+      this.timeoutId = null;
     }
     
-    showAnnouncement() {
-      // Clear any existing timeout
-      if (this.timeoutId) {
-        clearTimeout(this.timeoutId);
+    init() {
+      // Only proceed if the announcement bar exists or can be created
+      if (!this.announcementBar) {
+        return;
       }
       
-      // Update announcement content
-      this.announcementBar.className = `announcement-bar ${this.announcement.type}`;
-      this.announcementContent.innerHTML = `
-        <i class="${this.announcement.icon}"></i>
-        <span class="announcement-text">${this.announcement.message}</span>
-      `;
+      // Create and update the DOM structure if needed
+      this.createDOMStructure();
       
-      // Show announcement
-      this.announcementBar.classList.add('active', 'slide-down');
+      // Add event listener to close button if it exists
+      if (this.closeButton) {
+        this.closeButton.addEventListener('click', () => this.dismiss());
+      }
       
-      // Set timeout to hide announcement
-      this.timeoutId = setTimeout(() => this.hideAnnouncement(), this.announcement.duration);
+      // Check if this announcement has been dismissed before
+      const dismissedAnnouncements = this.getDismissedAnnouncements();
+      if (!dismissedAnnouncements.includes(this.announcement.id)) {
+        // Show announcement if not dismissed
+        this.showAnnouncement();
+      }
     }
     
+    // Create or update the announcement bar structure in the DOM
+    createDOMStructure() {
+      try {
+        // If we couldn't find the announcement bar in the DOM, create it
+        if (!this.announcementBar) {
+          console.log('Creating announcement bar');
+          this.announcementBar = document.createElement('div');
+          this.announcementBar.className = 'announcement-bar';
+          
+          const container = document.createElement('div');
+          container.className = 'announcement-container';
+          
+          this.announcementContent = document.createElement('div');
+          this.announcementContent.className = 'announcement-content';
+          
+          this.closeButton = document.createElement('button');
+          this.closeButton.className = 'announcement-close';
+          this.closeButton.setAttribute('aria-label', 'Close announcement');
+          this.closeButton.innerHTML = '&times;';
+          
+          container.appendChild(this.announcementContent);
+          container.appendChild(this.closeButton);
+          this.announcementBar.appendChild(container);
+          
+          // Make sure body exists before inserting
+          if (document.body) {
+            document.body.insertBefore(this.announcementBar, document.body.firstChild);
+          } else {
+            // If body isn't ready, try again after a short delay
+            setTimeout(() => {
+              if (document.body) {
+                document.body.insertBefore(this.announcementBar, document.body.firstChild);
+              }
+            }, 100);
+          }
+        }
+      } catch (error) {
+        console.error('Error creating announcement bar:', error);
+      }
+    }
+    
+    // Get dismissed announcements from localStorage
+    getDismissedAnnouncements() {
+      return JSON.parse(localStorage.getItem('dismissedAnnouncements') || '[]');
+    }
+    
+    // Save dismissed announcement to localStorage
+    saveDismissedAnnouncement(id) {
+      const dismissed = this.getDismissedAnnouncements();
+      if (!dismissed.includes(id)) {
+        dismissed.push(id);
+        localStorage.setItem('dismissedAnnouncements', JSON.stringify(dismissed));
+      }
+    }
+    
+    // Show announcement with improved UI
+    showAnnouncement() {
+      try {
+        // Ensure we have the required DOM elements
+        if (!this.announcementBar || !this.announcementContent) {
+          console.log('DOM elements not ready, trying to set up...');
+          this.setupDomElements();
+          this.createDOMStructure();
+          
+          // If still missing DOM elements, return
+          if (!this.announcementBar || !this.announcementContent) {
+            console.error('Cannot show announcement: DOM elements not available');
+            return;
+          }
+        }
+        
+        // Clear any existing timeout
+        if (this.timeoutId) {
+          clearTimeout(this.timeoutId);
+        }
+        
+        // Update announcement content with action button if provided
+        this.announcementBar.className = `announcement-bar ${this.announcement.type}`;
+        
+        let actionButton = '';
+        if (this.announcement.actionText && this.announcement.actionUrl) {
+          actionButton = `<a href="${this.announcement.actionUrl}" class="announcement-action">${this.announcement.actionText}</a>`;
+        }
+        
+        this.announcementContent.innerHTML = `
+          <i class="${this.announcement.icon}"></i>
+          <span class="announcement-text">${this.announcement.message}</span>
+          ${actionButton}
+        `;
+        
+        // Force a reflow to trigger animation properly
+        void this.announcementBar.offsetWidth;
+        
+        // Show announcement with animation
+        this.announcementBar.classList.add('active', 'slide-down');
+        console.log('Announcement bar displayed');
+        
+        // Set timeout to hide announcement after duration
+        if (this.announcement.duration > 0) {
+          this.timeoutId = setTimeout(() => this.hideAnnouncement(), this.announcement.duration);
+        }
+      } catch (error) {
+        console.error('Error showing announcement:', error);
+      }
+    }
+    
+    // Hide announcement with animation
     hideAnnouncement() {
-      this.announcementBar.classList.remove('slide-down');
-      this.announcementBar.classList.add('slide-up');
-      
-      setTimeout(() => {
-        this.announcementBar.classList.remove('active', 'slide-up');
-      }, 300);
+      try {
+        if (!this.announcementBar) return;
+        
+        this.announcementBar.classList.remove('slide-down');
+        this.announcementBar.classList.add('slide-up');
+        
+        setTimeout(() => {
+          if (this.announcementBar) {
+            this.announcementBar.classList.remove('active', 'slide-up');
+          }
+        }, 300);
+      } catch (error) {
+        console.error('Error hiding announcement:', error);
+      }
     }
     
+    // Dismiss announcement and save preference
+    dismiss() {
+      try {
+        // Save this announcement as dismissed
+        this.saveDismissedAnnouncement(this.announcement.id);
+        
+        // Hide the announcement
+        this.hideAnnouncement();
+        
+        console.log('Announcement dismissed and preference saved');
+      } catch (error) {
+        console.error('Error dismissing announcement:', error);
+      }
+    }
+    
+    // Update or show a new announcement
     updateAnnouncement(newAnnouncement) {
       this.announcement = { ...this.announcement, ...newAnnouncement };
-      this.showAnnouncement();
+      
+      // Only show if not previously dismissed
+      const dismissed = this.getDismissedAnnouncements();
+      if (!dismissed.includes(this.announcement.id)) {
+        this.showAnnouncement();
+      }
     }
   }
 
   // Initialize announcement system
   const announcementSystem = new AnnouncementSystem();
+
+  // Force initialization after a short delay to ensure DOM is ready
+  setTimeout(() => {
+    if (announcementSystem) {
+      // Force the announcement to show
+      announcementSystem.setupDomElements();
+      announcementSystem.createDOMStructure();
+      announcementSystem.showAnnouncement();
+      console.log('Forced announcement display');
+    }
+  }, 500);
 
   // Example: Add a new announcement
   // announcementSystem.addAnnouncement({
