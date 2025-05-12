@@ -978,21 +978,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Function to share product
   function shareProduct(product) {
-    // First update the meta tags to ensure rich content when shared
+    // First, create a unique sharing URL with timestamp to prevent caching issues
+    const shareTimestamp = Date.now();
+    const shareURL = `${window.location.origin}?id=${product.id}&share=true&t=${shareTimestamp}`;
+    
+    // Update meta tags to ensure rich content when shared
     updateProductMetaTags(product);
+    
+    // Create or update a hidden thumbnail image specifically for Facebook sharing
+    createSharingThumbnail(product);
     
     if (navigator.share) {
       navigator.share({
         title: `${product.name} - M. Fashion`,
         text: product.description || 
           `Check out this ${product.name} at Fashion Center. Price: Rs. ${product.price.discounted.toFixed(2)}`,
-        url: `${window.location.origin}?id=${product.id}`
+        url: shareURL
       })
       .then(() => showMessage('Product shared successfully'))
       .catch((error) => console.error('Error sharing product:', error));
     } else {
       // Fallback for browsers that don't support Web Share API
-      const shareURL = `${window.location.origin}?id=${product.id}`;
       
       // Create a modal for sharing options
       const modal = document.createElement('div');
@@ -1009,7 +1015,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   </div>
               </div>
               <div class="share-options">
-                  <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareURL)}" target="_blank" class="share-option facebook">
+                  <a href="https://www.facebook.com/dialog/share?app_id=1234567890&display=popup&href=${encodeURIComponent(shareURL)}&redirect_uri=${encodeURIComponent(shareURL)}&picture=${encodeURIComponent(getAbsoluteImageUrl(product.image))}&title=${encodeURIComponent(`${product.name} - M. Fashion`)}&description=${encodeURIComponent(product.description || `Check out this ${product.name} at Fashion Center. Price: Rs. ${product.price.discounted.toFixed(2)}`)}&quote=${encodeURIComponent(`I found this amazing ${product.name} at M. Fashion!`)}" target="_blank" class="share-option facebook">
                       <i class="ri-facebook-fill"></i>
                       <span>Facebook</span>
                   </a>
@@ -2472,6 +2478,65 @@ ${shareURL}`)}" target="_blank" class="share-option whatsapp">
     });
   }
   
+  // Function to create and add a sharing thumbnail to the page for Facebook
+  function createSharingThumbnail(product) {
+    try {
+      if (!product || !product.image) return;
+      
+      // Get absolute image URL
+      const imageUrl = getAbsoluteImageUrl(product.image);
+      
+      // Create or update a hidden thumbnail container
+      let thumbnailContainer = document.getElementById('sharing-thumbnail-container');
+      if (!thumbnailContainer) {
+        thumbnailContainer = document.createElement('div');
+        thumbnailContainer.id = 'sharing-thumbnail-container';
+        thumbnailContainer.style.position = 'absolute';
+        thumbnailContainer.style.top = '-9999px';
+        thumbnailContainer.style.left = '-9999px';
+        thumbnailContainer.style.width = '1200px';
+        thumbnailContainer.style.height = '630px';
+        thumbnailContainer.style.overflow = 'hidden';
+        thumbnailContainer.style.zIndex = '-1';
+        document.body.appendChild(thumbnailContainer);
+      }
+      
+      // Clear previous content
+      thumbnailContainer.innerHTML = '';
+      
+      // Create the thumbnail with product info
+      thumbnailContainer.innerHTML = `
+        <div style="width:1200px;height:630px;background:#fff;display:flex;flex-direction:column;font-family:Arial,sans-serif;">
+          <div style="background:linear-gradient(135deg,#e4cd00 0%,#d4bd00 100%);color:#000;padding:20px;text-align:center;">
+            <h1 style="margin:0;font-size:32px;">${product.name} - M. Fashion</h1>
+          </div>
+          <div style="display:flex;padding:30px;flex:1;">
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+              <img src="${imageUrl}" alt="${product.name}" style="max-width:90%;max-height:400px;object-fit:contain;box-shadow:0 4px 15px rgba(0,0,0,0.1);" />
+            </div>
+            <div style="flex:1;padding:20px;display:flex;flex-direction:column;justify-content:center;">
+              <h2 style="margin-top:0;font-size:28px;color:#333;">${product.name}</h2>
+              <p style="font-size:20px;margin:15px 0;color:#e4cd00;font-weight:bold;">Price: Rs. ${product.price.discounted.toFixed(2)}</p>
+              <p style="font-size:16px;line-height:1.5;color:#555;">${product.description || `Check out this amazing ${product.name} at M. Fashion!`}</p>
+              <div style="margin-top:20px;background:#e4cd00;color:#000;padding:10px;text-align:center;font-weight:bold;border-radius:5px;">
+                Shop Now at M. Fashion
+              </div>
+            </div>
+          </div>
+          <div style="background:#f8f8f8;padding:15px;text-align:center;color:#666;">
+            <p style="margin:0;">www.mfashion.com - Your premier fashion destination in Pakistan</p>
+          </div>
+        </div>
+      `;
+      
+      console.log('Created sharing thumbnail for product:', product.name);
+      return true;
+    } catch (error) {
+      console.error('Error creating sharing thumbnail:', error);
+      return false;
+    }
+  }
+  
   // Function to update meta tags for rich product sharing
   function updateProductMetaTags(product) {
     if (!product) return;
@@ -2480,12 +2545,32 @@ ${shareURL}`)}" target="_blank" class="share-option whatsapp">
       // Get absolute image URL (convert relative URLs to absolute)
       const imageUrl = getAbsoluteImageUrl(product.image);
       
-      // Update Open Graph meta tags
+      // Create a unique product URL to avoid Facebook caching issues
+      const productUrl = `${window.location.origin}?id=${product.id}&t=${Date.now()}`;
+      
+      // First, ensure we have all required meta tags by creating them if they don't exist
+      ensureMetaTagExists('og:type', 'product');
+      ensureMetaTagExists('og:site_name', 'M. Fashion');
+      ensureMetaTagExists('og:locale', 'en_US');
+      
+      // Update Open Graph meta tags for rich sharing
       updateMetaTag('og:title', `${product.name} - M. Fashion`);
       updateMetaTag('og:description', product.description || 
         `Check out this ${product.name} at Fashion Center. Price: Rs. ${product.price.discounted.toFixed(2)}`);
+      updateMetaTag('og:url', productUrl);
+      
+      // Add specific product meta tags
+      updateMetaTag('og:price:amount', product.price.discounted.toFixed(2));
+      updateMetaTag('og:price:currency', 'PKR');
+      
+      // Update image last to ensure it's not cached
       updateMetaTag('og:image', imageUrl);
-      updateMetaTag('og:url', `${window.location.origin}?id=${product.id}`);
+      updateMetaTag('og:image:width', '1200');
+      updateMetaTag('og:image:height', '630');
+      updateMetaTag('og:image:alt', product.name);
+      
+      // Add Facebook-specific meta
+      updateMetaTag('fb:app_id', '1234567890');
       
       // Update Twitter card meta tags
       updateMetaTag('twitter:title', `${product.name} - M. Fashion`);
@@ -2494,7 +2579,7 @@ ${shareURL}`)}" target="_blank" class="share-option whatsapp">
       updateMetaTag('twitter:image', imageUrl);
       updateMetaTag('twitter:card', 'summary_large_image');
       
-      console.log('Updated meta tags for product sharing:', product.name);
+      console.log('Updated meta tags for product sharing:', product.name, imageUrl);
     } catch (error) {
       console.error('Error updating meta tags:', error);
     }
@@ -2502,13 +2587,26 @@ ${shareURL}`)}" target="_blank" class="share-option whatsapp">
   
   // Helper function to convert relative image URLs to absolute URLs
   function getAbsoluteImageUrl(relativeUrl) {
+    if (!relativeUrl) {
+      // Default to logo if no image provided
+      return `${window.location.origin}/Assets/logo.png`;
+    }
+    
     // If the URL already starts with http:// or https://, it's already absolute
     if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
       return relativeUrl;
     }
     
-    // Remove any leading slash if present
-    const cleanRelativeUrl = relativeUrl.startsWith('/') ? relativeUrl.substring(1) : relativeUrl;
+    // Fix common relative path issues
+    let cleanRelativeUrl = relativeUrl;
+    // Remove any leading slash
+    if (cleanRelativeUrl.startsWith('/')) {
+      cleanRelativeUrl = cleanRelativeUrl.substring(1);
+    }
+    // Handle relative paths that start with ./ or ../
+    if (cleanRelativeUrl.startsWith('./')) {
+      cleanRelativeUrl = cleanRelativeUrl.substring(2);
+    }
     
     // Combine with the current domain to create an absolute URL
     return `${window.location.origin}/${cleanRelativeUrl}`;
@@ -2527,6 +2625,21 @@ ${shareURL}`)}" target="_blank" class="share-option whatsapp">
     
     // Update the content
     metaTag.setAttribute('content', content);
+  }
+  
+  // Helper function to ensure a meta tag exists with default content
+  function ensureMetaTagExists(property, defaultContent) {
+    let metaTag = document.querySelector(`meta[property="${property}"]`);
+    
+    if (!metaTag) {
+      // If the meta tag doesn't exist, create it with default content
+      metaTag = document.createElement('meta');
+      metaTag.setAttribute('property', property);
+      metaTag.setAttribute('content', defaultContent);
+      document.head.appendChild(metaTag);
+    }
+    
+    return metaTag;
   }
 
   // Function to handle product URL navigation
